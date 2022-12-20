@@ -2,12 +2,17 @@ package me.bteuk.converter;
 
 import cubicchunks.regionlib.impl.EntryLocation2D;
 import me.bteuk.converter.cc.CubicChunkReader;
+import me.bteuk.converter.cc.WorldIterator;
 
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
+
+    //Y / 16 is the cube height
+    public static final int MIN_Y_CUBE = -8;
+    public static final int MAX_Y_CUBE = 85;
 
     //This is where the program will start.
     //This is cli application and thus the arguments will be provided through the args variable.
@@ -22,7 +27,7 @@ public class Main {
 
     public static void main(String[] args) {
 
-        System.out.println(new EntryLocation2D(10,0).getId());
+        new WorldIterator(args[0]);
 
     }
 }
