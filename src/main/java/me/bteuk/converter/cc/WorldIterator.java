@@ -77,14 +77,39 @@ public class WorldIterator {
                         //Get all cubes that could be in the range of heights.
                         for (int y = Main.MIN_Y_CUBE; y < Main.MAX_Y_CUBE; y++) {
 
+                            EntryLocation3D e3d = new EntryLocation3D(e2d.getEntryX(), y, e2d.getEntryZ());
+                            System.out.println(e3d.getRegionKey().getName() + ", " + e3d.getId());
 
+                            //Get the cube of data.
+                            Optional<ByteBuffer> cube = saveCubeColumns.load(e3d,true);
+
+                            //Create list of sections to store the new sections in.
+                            List<CompoundTag> sections = new ArrayList<>();
+
+                            //Check if it exists.
+                            if (!cube.isEmpty()) {
+
+                                //Retrieve the data from the cube.
+                                CompoundTag cubeTag = cube.get() == null ? null : readCompressedCC(new ByteArrayInputStream(cube.get().array()));
+                                CompoundTag cubeLevel = (CompoundTag) cubeTag.getValue().get("Level");
+
+                                //Convert the data to the new section structure of Minecraft 1.18.2
+
+
+
+                            } else {
+
+                                //Skip this cube.
+                                continue;
+
+                            }
                         }
 
-                        CompoundTag columnTag = column.get() == null ? null : readCompressedCC(new ByteArrayInputStream(column.get().array()));
+                        /*CompoundTag columnTag = column.get() == null ? null : readCompressedCC(new ByteArrayInputStream(column.get().array()));
                         CompoundMap columnLevel = (CompoundMap) columnTag.getValue().get("Level").getValue();
                         for (Tag<?> tag : columnLevel) {
                             System.out.println(tag.getName());
-                        }
+                        }*/
                     } else {
                         //Skip this column.
                         continue;
