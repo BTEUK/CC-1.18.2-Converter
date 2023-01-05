@@ -32,7 +32,7 @@ public class WorldIterator {
     EntryLocation3D e3d;
     boolean unique;
     ArrayList<LegacyID> uniqueBlocks = new ArrayList<>();
-    HashMap<LegacyID,Integer> paletteID = new HashMap<>();
+    HashMap<LegacyID, Integer> paletteID = new HashMap<>();
     List<CompoundTag> palette = new ArrayList<>();
     byte meta;
     byte[] blocks;
@@ -87,6 +87,9 @@ public class WorldIterator {
                     //If the columndata is not empty
                     if (column.isPresent()) {
 
+                        //Create a check for if a cube is empty, if the whole column is empty it can be skipped.
+                        boolean isEmpty = true;
+
                         //Get all cubes that could be in the range of heights.
                         for (int y = Main.MIN_Y_CUBE; y < Main.MAX_Y_CUBE; y++) {
 
@@ -125,9 +128,9 @@ public class WorldIterator {
 
                                     //Get data for block.
                                     if (j % 2 == 0) {
-                                        meta = (byte) (data[j>>1] & 0x0f);
+                                        meta = (byte) (data[j >> 1] & 0x0f);
                                     } else {
-                                        meta = (byte) ((data[j>>1] >> 4) & 0x0f);
+                                        meta = (byte) ((data[j >> 1] >> 4) & 0x0f);
                                     }
 
                                     //Add block if unique.
@@ -145,12 +148,85 @@ public class WorldIterator {
                                 for (LegacyID id : uniqueBlocks) {
                                     //Store the index of this block, so we can easily reference it
                                     // from the palette without having the convert it again.
-                                    paletteID.put(id, 0);
+                                    paletteID.put(id, counter);
                                     counter++;
                                     palette.add(MinecraftIDConverter.getBlock(id));
                                 }
 
-                                //Convert the data to the new section structure of Minecraft 1.18.2
+                                //If the palette only has one block skip the next part entirely.
+                                if (palette.size() != 1) {
+
+                                    //Set column to not empty.
+                                    isEmpty = false;
+
+                                    //Find the number of blocks that will be stored in each long array. If the count is 16 or less then each block will use 4 bits.
+                                    //A long allows for 64 bits in total.
+                                    int blockSize = log2(uniqueBlocks.size());
+                                    int blocksPerLong = 64 / blockSize;
+                                    long[] newData = new long[(4096 + blocksPerLong - 1) / blocksPerLong];
+                                    System.out.println(newData.length);
+
+                                    counter = 0;
+                                    //To remember the index of the long.
+                                    int index = 0;
+                                    long blockIndex;
+
+                                    //Long value
+                                    long blockStorage = 0;
+
+                                    //Convert the data to the new section structure of Minecraft 1.18.2
+                                    for (int j = 0; j < 4096; j++) {
+
+                                        //If counter is equal or greater than the blocksPerLong we need to create a new long and reset the counter.
+                                        if (counter >= blocksPerLong) {
+                                            counter = 0;
+                                            blockStorage = 0;
+                                            index++;
+                                        }
+
+                                        //Get data for block.
+                                        if (j % 2 == 0) {
+                                            meta = (byte) (data[j >> 1] & 0x0f);
+                                        } else {
+                                            meta = (byte) ((data[j >> 1] >> 4) & 0x0f);
+                                        }
+
+                                        //Get the id for the block.
+                                        blockIndex = getPaletteID(blocks[j], meta);
+
+                                        //Shift the blockIndex by blockSize * counter so the value gets put in the right place in the long.
+                                        //Using the bitwise or function we can set the values in the long.
+                                        blockIndex = blockIndex << (counter * blockSize);
+                                        blockStorage = blockStorage | blockIndex;
+
+                                        //Update the counter.
+                                        counter++;
+
+                                        //Set the long in the array when the counter is at the blocksPerLong value.
+                                        if (counter == blocksPerLong) {
+                                            newData[index] = blockStorage;
+                                        }
+
+                                        //TODO: Check if the block is a block entity, if true also add it to the block entities list.
+
+                                    }
+
+                                    //Print the output of the long array.
+                                    System.out.println(Arrays.toString(blocks));
+                                    System.out.println(Arrays.toString(newData));
+
+                                } else {
+
+                                    //If the single block is not air, set the chunk to not empty.
+                                    if (uniqueBlocks.get(0).getID() != 0) {
+                                        isEmpty = false;
+                                    }
+
+                                    continue;
+
+                                }
+
+                                //TODO: Add section to sections.
 
 
                             } else {
@@ -160,6 +236,15 @@ public class WorldIterator {
 
                             }
                         }
+
+                        //If the whole chunk is empty, don't save it.
+                        if (!isEmpty) {
+
+                            //Save the chunk in the region file.
+
+                        }
+
+
 
                         /*CompoundTag columnTag = column.get() == null ? null : readCompressedCC(new ByteArrayInputStream(column.get().array()));
                         CompoundMap columnLevel = (CompoundMap) columnTag.getValue().get("Level").getValue();
@@ -175,8 +260,6 @@ public class WorldIterator {
                     e.printStackTrace();
                 }
             }
-
-            System.out.println(uniqueBlocks);
         }
     }
 
@@ -267,5 +350,9 @@ public class WorldIterator {
             }
         }
         return 0;
+    }
+
+    private int log2(int value) {
+        return Integer.SIZE - Integer.numberOfLeadingZeros(value);
     }
 }
