@@ -970,21 +970,6 @@ public class MinecraftIDConverter {
                 }
             }
 
-            //TODO Log2 Directions
-            //Log 2
-            case (byte) 162 -> {
-                switch (data) {
-
-                    case 0 -> {
-                        return "acacia_log";
-                    }
-
-                    case 1 -> {
-                        return "dark_oak_log";
-                    }
-                }
-            }
-
             //TODO Persistent Leaves
             //Leaves
             case 18 -> {
@@ -1004,21 +989,6 @@ public class MinecraftIDConverter {
 
                     case 3 -> {
                         return "jungle_leaves";
-                    }
-                }
-            }
-
-            //TODO Persistent Leaves
-            //Leaves 2
-            case (byte) 161 -> {
-                switch (data) {
-
-                    case 0 -> {
-                        return "acacia_leaves";
-                    }
-
-                    case 1 -> {
-                        return "dark_oak_leaves";
                     }
                 }
             }
@@ -1265,33 +1235,17 @@ public class MinecraftIDConverter {
                 return "iron_block";
             }
 
-            //TODO Top Half of Slab
-            //Wooden Slab
-            case 126 -> {
+            //TODO Double Slabs
+            //Double Stone Slab
+            case 43 -> {
                 switch (data) {
 
-                    case 0 -> {
-                        return "oak_slab";
+                    case 7 -> {
+                        return "smooth_quartz";
                     }
 
-                    case 1 -> {
-                        return "spruce_slab";
-                    }
-
-                    case 2 -> {
-                        return "birch_slab";
-                    }
-
-                    case 3 -> {
-                        return "jungle_slab";
-                    }
-
-                    case 4 -> {
-                        return "acacia_slab";
-                    }
-
-                    case 5 -> {
-                        return "dark_oak_slab";
+                    case 8 -> {
+                        return "smooth_stone";
                     }
                 }
             }
@@ -1335,6 +1289,372 @@ public class MinecraftIDConverter {
                 }
             }
 
+            //Brick Block
+            case 45 -> {
+                return "bricks";
+            }
+
+            //Tnt
+            case 46 -> {
+                return "tnt";
+            }
+
+            //Bookshelf
+            case 47 -> {
+                return "bookshelf";
+            }
+
+            //Moss Stone
+            case 48 -> {
+                return "mossy_cobblestone";
+            }
+
+            //Obsidian
+            case 49 -> {
+                return "obsidian";
+            }
+
+            //Torch
+            //TODO Torch directions
+            case 50 -> {
+                return "torch";
+            }
+
+            //Fire
+            case 51 -> {
+                return "fire";
+            }
+
+            //Mob Spawner
+            case 52 -> {
+                return "spawner";
+            }
+
+            //Oak Stairs
+            case 53 -> {
+                return "oak_stairs";
+            }
+
+            //Chest
+            case 54 -> {
+                return "chest";
+            }
+
+            //Redstone Wire
+            case 55 -> {
+                return "redstone_wire";
+            }
+
+            //Diamond Ore
+            case 56 -> {
+                return "diamond_ore";
+            }
+
+            //Diamond Block
+            case 57 -> {
+                return "diamond_block";
+            }
+
+            //Crafting Table
+            case 58 -> {
+                return "crafting_table";
+            }
+
+            //Wheat Crops
+            case 59 -> {
+                return "wheat";
+            }
+
+            //Farmland
+            case 60 -> {
+                return "farmland";
+            }
+
+            //(Burning) Furnace
+            case 61, 62 -> {
+                return "furnace";
+            }
+
+            //Standing Sign Block
+            case 63 -> {
+                return "oak_sign";
+            }
+
+            //Oak Door Block
+            case 64 -> {
+                return "oak_door";
+            }
+
+            //Ladder
+            case 65 -> {
+                return "ladder";
+            }
+
+            //Rail
+            case 66 -> {
+                return "rail";
+            }
+
+            //Cobblestone Stairs
+            case 67 -> {
+                return "cobblestone_stairs";
+            }
+
+            //Wall Mounted Sign Block
+            case 68 -> {
+                return "oak_wall_sign";
+            }
+
+            //Lever
+            case 69 -> {
+                return "lever";
+            }
+
+            //Stone Pressure Plate
+            case 70 -> {
+                return "stone_pressure_plate";
+            }
+
+            //Iron Door Block
+            case 71 -> {
+                return "iron_door";
+            }
+
+            //Wooden Pressure Plate
+            case 72 -> {
+                return "oak_pressure_plate";
+            }
+
+            //Redstone Ore
+            case 73, 74 -> {
+                return "redstone_ore";
+            }
+
+            //Redstone Torch
+            //TODO Torch directions.
+            case 75,76 -> {
+                return "redstone_torch";
+            }
+
+            //Stone Button
+            case 77 -> {
+                return "stone_button";
+            }
+
+            //Snow
+            case 78 -> {
+                return "snow";
+            }
+
+            //Ice
+            case 79 -> {
+                return "ice";
+            }
+
+            //Snow Block
+            case 80 -> {
+                return "snow_block";
+            }
+
+            //Cactus
+            case 81 -> {
+                return "cactus";
+            }
+
+            //Clay
+            case 82 -> {
+                return "clay";
+            }
+
+            //Sugar Canes
+            case 83 -> {
+                return "sugar_cane";
+            }
+
+            //Jukebox
+            case 84 -> {
+                return "jukebox";
+            }
+
+            //Oak Fence
+            case 85 -> {
+                return "fence";
+            }
+
+            //Pumpkin
+            case 86 -> {
+                return "carved_pumpkin";
+            }
+
+            //Netherrack
+            case 87 -> {
+                return "netherrack";
+            }
+
+            //Soul Sand
+            case 88 -> {
+                return "soul_sand";
+            }
+
+            //Glowstone
+            case 89 -> {
+                return "glowstone";
+            }
+
+            //Nether Portal
+            case 90 -> {
+                return "nether_portal";
+            }
+
+            //Jack o'Lantern
+            case 91 -> {
+                return "jack_o_lantern";
+            }
+
+            //Cake Block
+            case 92 -> {
+                return "cake";
+            }
+
+            //Redstone Repeater
+            case 93,94 -> {
+                return "repeater";
+            }
+
+            //Stained Glass
+            case 95 -> {
+
+                switch (data) {
+
+                    case 0 -> {
+                        return "white_stained_glass";
+                    }
+
+                    case 1 -> {
+                        return "orange_stained_glass";
+                    }
+
+                    case 2 -> {
+                        return "magenta_stained_glass";
+                    }
+
+                    case 3 -> {
+                        return "light_blue_stained_glass";
+                    }
+
+                    case 4 -> {
+                        return "yellow_stained_glass";
+                    }
+
+                    case 5 -> {
+                        return "lime_stained_glass";
+                    }
+
+                    case 6 -> {
+                        return "pink_stained_glass";
+                    }
+
+                    case 7 -> {
+                        return "gray_stained_glass";
+                    }
+
+                    case 8 -> {
+                        return "light_gray_stained_glass";
+                    }
+
+                    case 9 -> {
+                        return "cyan_stained_glass";
+                    }
+
+                    case 10 -> {
+                        return "purple_stained_glass";
+                    }
+
+                    case 11 -> {
+                        return "blue_stained_glass";
+                    }
+
+                    case 12 -> {
+                        return "brown_stained_glass";
+                    }
+
+                    case 13 -> {
+                        return "green_stain_glass";
+                    }
+
+                    case 14 -> {
+                        return "red_stained_glass";
+                    }
+
+                    case 15 -> {
+                        return "black_stained_glass";
+                    }
+                }
+            }
+
+
+
+            //TODO Top Half of Slab
+            //Wooden Slab
+            case 126 -> {
+                switch (data) {
+
+                    case 0 -> {
+                        return "oak_slab";
+                    }
+
+                    case 1 -> {
+                        return "spruce_slab";
+                    }
+
+                    case 2 -> {
+                        return "birch_slab";
+                    }
+
+                    case 3 -> {
+                        return "jungle_slab";
+                    }
+
+                    case 4 -> {
+                        return "acacia_slab";
+                    }
+
+                    case 5 -> {
+                        return "dark_oak_slab";
+                    }
+                }
+            }
+
+            //TODO Persistent Leaves
+            //Leaves 2
+            case (byte) 161 -> {
+                switch (data) {
+
+                    case 0 -> {
+                        return "acacia_leaves";
+                    }
+
+                    case 1 -> {
+                        return "dark_oak_leaves";
+                    }
+                }
+            }
+
+            //TODO Log2 Directions
+            //Log 2
+            case (byte) 162 -> {
+                switch (data) {
+
+                    case 0 -> {
+                        return "acacia_log";
+                    }
+
+                    case 1 -> {
+                        return "dark_oak_log";
+                    }
+                }
+            }
+
             //Stone Slab 2
             case (byte) 182 -> {
                 return "red_sandstone_slab";
@@ -1344,28 +1664,6 @@ public class MinecraftIDConverter {
             case (byte) 205 -> {
                 return "purpur_slab";
             }
-
-            //TODO Double Slabs
-            //Double Stone Slab
-            case 43 -> {
-                switch (data) {
-
-                    case 7 -> {
-                        return "smooth_quartz";
-                    }
-
-                    case 8 -> {
-                        return "smooth_stone";
-                    }
-                }
-            }
-
-            //Brick Block
-            case 45 -> {
-                return "bricks";
-            }
-
-            //Tnt
 
 
         }
