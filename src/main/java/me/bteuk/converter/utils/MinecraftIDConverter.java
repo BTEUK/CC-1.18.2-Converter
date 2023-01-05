@@ -6,18 +6,35 @@ import com.flowpowered.nbt.StringTag;
 
 public class MinecraftIDConverter {
 
+    /*
+
+    This is the to-do list of unique cases which could otherwise be forgotten:
+
+    TODO: For double plant blocks we need to store the details of the bottom-half somewhere so when we get to a top-half we can query that list to figure out which top-half is needed,
+     since in 1.12.2 they all have the same id 175:11.
+
+    TODO: Do the same for stairs, fences and walls, iron bars, glass panes, chests, redstone dust.
+
+
+
+
+     */
+
+
+
+
     //Convert a legacy Minecraft block id and get the 1.18.2 palette for the block.
-    public static CompoundTag getBlock(byte id, byte data) {
+    public static CompoundTag getBlock(LegacyID id) {
 
         //Create map for block.
         CompoundMap block = new CompoundMap();
 
         //Add block name as String tag.
-        block.put(new StringTag("Name", getNameSpace(id, data)));
+        block.put(new StringTag("Name", getNameSpace(id.getID(), id.getData())));
 
         //If block has properties, add them.
-        if (hasBlockStates(id)) {
-            block.put(getBlockStates(id, data));
+        if (hasBlockStates(id.getID())) {
+            block.put(getBlockStates(id.getID(), id.getData()));
         }
 
         return new CompoundTag("", block);
@@ -26,7 +43,7 @@ public class MinecraftIDConverter {
 
     //Convert a legacy Minecraft block id and get the 1.18.2 namespace version.
     public static String getNameSpace(byte id, byte data) {
-        return ("minecraft:" + getBlock(id, data));
+        return ("minecraft:" + getBlockName(id, data));
     }
 
     //Check if the block has block states in 1.18.2, in this case it needs a properties tag in the palette.
@@ -34,12 +51,31 @@ public class MinecraftIDConverter {
 
         switch (id) {
 
-            case 2, 23, 51, 54, 64, 71, 77, 81, 85, 92, 113, 117, 118, 120, 127,
-                    (byte) 130, (byte) 137, (byte) 141, (byte) 143, (byte) 145, (byte) 146, (byte) 151, (byte) 158,
-                    (byte) 176, (byte) 177, (byte) 178, (byte) 188, (byte) 189, (byte) 190, (byte) 191, (byte) 192,
-                    (byte) 193, (byte) 194, (byte) 195, (byte) 196, (byte) 197,
-                    (byte) 198, (byte) 199, (byte) 200, (byte) 207,(byte) 210, (byte) 211,
-                    (byte) 216 -> {return true;}
+            case 2, 3, 6, 23, 46, 51, 54, 61, 62, 64, 65, 71, 77, 81, 84, 85, 91, 92, 101, 102, 110, 113, 117, 118, 120, 127,
+                    (byte) 130, (byte) 137, (byte) 141, (byte) 143, (byte) 145, (byte) 146, (byte) 151, (byte) 154,
+                    (byte) 158, (byte) 160, (byte) 170, (byte) 176, (byte) 177, (byte) 178, (byte) 188, (byte) 189,
+                    (byte) 190, (byte) 191, (byte) 192, (byte) 193, (byte) 194, (byte) 195, (byte) 196, (byte) 197,
+                    (byte) 198, (byte) 199, (byte) 200, (byte) 207,(byte) 210, (byte) 211, (byte) 212, (byte) 216,
+                    (byte) 235, (byte) 236, (byte) 237, (byte) 238, (byte) 239, (byte) 240, (byte) 241, (byte) 242,
+                    (byte) 243, (byte) 244, (byte) 245, (byte) 246, (byte) 247, (byte) 248, (byte) 249, (byte) 250,
+                    70, 72, (byte) 147, (byte) 148 -> {return true;}
+
+        }
+
+        return false;
+
+    }
+
+    //Check if the block is a block entity (formally known as tile entity)
+    public static boolean isBlockEntity(byte id) {
+
+        switch (id) {
+
+            case 23, 26, 29, 33, 34, 52, 54, 61, 62, 63, 64, 84, 116, 117, 119, (byte) 130, (byte) 137, (byte) 138,
+                    (byte) 144, (byte) 146, (byte) 149, (byte) 150, (byte) 151, (byte) 154, (byte) 158, (byte) 176,
+                    (byte) 177, (byte) 178, (byte) 209, (byte) 210, (byte) 211, (byte) 219, (byte) 220, (byte) 221,
+                    (byte) 222, (byte) 223, (byte) 224, (byte) 225, (byte) 226, (byte) 227, (byte) 228, (byte) 229,
+                    (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234, (byte) 255 -> {return true;}
 
         }
 
@@ -51,6 +87,8 @@ public class MinecraftIDConverter {
     public static CompoundTag getBlockStates(byte id, byte data) {
 
         CompoundMap block_states = new CompoundMap();
+
+        //TODO: Water and Lava
 
         switch (id) {
 
@@ -508,6 +546,221 @@ public class MinecraftIDConverter {
                 }
 
             }
+
+            //Frosted Ice
+            case (byte) 212 -> {
+
+                if (data < 3) {
+                    block_states.put(new StringTag("age", String.valueOf(data)));
+                } else {
+                    block_states.put(new StringTag("age", "3"));
+                }
+
+            }
+
+            //Furnace
+            case 61,62 -> {
+
+                //lit
+                if (id == 62) {
+                    block_states.put(new StringTag("lit", "true"));
+                } else {
+                    block_states.put(new StringTag("lit", "false"));
+                }
+
+                //facing
+                switch (data) {
+
+                    case 3,9,15 -> block_states.put(new StringTag("facing", "south"));
+                    case 4,10 -> block_states.put(new StringTag("facing", "west"));
+                    case 5,11 -> block_states.put(new StringTag("facing", "east"));
+                    default -> block_states.put(new StringTag("facing", "north"));
+
+                }
+            }
+
+            //Glass Panes and Iron Bars
+            case 102, (byte) 160, 101 -> {
+
+                block_states.put(new StringTag("east", "false"));
+                block_states.put(new StringTag("north", "false"));
+                block_states.put(new StringTag("south", "false"));
+                block_states.put(new StringTag("watterlogged", "false"));
+                block_states.put(new StringTag("west", "false"));
+
+            }
+
+            //Glazed Terracotta and Jack o'Lantern
+            case (byte) 235, (byte) 236, (byte) 237, (byte) 238, (byte) 239, (byte) 240, (byte) 241, (byte) 242,
+                    (byte) 243, (byte) 244, (byte) 245, (byte) 246, (byte) 247, (byte) 248, (byte) 249,
+                    (byte) 250, 91 -> {
+
+                switch (data) {
+
+                    case 0,4,8,12 -> block_states.put(new StringTag("facing", "south"));
+                    case 1,5,9,13 -> block_states.put(new StringTag("facing", "west"));
+                    case 2,6,10,14 -> block_states.put(new StringTag("facing", "north"));
+                    case 3,7,11,15 -> block_states.put(new StringTag("facing", "east"));
+
+                }
+            }
+
+            //Grass, Myceleum and Podzol
+            case 2, 110, 3 -> {
+
+                if (id == 3 && data != 2) {
+                    //Do nothing
+                } else {
+
+                    block_states.put(new StringTag("snowy", "false"));
+
+                }
+            }
+
+            //Hay Bale
+            case (byte) 170 -> {
+
+                switch (data) {
+
+                    case 4,5,6,7 -> block_states.put(new StringTag("axis", "x"));
+                    case 8,9,10,11 -> block_states.put(new StringTag("axis", "z"));
+                    default -> block_states.put(new StringTag("axis", "y"));
+
+                }
+            }
+
+            //Hopper
+            case (byte) 154 -> {
+
+                //enabled
+                block_states.put(new StringTag("enabled", "false"));
+
+                //facing
+                switch (data) {
+
+                    case 0,6,8,14,15 -> block_states.put(new StringTag("facing", "down"));
+                    case 2,10 -> block_states.put(new StringTag("facing", "north"));
+                    case 3,11 -> block_states.put(new StringTag("facing", "south"));
+                    case 4,12 -> block_states.put(new StringTag("facing", "west"));
+                    case 5,13 -> block_states.put(new StringTag("facing", "east"));
+
+                }
+            }
+
+            //Jukebox
+            case 84 -> block_states.put(new StringTag("has_record", "false"));
+
+            //Ladder
+            case 65 -> {
+
+                switch (data) {
+
+                    case 3, 9, 15 -> block_states.put(new StringTag("facing", "south"));
+                    case 4, 10 -> block_states.put(new StringTag("facing", "west"));
+                    case 5, 11 -> block_states.put(new StringTag("facing", "east"));
+                    default -> block_states.put(new StringTag("facing", "north"));
+
+                }
+            }
+
+            //Leaves
+            case 18, (byte) 161 -> {
+
+                block_states.put(new StringTag("distance", "7"));
+                block_states.put(new StringTag("persistent", "true"));
+                block_states.put(new StringTag("waterlogged", "false"));
+
+            }
+
+            //Lever
+
+            //Logs
+
+            //Melon Stem
+
+            //Mob Heads
+
+            //Mushroom Blocks
+
+            //Nether Wart
+
+            //Nether Portal
+
+            //Note Block
+
+            //Observer
+
+            //Pistons
+
+            //Potatoes
+
+            //Pressure Plates
+            case 70, 72, (byte) 147, (byte) 148 -> block_states.put(new StringTag("powered", "false"));
+
+            //Carved Pumpkin
+
+            //Pumpkin Stem
+
+            //Purpur and Quartz Pillar
+
+            //Rail
+
+            //Activator Rail, Detector Rail and Powered Rail
+
+            //Redstone Comparator
+
+            //Redstone Dust
+
+            //Redstone Lamp
+
+            //Redstone Ore
+
+            //Redstone Repeater
+
+            //Redstone Torch
+
+            //Saplings
+            case 6 -> block_states.put(new StringTag("stage", "0"));
+
+            //Shulker Boxes
+
+            //Sign
+
+            //Slabs
+
+            //Snow
+
+            //Sponge
+
+            //Stairs
+
+            //Structure Block
+
+            //Structure Void
+
+            //Sugar Cane
+
+            //Tall Grass and Large Fern
+
+            //TNT
+            case 46 -> block_states.put(new StringTag("unstable", "false"));
+
+            //Torch
+
+            //Trapdoors
+
+            //Tripwire
+
+            //Tripwire Hook
+
+            //Vines
+
+            //Walls
+
+            //Wheat Crop
+
+            //Wood
+
 
 
 
