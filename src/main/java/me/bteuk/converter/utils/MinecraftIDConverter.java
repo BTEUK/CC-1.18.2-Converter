@@ -13,7 +13,7 @@ public class MinecraftIDConverter {
     TODO: For double plant blocks we need to store the details of the bottom-half somewhere so when we get to a top-half we can query that list to figure out which top-half is needed,
      since in 1.12.2 they all have the same id 175:11.
 
-    TODO: Do the same for stairs, fences and walls, iron bars, glass panes, chests, redstone dust.
+    TODO: Do the same for stairs, fences and walls, iron bars, glass panes, chests, redstone dust, chorus plant
 
     TODO: Change colour of the bed in post-processing, this can be retrieved from the block entity data.
 
@@ -24,6 +24,8 @@ public class MinecraftIDConverter {
     TODO: Convert flower pots to correct type in post-processing by using block entity data.
 
     TODO: Convert mob heads in post-processing since the block entity data needs to be used.
+
+    TODO: Convert Note blocks in post-processing since the block entity data needs to be used.
 
      */
 
@@ -96,8 +98,6 @@ public class MinecraftIDConverter {
 
         CompoundMap block_states = new CompoundMap();
 
-        //TODO: Water and Lava
-
         switch (id) {
 
             //Anvil (all types)
@@ -111,25 +111,22 @@ public class MinecraftIDConverter {
                 }
             }
 
-            //TODO Get banner colour
             //Standing Banner
             case (byte) 176 -> block_states.put(new StringTag("rotation", String.valueOf(data)));
 
-            //TODO Get banner colour
-            //Wall Banner
-            case (byte) 177 -> {
+            //Wall Banner and Mob Heads
+            case (byte) 177, (byte) 144 -> {
 
                 switch (data) {
 
-                    case 0,1,2,7,8,12,13,14 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,9,15 -> block_states.put(new StringTag("facing", "south"));
-                    case 4,10 -> block_states.put(new StringTag("facing", "west"));
-                    case 5,11 -> block_states.put(new StringTag("facing", "east"));
+                    case 2 -> block_states.put(new StringTag("facing", "north"));
+                    case 3 -> block_states.put(new StringTag("facing", "south"));
+                    case 4 -> block_states.put(new StringTag("facing", "west"));
+                    case 5 -> block_states.put(new StringTag("facing", "east"));
 
                 }
             }
 
-            //TODO Get bed colour
             //Bed (all colours)
             case 26 -> {
 
@@ -230,7 +227,10 @@ public class MinecraftIDConverter {
             case 81 -> block_states.put(new StringTag("age", "0"));
 
             //Cake
-            case 92 -> block_states.put(new StringTag("bites", String.valueOf(data)));
+            case 92 -> {
+                block_states.put(new StringTag("bites", String.valueOf(data)));
+                block_states.put(new StringTag("lit", "false"));
+            }
 
             //Carrots
             case (byte) 141 -> block_states.put(new StringTag("age", String.valueOf(data)));
@@ -546,11 +546,10 @@ public class MinecraftIDConverter {
             //Double Plant
             case (byte) 175 -> {
 
-                switch (data) {
-
-                    case 0,1,2,3,4,5,6,7 -> block_states.put(new StringTag("half", "lower"));
-                    default -> block_states.put(new StringTag("half", "upper"));
-
+                if (data == 11) {
+                    block_states.put(new StringTag("half", "upper"));
+                } else {
+                    block_states.put(new StringTag("half", "lower"));
                 }
 
             }
@@ -616,9 +615,7 @@ public class MinecraftIDConverter {
             //Grass, Myceleum and Podzol
             case 2, 110, 3 -> {
 
-                if (id == 3 && data != 2) {
-                    //Do nothing
-                } else {
+                if (!(id == 3 && data != 2)) {
 
                     block_states.put(new StringTag("snowy", "false"));
 
@@ -671,6 +668,9 @@ public class MinecraftIDConverter {
                 }
             }
 
+            //Lava
+            case 10, 11 -> block_states.put(new StringTag("level", String.valueOf(data)));
+
             //Leaves
             case 18, (byte) 161 -> {
 
@@ -681,20 +681,114 @@ public class MinecraftIDConverter {
             }
 
             //Lever
+            case 69 -> {
+
+                //face
+                switch (data) {
+
+                    case 0,7,8,15 -> block_states.put(new StringTag("face", "floor"));
+                    case 5,6,13,14 -> block_states.put(new StringTag("face", "ceiling"));
+                    case 1,2,3,4,9,10,11,12 -> block_states.put(new StringTag("face", "wall"));
+
+                }
+
+                //facing
+                switch (data) {
+
+                    case 0,1,6,8,9,14 -> block_states.put(new StringTag("facing", "east"));
+                    case 3,5,7,11,13,15 -> block_states.put(new StringTag("facing", "south"));
+                    case 2,10 -> block_states.put(new StringTag("facing", "west"));
+                    case 4,12 -> block_states.put(new StringTag("facing", "north"));
+
+                }
+
+                //powered
+                if (data >= 8) {
+                    block_states.put(new StringTag("powered", "true"));
+                } else {
+                    block_states.put(new StringTag("powered", "false"));
+                }
+
+            }
 
             //Logs
+            case 17, (byte) 162 -> {
+                switch (data) {
+
+                    case 5,6,7,8 -> block_states.put(new StringTag("axis", "x"));
+                    case 9,10,11,12 -> block_states.put(new StringTag("axis", "z"));
+                    default -> block_states.put(new StringTag("axis", "y"));
+
+                }
+            }
 
             //Melon Stem
-
-            //Mob Heads
+            case 104, 105 -> block_states.put(new StringTag("age", String.valueOf(data)));
 
             //Mushroom Blocks
+            case 99, 100 -> {
+
+                //east
+                if (data == 3 || data == 6 || data == 9 || data == 10 || data == 14 || data == 15) {
+                    block_states.put(new StringTag("east", "true"));
+                } else {
+                    block_states.put(new StringTag("east", "false"));
+                }
+
+                //down
+                if (data == 14 || data == 15) {
+                    block_states.put(new StringTag("down", "true"));
+                } else {
+                    block_states.put(new StringTag("down", "false"));
+                }
+
+                //north
+                if (data == 1 || data == 2 || data == 3 || data == 10 || data == 14 || data == 15) {
+                    block_states.put(new StringTag("north", "true"));
+                } else {
+                    block_states.put(new StringTag("north", "false"));
+                }
+
+                //south
+                if (data == 7 || data == 8 || data == 9 || data == 10 || data == 14 || data == 15) {
+                    block_states.put(new StringTag("south", "true"));
+                } else {
+                    block_states.put(new StringTag("south", "false"));
+                }
+
+                //up
+                if (data == 0 || data == 10) {
+                    block_states.put(new StringTag("east", "false"));
+                } else {
+                    block_states.put(new StringTag("east", "true"));
+                }
+
+                //west
+                if (data == 1 || data == 4 || data == 7 || data == 10 || data == 14 || data == 15) {
+                    block_states.put(new StringTag("east", "true"));
+                } else {
+                    block_states.put(new StringTag("east", "false"));
+                }
+            }
 
             //Nether Wart
+            case 115 -> block_states.put(new StringTag("age", String.valueOf(data)));
 
             //Nether Portal
+            case 90 -> {
+                if (data == 1) {
+                    block_states.put(new StringTag("axis", "z"));
+                } else {
+                    block_states.put(new StringTag("axis", "x"));
+                }
+            }
 
             //Note Block
+            case 25 -> {
+                block_states.put(new StringTag("instrument", "harp"));
+                block_states.put(new StringTag("note", "0"));
+                block_states.put(new StringTag("powered", "false"));
+            }
 
             //Observer
 
@@ -744,11 +838,7 @@ public class MinecraftIDConverter {
 
             //Structure Block
 
-            //Structure Void
-
             //Sugar Cane
-
-            //Tall Grass and Large Fern
 
             //TNT
             case 46 -> block_states.put(new StringTag("unstable", "false"));
@@ -764,6 +854,9 @@ public class MinecraftIDConverter {
             //Vines
 
             //Walls
+
+            //Water
+            case 8, 9 -> block_states.put(new StringTag("level", String.valueOf(data)));
 
             //Wheat Crop
 
@@ -2996,9 +3089,5 @@ public class MinecraftIDConverter {
 
         return "air";
 
-    }
-
-    public static String getNameSpace(byte id) {
-        return getNameSpace(id, (byte) 0);
     }
 }
