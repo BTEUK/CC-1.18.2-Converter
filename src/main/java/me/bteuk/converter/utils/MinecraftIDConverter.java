@@ -1592,7 +1592,224 @@ public class MinecraftIDConverter {
                 }
             }
 
+            //Wooden Trapdoor
+            case 96 -> {
+                return "oak_trapdoor";
+            }
 
+            //Monster Egg
+            case 97 -> {
+
+                switch (data) {
+
+                    case 0 -> {
+                        return "infested_stone";
+                    }
+
+                    case 1 -> {
+                        return "infested_cobblestone";
+                    }
+
+                    case 2 -> {
+                        return "infested_stone_bricks";
+                    }
+
+                    case 3 -> {
+                        return "infested_mossy_stone_bricks";
+                    }
+
+                    case 4 -> {
+                        return "infested_cracked_stone_bricks";
+                    }
+
+                    case 5 -> {
+                        return "infested_chiseled_stone_bricks";
+                    }
+                }
+            }
+
+            //Stone Brick
+            case 98 -> {
+
+                switch (data) {
+
+                    case 0 -> {
+                        return "stone_bricks";
+                    }
+
+                    case 1 -> {
+                        return "mossy_stone_bricks";
+                    }
+
+                    case 2 -> {
+                        return "cracked_stone_bricks";
+                    }
+
+                    case 3 -> {
+                        return "chiseled_stone_bricks";
+                    }
+                }
+            }
+
+            //TODO Stem cases
+            //Brown Mushroom Block
+            case 99 -> {
+                return "brown_mushroom_block";
+            }
+
+            //TODO Stem cases
+            //Red Mushroom Block
+            case 100 -> {
+                return "red_mushroom_block";
+            }
+
+            //Iron Bars
+            case 101 -> {
+                return "iron_bars";
+            }
+
+            //Glass Pane
+            case 102 -> {
+                return "glass_pane";
+            }
+
+            //Melon Block
+            case 103 -> {
+                return "melon";
+            }
+
+            //Pumpkin Stem
+            //TODO Attached case
+            case 104 -> {
+                return "pumpkin_stem";
+            }
+
+            //Melon Stem
+            //TODO Attached case
+            case 105 -> {
+                return "melon_stem";
+            }
+
+            //Vines
+            case 106 -> {
+                return "vine";
+            }
+
+            //Oak Fence Gate
+            case 107 -> {
+                return "oak_fence_gate";
+            }
+
+            //Brick Stairs
+            case 108 -> {
+                return "brick_stairs";
+            }
+
+            //Stone Brick Stairs
+            case 109 -> {
+                return "stone_brick_stairs";
+            }
+
+            //Myceleum
+            case 110 -> {
+                return "myceleum";
+            }
+
+            //Lily Pad
+            case 111 -> {
+                return "lily_pad";
+            }
+
+            //Nether Brick
+            case 112 -> {
+                return "nether_bricks";
+            }
+
+            //Nether Brick Fence
+            case 113 -> {
+                return "nether_brick_fence";
+            }
+
+            //Nether Brick Stairs
+            case 114 -> {
+                return "nether_brick_stairs";
+            }
+
+            //Nether Wart
+            case 115 -> {
+                return "nether_wart";
+            }
+
+            //Enchantment Table
+            case 116 -> {
+                return "enchanting_table";
+            }
+
+            //Brewing Stand
+            case 117 -> {
+                return "brewing_stand";
+            }
+
+            //Cauldron
+            case 118 -> {
+                return "cauldron";
+            }
+
+            //End Portal
+            case 119 -> {
+                return "end_portal";
+            }
+
+            //End Portal Frame
+            case 120 -> {
+                return "end_portal_frame";
+            }
+
+            //End Stone
+            case 121 -> {
+                return "end_stone";
+            }
+
+            //Dragon Egg
+            case 122 -> {
+                return "dragon_egg";
+            }
+
+            //Redstone Lamp
+            case 123,124 -> {
+                return "redstone_lamp";
+            }
+
+            //TODO Full Slab
+            //Double Wood Slabs
+            case 125 -> {
+                switch (data) {
+
+                    case 0 -> {
+                        return "oak_slab";
+                    }
+
+                    case 1 -> {
+                        return "spruce_slab";
+                    }
+
+                    case 2 -> {
+                        return "birch_slab";
+                    }
+
+                    case 3 -> {
+                        return "jungle_slab";
+                    }
+
+                    case 4 -> {
+                        return "acacia_slab";
+                    }
+
+                    case 5 -> {
+                        return "dark_oak_slab";
+                    }
+                }
+            }
 
             //TODO Top Half of Slab
             //Wooden Slab
@@ -1621,6 +1838,339 @@ public class MinecraftIDConverter {
 
                     case 5 -> {
                         return "dark_oak_slab";
+                    }
+                }
+            }
+
+            //Cocoa
+            case 127 -> {
+                return "cocoa";
+            }
+
+            //Sandstone Stairs
+            case (byte) 128 -> {
+                return "sandstone_stairs";
+            }
+
+            //Emerald Ore
+            case (byte) 129 -> {
+                return "emerald_ore";
+            }
+
+            //Ender Chest
+            case (byte) 130 -> {
+                return "ender_chest";
+            }
+
+            //Tripwire Hook
+            case (byte) 131 -> {
+                return "tripwire_hook";
+            }
+
+            //Tripwire
+            case (byte) 132 -> {
+                return "tripwire";
+            }
+
+            //Emerald Block
+            case (byte) 133 -> {
+                return "emerald_block";
+            }
+
+            //Spruce Wood Stairs
+            case (byte) 134 -> {
+                return "spruce_stairs";
+            }
+
+            //Birch Wood Stairs
+            case (byte) 135 -> {
+                return "birch_stairs";
+            }
+
+            //Jungle Wood Stairs
+            case (byte) 136 -> {
+                return "jungle_stairs";
+            }
+
+            //Command Block
+            case (byte) 137 -> {
+                return "command_block";
+            }
+
+            //Beacon
+            case (byte) 138 -> {
+                return "beacon";
+            }
+
+            //Cobblestone Wall
+            case (byte) 139 -> {
+                switch (data) {
+
+                    case 0 -> {
+                        return "cobblestone_wall";
+                    }
+
+                    case 1 -> {
+                        return "mossy_cobblestone_wall";
+                    }
+                }
+            }
+
+            //TODO deal with all plants in flower pots since they now have separate ids.
+            //Flower Pot
+            case (byte) 140 -> {
+                return "flower_pot";
+            }
+
+            //Carrots
+            case (byte) 141 -> {
+                return "carrots";
+            }
+
+            //Potatoes
+            case (byte) 142 -> {
+                return "potatoes";
+            }
+
+            //Wooden Button
+            case (byte) 143 -> {
+                return "oak_button";
+            }
+
+            //TODO Mob Head
+            case (byte) 144 -> {
+
+            }
+
+            //TODO anvil rotation
+            //Anvil
+            case (byte) 145 -> {
+                switch (data) {
+
+                    case 0 -> {
+                        return "anvil";
+                    }
+
+                    case 1 -> {
+                        return "chipped_anvil";
+                    }
+
+                    case 2 -> {
+                        return "damaged_anvil";
+                    }
+                }
+            }
+
+            //Trapped Chest
+            case (byte) 146 -> {
+                return "trapped_chest";
+            }
+
+            //Weighted Pressure Plate (light)
+            case (byte) 147 -> {
+                return "light_weighted_pressure_plate";
+            }
+
+            //Weighted Pressure Plate (heavy)
+            case (byte) 148 -> {
+                return "heavy_weighted_pressure_plate";
+            }
+
+            //Redstone Comporator
+            case (byte) 149, (byte) 150 -> {
+                return "comparator";
+            }
+
+            //Daylight Sensor
+            case (byte) 151, (byte) 178 -> {
+                return "daylight_detector";
+            }
+
+            //Redstone Block
+            case (byte) 152 -> {
+                return "redstone_block";
+            }
+
+            //Nether Quartz Ore
+            case (byte) 153 -> {
+                return "nether_quartz_ore";
+            }
+
+            //Hopper
+            case (byte) 154 -> {
+                return "hopper";
+            }
+
+            //TODO Pillar rotation
+            //Quartz Block
+            case (byte) 155 -> {
+                switch (data) {
+
+                    case 0 -> {
+                        return "quartz_block";
+                    }
+
+                    case 1 -> {
+                        return "chiseled_quartz_block";
+                    }
+
+                    case 2 -> {
+                        return "quartz_pillar";
+                    }
+                }
+            }
+
+            //Quartz Stairs
+            case (byte) 156 -> {
+                return "quartz_stairs";
+            }
+
+            //Activitor Rail
+            case (byte) 157 -> {
+                return "activator_rail";
+            }
+
+            //Dropper
+            case (byte) 158 -> {
+                return "dropper";
+            }
+
+            //Hardened Clay
+            case (byte) 159 -> {
+                switch (data) {
+
+                    case 0 -> {
+                        return "white_terracotta";
+                    }
+
+                    case 1 -> {
+                        return "orange_terracotta";
+                    }
+
+                    case 2 -> {
+                        return "magenta_terracotta";
+                    }
+
+                    case 3 -> {
+                        return "light_blue_terracotta";
+                    }
+
+                    case 4 -> {
+                        return "yellow_terracotta";
+                    }
+
+                    case 5 -> {
+                        return "lime_terracotta";
+                    }
+
+                    case 6 -> {
+                        return "pink_terracotta";
+                    }
+
+                    case 7 -> {
+                        return "gray_terracotta";
+                    }
+
+                    case 8 -> {
+                        return "light_gray_terracotta";
+                    }
+
+                    case 9 -> {
+                        return "cyan_terracotta";
+                    }
+
+                    case 10 -> {
+                        return "purple_terracotta";
+                    }
+
+                    case 11 -> {
+                        return "blue_terracotta";
+                    }
+
+                    case 12 -> {
+                        return "brown_terracotta";
+                    }
+
+                    case 13 -> {
+                        return "green_terracotta";
+                    }
+
+                    case 14 -> {
+                        return "red_terracotta";
+                    }
+
+                    case 15 -> {
+                        return "black_terracotta";
+                    }
+                }
+            }
+
+            //Stained Glass Panes
+            case (byte) 160 -> {
+                switch (data) {
+
+                    case 0 -> {
+                        return "white_stained_glass_pane";
+                    }
+
+                    case 1 -> {
+                        return "orange_stained_glass_pane";
+                    }
+
+                    case 2 -> {
+                        return "magenta_stained_glass_pane";
+                    }
+
+                    case 3 -> {
+                        return "light_blue_stained_glass_pane";
+                    }
+
+                    case 4 -> {
+                        return "yellow_stained_glass_pane";
+                    }
+
+                    case 5 -> {
+                        return "lime_stained_glass_pane";
+                    }
+
+                    case 6 -> {
+                        return "pink_stained_glass_pane";
+                    }
+
+                    case 7 -> {
+                        return "gray_stained_glass_pane";
+                    }
+
+                    case 8 -> {
+                        return "light_gray_stained_glass_pane";
+                    }
+
+                    case 9 -> {
+                        return "cyan_stained_glass_pane";
+                    }
+
+                    case 10 -> {
+                        return "purple_stained_glass_pane";
+                    }
+
+                    case 11 -> {
+                        return "blue_stained_glass_pane";
+                    }
+
+                    case 12 -> {
+                        return "brown_stained_glass_pane";
+                    }
+
+                    case 13 -> {
+                        return "green_stained_glass_pane";
+                    }
+
+                    case 14 -> {
+                        return "red_stained_glass_pane";
+                    }
+
+                    case 15 -> {
+                        return "black_stained_glass_pane";
                     }
                 }
             }
@@ -1655,17 +2205,692 @@ public class MinecraftIDConverter {
                 }
             }
 
-            //Stone Slab 2
-            case (byte) 182 -> {
+            //Acacia Wood Stairs
+            case (byte) 163 -> {
+                return "acacia_stairs";
+            }
+
+            //Dark Oak Wood Stairs
+            case (byte) 164 -> {
+                return "dark_oak_stairs";
+            }
+
+            //Slime Block
+            case (byte) 165 -> {
+                return "slime_block";
+            }
+
+            //Barrier
+            case (byte) 166 -> {
+                return "barrier";
+            }
+
+            //Iron Trapdoor
+            case (byte) 167 -> {
+                return "iron_trapdoor";
+            }
+
+            //Prismarine
+            case (byte) 168 -> {
+                switch (data) {
+
+                    case 0 -> {
+                        return "prismarine";
+                    }
+
+                    case 1 -> {
+                        return "prismarine_bricks";
+                    }
+
+                    case 2 -> {
+                        return "dark_prismarine";
+                    }
+                }
+            }
+
+            //Sea Lantern
+            case (byte) 169 -> {
+                return "sea_lantern";
+            }
+
+            //Hay Bale
+            case (byte) 170 -> {
+                return "hay_block";
+            }
+
+            //Carpet
+            case (byte) 171 -> {
+                switch (data) {
+
+                    case 0 -> {
+                        return "white_carpet";
+                    }
+
+                    case 1 -> {
+                        return "orange_carpet";
+                    }
+
+                    case 2 -> {
+                        return "magenta_carpet";
+                    }
+
+                    case 3 -> {
+                        return "light_blue_carpet";
+                    }
+
+                    case 4 -> {
+                        return "yellow_carpet";
+                    }
+
+                    case 5 -> {
+                        return "lime_carpet";
+                    }
+
+                    case 6 -> {
+                        return "pink_carpet";
+                    }
+
+                    case 7 -> {
+                        return "gray_carpet";
+                    }
+
+                    case 8 -> {
+                        return "light_gray_carpet";
+                    }
+
+                    case 9 -> {
+                        return "cyan_carpet";
+                    }
+
+                    case 10 -> {
+                        return "purple_carpet";
+                    }
+
+                    case 11 -> {
+                        return "blue_carpet";
+                    }
+
+                    case 12 -> {
+                        return "brown_carpet";
+                    }
+
+                    case 13 -> {
+                        return "green_carpet";
+                    }
+
+                    case 14 -> {
+                        return "red_carpet";
+                    }
+
+                    case 15 -> {
+                        return "black_carpet";
+                    }
+                }
+            }
+
+            //Hardened Clay
+            case (byte) 172 -> {
+                return "terracotta";
+            }
+
+            //Block of Coal
+            case (byte) 173 -> {
+                return "coal_block";
+            }
+
+            //Packed Ice
+            case (byte) 174 -> {
+                return "packed_ice";
+            }
+
+            //Double Plant
+            //Top half is converted to the default (sunflower top), this will  be edited in post-processing
+            case (byte) 175 -> {
+                switch (data) {
+
+                    case 1 -> {
+                        return "lilac";
+                    }
+
+                    case 2 -> {
+                        return "tall_grass";
+                    }
+
+                    case 3 -> {
+                        return "large_fern";
+                    }
+
+                    case 4 -> {
+                        return "rose_bush";
+                    }
+
+                    case 5 -> {
+                        return "peony";
+                    }
+
+                    default -> {
+                        return "sunflower";
+                    }
+                }
+            }
+
+            //TODO banner
+            //Free-standing Banner
+            case (byte) 176 -> {
+
+            }
+
+            //Wall-mounted Banner
+            case (byte) 177 -> {
+
+            }
+
+            //Red Sandstone
+            case (byte) 179 -> {
+                switch (data) {
+
+                    case 0 -> {
+                        return "red_sandstone";
+                    }
+
+                    case 1 -> {
+                        return "chiseled_red_sandstone";
+                    }
+
+                    case 2 -> {
+                        return "cut_red_sandstone";
+                    }
+                }
+            }
+
+            //Red Sandstone Stais
+            case (byte) 180 -> {
+                return "red_sandstone_stairs";
+            }
+
+            //Red Sandstone Slab
+            case (byte) 181, (byte) 182 -> {
                 return "red_sandstone_slab";
             }
 
+            //Spruce Fence Gate
+            case (byte) 183 -> {
+                return "spruce_fence_gate";
+            }
+
+            //Birch Fence Gate
+            case (byte) 184 -> {
+                return "birch_fence_gate";
+            }
+
+            //Jungle Fence Gate
+            case (byte) 185 -> {
+                return "jungle_fence_gate";
+            }
+
+            //Dark Oak Fence Gate
+            case (byte) 186 -> {
+                return "dark_oak_fence_gate";
+            }
+
+            //Acacia Fence Gate
+            case (byte) 187 -> {
+                return "acacia_fence_gate";
+            }
+
+            //Spruce Fence
+            case (byte) 188 -> {
+                return "spruce_fence";
+            }
+
+            //Birch Fence
+            case (byte) 189 -> {
+                return "birch_fence";
+            }
+
+            //Jungle Fence
+            case (byte) 190 -> {
+                return "jungle_fence";
+            }
+
+            //Dark Oak Fence
+            case (byte) 191 -> {
+                return "dark_oak_fence";
+            }
+
+            //Acacia Fence
+            case (byte) 192 -> {
+                return "acacia_fence";
+            }
+
+            //Spruce Door
+            case (byte) 193 -> {
+                return "spruce_door";
+            }
+
+            //Birch Door
+            case (byte) 194 -> {
+                return "birch_door";
+            }
+
+            //Jungle Door
+            case (byte) 195 -> {
+                return "jungle_door";
+            }
+
+            //Dark Oak Door
+            case (byte) 196 -> {
+                return "dark_oak_door";
+            }
+
+            //Acacia Door
+            case (byte) 197 -> {
+                return "acacia_door";
+            }
+
+            //End Rod
+            case (byte) 198 -> {
+                return "end_rod";
+            }
+
+            //Chorus Plant
+            case (byte) 199 -> {
+                return "chorus_plant";
+            }
+
+            //Chorus Flower
+            case (byte) 200 -> {
+                return "chorus_flower";
+            }
+
+            //Purpur Block
+            case (byte) 201 -> {
+                return "purpur_block";
+            }
+
+            //Purpur Pillar
+            case (byte) 202 -> {
+                return "purpur_pillar";
+            }
+
+            //Purpur Stairs
+            case (byte) 203 -> {
+                return "purpur_stairs";
+            }
+
             //Purpur Slab
-            case (byte) 205 -> {
+            case (byte) 204, (byte) 205 -> {
                 return "purpur_slab";
             }
 
+            //End Stone Bricks
+            case (byte) 206 -> {
+                return "end_stone_bricks";
+            }
 
+            //Beetroot Block
+            case (byte) 207 -> {
+                return "beetroots";
+            }
+
+            //Grass Path
+            case (byte) 208 -> {
+                return "dirt_path";
+            }
+
+            //End Gateway
+            case (byte) 209 -> {
+                return "end_gateway";
+            }
+
+            //Repeating Command Block
+            case (byte) 210 -> {
+                return "repeating_command_block";
+            }
+
+            //Chain Command Block
+            case (byte) 211 -> {
+                return "chain_command_block";
+            }
+
+            //Frosted Ice
+            case (byte) 212 -> {
+                return "frosted_ice";
+            }
+
+            //Magma Block
+            case (byte) 213 -> {
+                return "magma_block";
+            }
+
+            //Nether Wart Block
+            case (byte) 214 -> {
+                return "nether_wart_block";
+            }
+
+            //Red Nether Brick
+            case (byte) 215 -> {
+                return "red_nether_bricks";
+            }
+
+            //Bone Block
+            case (byte) 216 -> {
+                return "bone_block";
+            }
+
+            //Structure Void
+            case (byte) 217 -> {
+                return "structure_void";
+            }
+
+            //Observer
+            case (byte) 218 -> {
+                return "observer";
+            }
+
+            //White Shulker Box
+            case (byte) 219 -> {
+                return "white_shulker_box";
+            }
+
+            //Orange Shulker Box
+            case (byte) 220 -> {
+                return "orange_shulker_box";
+            }
+
+            //Magenta Shulker Box
+            case (byte) 221 -> {
+                return "magenta_shulker_box";
+            }
+
+            //Light Blue Shulker Box
+            case (byte) 222 -> {
+                return "light_blue_shulker_box";
+            }
+
+            //Yellow Shulker Box
+            case (byte) 223 -> {
+                return "yellow_shulker_box";
+            }
+
+            //Lime Shulker Box
+            case (byte) 224 -> {
+                return "lime_shulker_box";
+            }
+
+            //Pink Shulker Box
+            case (byte) 225 -> {
+                return "pink_shulker_box";
+            }
+
+            //Gray Shulker Box
+            case (byte) 226 -> {
+                return "gray_shulker_box";
+            }
+
+            //Light Gray Shulker Box
+            case (byte) 227 -> {
+                return "light_gray_shulker_box";
+            }
+
+            //Cyan Shulker Box
+            case (byte) 228 -> {
+                return "cyan_shulker_box";
+            }
+
+            //Default Shulker Box
+            case (byte) 229 -> {
+                return "shulker_box";
+            }
+
+            //Blue Shulker Box
+            case (byte) 230 -> {
+                return "blue_shulker_box";
+            }
+
+            //Brown Shulker Box
+            case (byte) 231 -> {
+                return "brown_shulker_box";
+            }
+
+            //Green Shulker Box
+            case (byte) 232 -> {
+                return "green_shulker_box";
+            }
+
+            //Red Shulker Box
+            case (byte) 233 -> {
+                return "red_shulker_box";
+            }
+
+            //Black Shulker Box
+            case (byte) 234 -> {
+                return "black_shulker_box";
+            }
+
+            //White Glazed Terracotta
+            case (byte) 235 -> {
+                return "white_glazed_terracotta";
+            }
+
+            //Orange Glazed Terracotta
+            case (byte) 236 -> {
+                return "orange_glazed_terracotta";
+            }
+
+            //Magenta Glazed Terracotta
+            case (byte) 237 -> {
+                return "magenta_glazed_terracotta";
+            }
+
+            //Light Blue Glazed Terracotta
+            case (byte) 238 -> {
+                return "light_blue_glazed_terracotta";
+            }
+
+            //Yellow Glazed Terracotta
+            case (byte) 239 -> {
+                return "yellow_glazed_terracotta";
+            }
+
+            //Lime Glazed Terracotta
+            case (byte) 240 -> {
+                return "lime_glazed_terracotta";
+            }
+
+            //Pink Glazed Terracotta
+            case (byte) 241 -> {
+                return "pink_glazed_terracotta";
+            }
+
+            //Gray Glazed Terracotta
+            case (byte) 242 -> {
+                return "gray_glazed_terracotta";
+            }
+
+            //Light Gray Glazed Terracotta
+            case (byte) 243 -> {
+                return "light_gray_glazed_terracotta";
+            }
+
+            //Cyan Glazed Terracotta
+            case (byte) 244 -> {
+                return "cyan_glazed_terracotta";
+            }
+
+            //Purple Glazed Terracotta
+            case (byte) 245 -> {
+                return "purple_glazed_terracotta";
+            }
+
+            //Blue Glazed Terracotta
+            case (byte) 246 -> {
+                return "blue_glazed_terracotta";
+            }
+
+            //Brown Glazed Terracotta
+            case (byte) 247 -> {
+                return "brown_glazed_terracotta";
+            }
+
+            //Green Glazed Terracotta
+            case (byte) 248 -> {
+                return "green_glazed_terracotta";
+            }
+
+            //Red Glazed Terracotta
+            case (byte) 249 -> {
+                return "red_glazed_terracotta";
+            }
+
+            //Black Glazed Terracotta
+            case (byte) 250 -> {
+                return "black_glazed_terracotta";
+            }
+
+            //Concrete
+            case (byte) 251 -> {
+                switch (data) {
+
+                    case 0 -> {
+                        return "white_concrete";
+                    }
+
+                    case 1 -> {
+                        return "orange_concrete";
+                    }
+
+                    case 2 -> {
+                        return "magenta_concrete";
+                    }
+
+                    case 3 -> {
+                        return "light_blue_concrete";
+                    }
+
+                    case 4 -> {
+                        return "yellow_concrete";
+                    }
+
+                    case 5 -> {
+                        return "lime_concrete";
+                    }
+
+                    case 6 -> {
+                        return "pink_concrete";
+                    }
+
+                    case 7 -> {
+                        return "gray_concrete";
+                    }
+
+                    case 8 -> {
+                        return "light_gray_concrete";
+                    }
+
+                    case 9 -> {
+                        return "cyan_concrete";
+                    }
+
+                    case 10 -> {
+                        return "purple_concrete";
+                    }
+
+                    case 11 -> {
+                        return "blue_concrete";
+                    }
+
+                    case 12 -> {
+                        return "brown_concrete";
+                    }
+
+                    case 13 -> {
+                        return "green_concrete";
+                    }
+
+                    case 14 -> {
+                        return "red_concrete";
+                    }
+
+                    case 15 -> {
+                        return "black_concrete";
+                    }
+                }
+            }
+
+            //Concrete Powder
+            case (byte) 252 -> {
+                switch (data) {
+
+                    case 0 -> {
+                        return "white_concrete_powder";
+                    }
+
+                    case 1 -> {
+                        return "orange_concrete_powder";
+                    }
+
+                    case 2 -> {
+                        return "magenta_concrete_powder";
+                    }
+
+                    case 3 -> {
+                        return "light_blue_concrete_powder";
+                    }
+
+                    case 4 -> {
+                        return "yellow_concrete_powder";
+                    }
+
+                    case 5 -> {
+                        return "lime_concrete_powder";
+                    }
+
+                    case 6 -> {
+                        return "pink_concrete_powder";
+                    }
+
+                    case 7 -> {
+                        return "gray_concrete_powder";
+                    }
+
+                    case 8 -> {
+                        return "light_gray_concrete_powder";
+                    }
+
+                    case 9 -> {
+                        return "cyan_concrete_powder";
+                    }
+
+                    case 10 -> {
+                        return "purple_concrete_powder";
+                    }
+
+                    case 11 -> {
+                        return "blue_concrete_powder";
+                    }
+
+                    case 12 -> {
+                        return "brown_concrete_powder";
+                    }
+
+                    case 13 -> {
+                        return "green_concrete_powder";
+                    }
+
+                    case 14 -> {
+                        return "red_concrete_powder";
+                    }
+
+                    case 15 -> {
+                        return "black_concrete_powder";
+                    }
+                }
+            }
+
+            case (byte) 255 -> {
+                return "structure_block";
+            }
         }
 
         return "air";
