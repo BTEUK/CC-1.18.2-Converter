@@ -15,8 +15,15 @@ public class MinecraftIDConverter {
 
     TODO: Do the same for stairs, fences and walls, iron bars, glass panes, chests, redstone dust.
 
+    TODO: Change colour of the bed in post-processing, this can be retrieved from the block entity data.
 
+    TODO: Change colour of banners in post-processing and add the patterns.
 
+    TODO: Check if melon/pumpkin stem is attached to a melon/pumpkin in post-processing.
+
+    TODO: Convert flower pots to correct type in post-processing by using block entity data.
+
+    TODO: Convert mob heads in post-processing since the block entity data needs to be used.
 
      */
 
@@ -878,10 +885,6 @@ public class MinecraftIDConverter {
             case 6 -> {
                 switch (data) {
 
-                    case 0 -> {
-                        return "oak_sapling";
-                    }
-
                     case 1 -> {
                         return "spruce_sapling";
                     }
@@ -901,6 +904,10 @@ public class MinecraftIDConverter {
                     case 5 -> {
                         return "dark_oak_sapling";
                     }
+
+                    default -> {
+                        return "oak_sapling";
+                    }
                 }
             }
 
@@ -909,9 +916,15 @@ public class MinecraftIDConverter {
                 return "bedrock";
             }
 
-            //TODO Water
+            //Water
+            case 8, 9 -> {
+                return "water";
+            }
 
-            //TODO Lava
+            //Lava
+            case 10, 11 -> {
+                return "lava";
+            }
 
             //Sand
             case 12 -> {
@@ -947,47 +960,63 @@ public class MinecraftIDConverter {
                 return "coal_ore";
             }
 
-            //TODO Log Directions
             //Log
             case 17 -> {
                 switch (data) {
 
-                    case 0 -> {
+                    case 0,4,8 -> {
                         return "oak_log";
                     }
 
-                    case 1 -> {
+                    case 1,5,9 -> {
                         return "spruce_log";
                     }
 
-                    case 2 -> {
+                    case 2,6,10 -> {
                         return "birch_log";
                     }
 
-                    case 3 -> {
+                    case 3,7,11 -> {
                         return "jungle_log";
+                    }
+
+                    //Wood 6 sided
+                    case 12 -> {
+                        return "oak_wood";
+                    }
+
+                    case 13 -> {
+                        return "spruce_wood";
+
+                    }
+
+                    case 14 -> {
+                        return "birch_wood";
+                    }
+
+                    case 15 -> {
+                        return "jungle_wood";
                     }
                 }
             }
 
-            //TODO Persistent Leaves
             //Leaves
             case 18 -> {
                 switch (data) {
 
-                    case 0 -> {
+                    case 0,4,8,12 -> {
                         return "oak_leaves";
                     }
 
-                    case 1 -> {
+                    case 1,5,9,13 -> {
                         return "spruce_leaves";
                     }
 
-                    case 2 -> {
+                    case 2,6,10,14 -> {
                         return "birch_leaves";
                     }
 
-                    case 3 -> {
+                    case 3,7,11,15 -> {
                         return "jungle_leaves";
                     }
                 }
@@ -1050,6 +1079,12 @@ public class MinecraftIDConverter {
                 return "note_block";
             }
 
+            //Colour of the bed is stored as a block entity, this will be fixed in post-processing.
+            //Bed
+            case 26 -> {
+                return "red_bed";
+            }
+
             //Golden Rail
             case 27 -> {
                 return "powered_rail";
@@ -1096,6 +1131,11 @@ public class MinecraftIDConverter {
             //Piston
             case 33 -> {
                 return "piston";
+            }
+
+            //Piston Head
+            case 34 -> {
+                return "piston_head";
             }
 
             //Wool
@@ -1235,28 +1275,12 @@ public class MinecraftIDConverter {
                 return "iron_block";
             }
 
-            //TODO Double Slabs
             //Double Stone Slab
             case 43 -> {
                 switch (data) {
 
-                    case 7 -> {
-                        return "smooth_quartz";
-                    }
-
-                    case 8 -> {
-                        return "smooth_stone";
-                    }
-                }
-            }
-
-            //TODO Top Half of Slab
-            //Stone Slab
-            case 44 -> {
-                switch (data) {
-
                     case 0 -> {
-                        return "stone_slab";
+                        return "smooth_stone_slab";
                     }
 
                     case 1 -> {
@@ -1264,7 +1288,7 @@ public class MinecraftIDConverter {
                     }
 
                     case 2 -> {
-                        return "petrified_oak_slab";
+                        return "oak_slab";
                     }
 
                     case 3 -> {
@@ -1284,6 +1308,52 @@ public class MinecraftIDConverter {
                     }
 
                     case 7 -> {
+                        return "quartz_slab";
+                    }
+
+                    case 8 -> {
+                        return "smooth_stone";
+                    }
+
+                    case 9 -> {
+                        return "smooth_sandstone";
+                    }
+                }
+            }
+
+            //Stone Slab
+            case 44 -> {
+                switch (data) {
+
+                    case 0,8 -> {
+                        return "smooth_stone_slab";
+                    }
+
+                    case 1,9 -> {
+                        return "sandstone_slab";
+                    }
+
+                    case 2,10 -> {
+                        return "oak_slab";
+                    }
+
+                    case 3,11 -> {
+                        return "cobblestone_slab";
+                    }
+
+                    case 4,12 -> {
+                        return "brick_slab";
+                    }
+
+                    case 5,13 -> {
+                        return "stone_brick_slab";
+                    }
+
+                    case 6,14 -> {
+                        return "nether_brick_slab";
+                    }
+
+                    case 7,15 -> {
                         return "quartz_slab";
                     }
                 }
@@ -1315,9 +1385,17 @@ public class MinecraftIDConverter {
             }
 
             //Torch
-            //TODO Torch directions
             case 50 -> {
-                return "torch";
+                switch (data) {
+
+                    case 1,2,3,4 -> {
+                        return "wall_torch";
+                    }
+
+                    default -> {
+                        return "torch";
+                    }
+                }
             }
 
             //Fire
@@ -1431,9 +1509,17 @@ public class MinecraftIDConverter {
             }
 
             //Redstone Torch
-            //TODO Torch directions.
             case 75,76 -> {
-                return "redstone_torch";
+                switch (data) {
+
+                    case 1,2,3,4 -> {
+                        return "redstone_wall_torch";
+                    }
+
+                    default -> {
+                        return "redstone_torch";
+                    }
+                }
             }
 
             //Stone Button
@@ -1630,7 +1716,6 @@ public class MinecraftIDConverter {
 
             //Stone Brick
             case 98 -> {
-
                 switch (data) {
 
                     case 0 -> {
@@ -1651,16 +1736,32 @@ public class MinecraftIDConverter {
                 }
             }
 
-            //TODO Stem cases
             //Brown Mushroom Block
             case 99 -> {
-                return "brown_mushroom_block";
+                switch (data) {
+
+                    case 10, 15 -> {
+                        return "mushroom_stem";
+                    }
+
+                    default -> {
+                        return "brown_mushroom_block";
+                    }
+                }
             }
 
-            //TODO Stem cases
             //Red Mushroom Block
             case 100 -> {
-                return "red_mushroom_block";
+                switch (data) {
+
+                    case 10, 15 -> {
+                        return "mushroom_stem";
+                    }
+
+                    default -> {
+                        return "red_mushroom_block";
+                    }
+                }
             }
 
             //Iron Bars
@@ -1679,13 +1780,11 @@ public class MinecraftIDConverter {
             }
 
             //Pumpkin Stem
-            //TODO Attached case
             case 104 -> {
                 return "pumpkin_stem";
             }
 
             //Melon Stem
-            //TODO Attached case
             case 105 -> {
                 return "melon_stem";
             }
@@ -1780,7 +1879,6 @@ public class MinecraftIDConverter {
                 return "redstone_lamp";
             }
 
-            //TODO Full Slab
             //Double Wood Slabs
             case 125 -> {
                 switch (data) {
@@ -1811,32 +1909,31 @@ public class MinecraftIDConverter {
                 }
             }
 
-            //TODO Top Half of Slab
             //Wooden Slab
             case 126 -> {
                 switch (data) {
 
-                    case 0 -> {
+                    case 0,8 -> {
                         return "oak_slab";
                     }
 
-                    case 1 -> {
+                    case 1,9 -> {
                         return "spruce_slab";
                     }
 
-                    case 2 -> {
+                    case 2,10 -> {
                         return "birch_slab";
                     }
 
-                    case 3 -> {
+                    case 3,11 -> {
                         return "jungle_slab";
                     }
 
-                    case 4 -> {
+                    case 4,12 -> {
                         return "acacia_slab";
                     }
 
-                    case 5 -> {
+                    case 5,13 -> {
                         return "dark_oak_slab";
                     }
                 }
@@ -1916,7 +2013,6 @@ public class MinecraftIDConverter {
                 }
             }
 
-            //TODO deal with all plants in flower pots since they now have separate ids.
             //Flower Pot
             case (byte) 140 -> {
                 return "flower_pot";
@@ -1937,25 +2033,24 @@ public class MinecraftIDConverter {
                 return "oak_button";
             }
 
-            //TODO Mob Head
+            //Mob Head
             case (byte) 144 -> {
-
+                return "skeleton_skull";
             }
 
-            //TODO anvil rotation
             //Anvil
             case (byte) 145 -> {
                 switch (data) {
 
-                    case 0 -> {
+                    case 0,1,2,3 -> {
                         return "anvil";
                     }
 
-                    case 1 -> {
+                    case 4,5,6,7 -> {
                         return "chipped_anvil";
                     }
 
-                    case 2 -> {
+                    case 8,9,10,11 -> {
                         return "damaged_anvil";
                     }
                 }
@@ -2001,7 +2096,6 @@ public class MinecraftIDConverter {
                 return "hopper";
             }
 
-            //TODO Pillar rotation
             //Quartz Block
             case (byte) 155 -> {
                 switch (data) {
@@ -2175,32 +2269,38 @@ public class MinecraftIDConverter {
                 }
             }
 
-            //TODO Persistent Leaves
             //Leaves 2
             case (byte) 161 -> {
                 switch (data) {
 
-                    case 0 -> {
+                    case 0,4,8,12 -> {
                         return "acacia_leaves";
                     }
 
-                    case 1 -> {
+                    case 1,5,9,13 -> {
                         return "dark_oak_leaves";
                     }
                 }
             }
 
-            //TODO Log2 Directions
             //Log 2
             case (byte) 162 -> {
                 switch (data) {
 
-                    case 0 -> {
+                    case 0,4,8 -> {
                         return "acacia_log";
                     }
 
-                    case 1 -> {
+                    case 1,5,9 -> {
                         return "dark_oak_log";
+                    }
+
+                    case 12 -> {
+                        return "acacia_wood";
+                    }
+
+                    case 13 -> {
+                        return "dark_oak_wood";
                     }
                 }
             }
@@ -2374,15 +2474,16 @@ public class MinecraftIDConverter {
                 }
             }
 
-            //TODO banner
+            //Banner colour is stored in the block entity data, this will be applied post-processing.
             //Free-standing Banner
             case (byte) 176 -> {
-
+                return "white_banner";
             }
 
+            //Banner colour is stored in the block entity data, this will be applied post-processing.
             //Wall-mounted Banner
             case (byte) 177 -> {
-
+                return "white_wall_banner";
             }
 
             //Red Sandstone
