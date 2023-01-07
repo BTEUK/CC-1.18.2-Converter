@@ -27,6 +27,14 @@ public class MinecraftIDConverter {
 
     TODO: Convert Note blocks in post-processing since the block entity data needs to be used.
 
+    TODO: Fix redstone wire format in post-processing, similar to fences.
+
+    TODO Redstone repeater locked and powered status in post-processing.
+
+    TODO Tripwire directions in post-processing.
+
+    TODO Vine Up block state, always true if there is a block above the vine.
+
      */
 
 
@@ -61,14 +69,23 @@ public class MinecraftIDConverter {
 
         switch (id) {
 
-            case 2, 3, 6, 23, 46, 51, 54, 61, 62, 64, 65, 71, 77, 81, 84, 85, 91, 92, 101, 102, 110, 113, 117, 118, 120, 127,
-                    (byte) 130, (byte) 137, (byte) 141, (byte) 143, (byte) 145, (byte) 146, (byte) 151, (byte) 154,
-                    (byte) 158, (byte) 160, (byte) 170, (byte) 176, (byte) 177, (byte) 178, (byte) 188, (byte) 189,
-                    (byte) 190, (byte) 191, (byte) 192, (byte) 193, (byte) 194, (byte) 195, (byte) 196, (byte) 197,
-                    (byte) 198, (byte) 199, (byte) 200, (byte) 207,(byte) 210, (byte) 211, (byte) 212, (byte) 216,
-                    (byte) 235, (byte) 236, (byte) 237, (byte) 238, (byte) 239, (byte) 240, (byte) 241, (byte) 242,
-                    (byte) 243, (byte) 244, (byte) 245, (byte) 246, (byte) 247, (byte) 248, (byte) 249, (byte) 250,
-                    70, 72, (byte) 147, (byte) 148 -> {return true;}
+            case (byte) 139, 106, (byte) 131, (byte) 132, 96, (byte) 167, 50, 46, (byte) 255, 53, 67, 108, 109,
+                    114, (byte) 128, (byte) 134, (byte) 135, (byte) 136, (byte) 156, (byte) 163, (byte) 164,
+                    (byte) 180, (byte) 203, 78, 43, 125, (byte) 181, (byte) 204, 44, 126, (byte) 182, (byte) 205,
+                    68, 63, (byte) 219, (byte) 220, (byte) 221, (byte) 222, (byte) 223, (byte) 224, (byte) 225,
+                    (byte) 226, (byte) 227, (byte) 228, (byte) 229, (byte) 230, (byte) 231, (byte) 232,
+                    (byte) 233, (byte) 234, 6, 76, 75, 93, 94, 123, 73, 124, 74, 55, (byte) 149, (byte) 150, 27,
+                    28, (byte) 157, 66, (byte) 155, 70, 72, (byte) 147, (byte) 148, (byte) 142, (byte) 141, 59,
+                    (byte) 207, 115, 104, 105, 83, 34, 29, 33, (byte) 218, 25, 90, 99, 100, 17, (byte) 162, 69,
+                    18, (byte) 161, 10, 11, 65, 84, (byte) 154, (byte) 170, (byte) 202, 2, 110, 3, (byte) 235,
+                    (byte) 236, (byte) 237, (byte) 238, (byte) 239, (byte) 240, (byte) 241, (byte) 242,
+                    (byte) 243, (byte) 244, (byte) 245, (byte) 246, (byte) 247, (byte) 248, (byte) 249,
+                    (byte) 250, 91, 86, 102, (byte) 160, 101, 61, 62, (byte) 212, (byte) 175, 51, 107, (byte) 183,
+                    (byte) 184, (byte) 185, (byte) 186, (byte) 187, 85, 113, (byte) 188, (byte) 189, (byte) 190,
+                    (byte) 191, (byte) 192, 60, (byte) 198, 120, 64, 71, (byte) 193, (byte) 194, (byte) 195,
+                    (byte) 196, (byte) 197, 23, (byte) 158, (byte) 178, (byte) 151, (byte) 137, (byte) 210,
+                    (byte) 211, 127, (byte) 199, (byte) 200, (byte) 130, 54, (byte) 146, 118, 92, 81, 77,
+                    (byte) 143, 117, (byte) 216, 26, (byte) 177, (byte) 144, (byte) 176, (byte) 145 -> {return true;}
 
         }
 
@@ -153,9 +170,6 @@ public class MinecraftIDConverter {
 
             }
 
-            //Beetroots
-            case (byte) 207 -> block_states.put(new StringTag("age", String.valueOf(data)));
-
             //Bone Block
             case (byte) 216 -> {
 
@@ -231,9 +245,6 @@ public class MinecraftIDConverter {
                 block_states.put(new StringTag("bites", String.valueOf(data)));
                 block_states.put(new StringTag("lit", "false"));
             }
-
-            //Carrots
-            case (byte) 141 -> block_states.put(new StringTag("age", String.valueOf(data)));
 
             //Cauldron
             case 118 -> block_states.put(new StringTag("level", String.valueOf(data)));
@@ -597,10 +608,10 @@ public class MinecraftIDConverter {
 
             }
 
-            //Glazed Terracotta and Jack o'Lantern
+            //Glazed Terracotta, Pumpkin Jack o'Lantern
             case (byte) 235, (byte) 236, (byte) 237, (byte) 238, (byte) 239, (byte) 240, (byte) 241, (byte) 242,
                     (byte) 243, (byte) 244, (byte) 245, (byte) 246, (byte) 247, (byte) 248, (byte) 249,
-                    (byte) 250, 91 -> {
+                    (byte) 250, 91, 86 -> {
 
                 switch (data) {
 
@@ -622,8 +633,8 @@ public class MinecraftIDConverter {
                 }
             }
 
-            //Hay Bale
-            case (byte) 170 -> {
+            //Hay Bale and Purpur Pillar
+            case (byte) 170, (byte) 202 -> {
 
                 switch (data) {
 
@@ -722,9 +733,6 @@ public class MinecraftIDConverter {
                 }
             }
 
-            //Melon Stem
-            case 104, 105 -> block_states.put(new StringTag("age", String.valueOf(data)));
-
             //Mushroom Blocks
             case 99, 100 -> {
 
@@ -771,9 +779,6 @@ public class MinecraftIDConverter {
                 }
             }
 
-            //Nether Wart
-            case 115 -> block_states.put(new StringTag("age", String.valueOf(data)));
-
             //Nether Portal
             case 90 -> {
                 if (data == 1) {
@@ -791,80 +796,520 @@ public class MinecraftIDConverter {
             }
 
             //Observer
+            case (byte) 218 -> {
+
+                //facing
+                switch (data) {
+
+                    case 0,8 -> block_states.put(new StringTag("facing", "down"));
+                    case 1,9 -> block_states.put(new StringTag("facing", "up"));
+                    case 2,10 -> block_states.put(new StringTag("facing", "north"));
+                    case 3,11 -> block_states.put(new StringTag("facing", "south"));
+                    case 4,12 -> block_states.put(new StringTag("facing", "west"));
+                    case 5,13 -> block_states.put(new StringTag("facing", "east"));
+
+                }
+
+                //powered
+                block_states.put(new StringTag("powered", "false"));
+
+            }
 
             //Pistons
+            case 29, 33 -> {
 
-            //Potatoes
+                //extended
+                if (data >= 8) {
+                    block_states.put(new StringTag("extended", "true"));
+                } else {
+                    block_states.put(new StringTag("extended", "false"));
+                }
+
+                //facing
+                switch (data) {
+
+                    case 0,8 -> block_states.put(new StringTag("facing", "down"));
+                    case 1,9 -> block_states.put(new StringTag("facing", "up"));
+                    case 2,10 -> block_states.put(new StringTag("facing", "north"));
+                    case 3,11 -> block_states.put(new StringTag("facing", "south"));
+                    case 4,12 -> block_states.put(new StringTag("facing", "west"));
+                    case 5,13 -> block_states.put(new StringTag("facing", "east"));
+
+                }
+            }
+
+            //Piston Head
+            case 34 -> {
+
+                //facing
+                switch (data) {
+
+                    case 0,8 -> block_states.put(new StringTag("facing", "down"));
+                    case 1,9 -> block_states.put(new StringTag("facing", "up"));
+                    case 2,10 -> block_states.put(new StringTag("facing", "north"));
+                    case 3,11 -> block_states.put(new StringTag("facing", "south"));
+                    case 4,12 -> block_states.put(new StringTag("facing", "west"));
+                    case 5,13 -> block_states.put(new StringTag("facing", "east"));
+
+                }
+
+                //short
+                block_states.put(new StringTag("short", "false"));
+
+                //type
+                if (data >= 8) {
+                    block_states.put(new StringTag("type", "sticky"));
+                } else {
+                    block_states.put(new StringTag("type", "normal"));
+                }
+            }
+
+            //Potatoes, Carrots, Beetroots, Nether Wart, Melon/Pumpkin Stem, Sugar Canes and Wheat
+            case (byte) 142, (byte) 141, 59, (byte) 207, 115, 104, 105, 83 ->
+                    block_states.put(new StringTag("age", String.valueOf(data)));
 
             //Pressure Plates
             case 70, 72, (byte) 147, (byte) 148 -> block_states.put(new StringTag("powered", "false"));
 
-            //Carved Pumpkin
+            //Quartz Pillar
+            case (byte) 155 -> {
+                switch (data) {
 
-            //Pumpkin Stem
+                    case 2 -> block_states.put(new StringTag("axis", "y"));
+                    case 3 -> block_states.put(new StringTag("axis", "x"));
+                    case 4 -> block_states.put(new StringTag("axis", "z"));
 
-            //Purpur and Quartz Pillar
+                }
+            }
 
             //Rail
+            case 66 -> {
+
+                //shape
+                switch (data) {
+
+                    case 0 -> block_states.put(new StringTag("shape", "north_south"));
+                    case 1 -> block_states.put(new StringTag("shape", "east_west"));
+                    case 2 -> block_states.put(new StringTag("shape", "ascending_east"));
+                    case 3 -> block_states.put(new StringTag("shape", "ascending_west"));
+                    case 4 -> block_states.put(new StringTag("shape", "ascending_north"));
+                    case 5 -> block_states.put(new StringTag("shape", "ascending_south"));
+                    case 6 -> block_states.put(new StringTag("shape", "south_east"));
+                    case 7 -> block_states.put(new StringTag("shape", "south_west"));
+                    case 8 -> block_states.put(new StringTag("shape", "north_west"));
+                    case 9 -> block_states.put(new StringTag("shape", "north_east"));
+
+                }
+
+                //waterlogged
+                block_states.put(new StringTag("waterlogged", "false"));
+
+            }
 
             //Activator Rail, Detector Rail and Powered Rail
+            case 27, 28, (byte) 157 -> {
+
+                //powered
+                if (data >= 8) {
+                    block_states.put(new StringTag("powered", "true"));
+                } else {
+                    block_states.put(new StringTag("powered", "false"));
+                }
+
+                //shape
+                switch (data) {
+
+                    case 0,8 -> block_states.put(new StringTag("shape", "north_south"));
+                    case 1,9 -> block_states.put(new StringTag("shape", "east_west"));
+                    case 2,10 -> block_states.put(new StringTag("shape", "ascending_east"));
+                    case 3,11 -> block_states.put(new StringTag("shape", "ascending_west"));
+                    case 4,12 -> block_states.put(new StringTag("shape", "ascending_north"));
+                    case 5,13 -> block_states.put(new StringTag("shape", "ascending_south"));
+
+                }
+
+                //waterlogged
+                block_states.put(new StringTag("waterlogged", "false"));
+
+            }
 
             //Redstone Comparator
+            case (byte) 149, (byte) 150 -> {
+
+                //facing
+                switch (data) {
+
+                    case 0,4,8,12 -> block_states.put(new StringTag("facing", "north"));
+                    case 1,5,9,13 -> block_states.put(new StringTag("facing", "east"));
+                    case 2,6,10,14 -> block_states.put(new StringTag("facing", "south"));
+                    case 3,7,11,15 -> block_states.put(new StringTag("facing", "west"));
+
+                }
+
+                //mode
+                switch (data) {
+
+                    case 4,5,6,7,12,13,14,15 -> block_states.put(new StringTag("mode", "subtract"));
+                    default -> block_states.put(new StringTag("mode", "compare"));
+
+                }
+
+                //powered
+                if (data >= 8) {
+                    block_states.put(new StringTag("powered", "true"));
+                } else {
+                    block_states.put(new StringTag("powered", "false"));
+                }
+            }
 
             //Redstone Dust
+            case 55 -> {
 
-            //Redstone Lamp
+                block_states.put(new StringTag("east", "none"));
+                block_states.put(new StringTag("north", "none"));
+                block_states.put(new StringTag("power", "0"));
+                block_states.put(new StringTag("south", "none"));
+                block_states.put(new StringTag("west", "none"));
 
-            //Redstone Ore
+            }
+
+            //Redstone Lamp and Ore
+            case 123, 73 -> block_states.put(new StringTag("lit", "false"));
+            case 124, 74 -> block_states.put(new StringTag("lit", "true"));
 
             //Redstone Repeater
+            case 93, 94 -> {
+
+                //delay
+                switch (data) {
+
+                    case 0,1,2,3 -> block_states.put(new StringTag("delay", "1"));
+                    case 4,5,6,7 -> block_states.put(new StringTag("delay", "2"));
+                    case 8,9,10,11 -> block_states.put(new StringTag("delay", "3"));
+                    case 12,13,14,15 -> block_states.put(new StringTag("delay", "4"));
+
+                }
+
+                //facing
+                switch (data) {
+
+                    case 0,4,8,12 -> block_states.put(new StringTag("facing", "north"));
+                    case 1,5,9,13 -> block_states.put(new StringTag("facing", "east"));
+                    case 2,6,10,14 -> block_states.put(new StringTag("facing", "south"));
+                    case 3,7,11,15 -> block_states.put(new StringTag("facing", "west"));
+
+                }
+            }
 
             //Redstone Torch
+            case 75 -> {
+
+                //lit
+                block_states.put(new StringTag("lit", "false"));
+
+                //facing
+                switch (data) {
+
+                    case 1 -> block_states.put(new StringTag("facing", "east"));
+                    case 2 -> block_states.put(new StringTag("facing", "west"));
+                    case 3 -> block_states.put(new StringTag("facing", "south"));
+                    case 4 -> block_states.put(new StringTag("facing", "north"));
+
+                }
+            }
+
+            case 76 -> {
+
+                //lit
+                block_states.put(new StringTag("lit", "true"));
+
+                //facing
+                switch (data) {
+
+                    case 1 -> block_states.put(new StringTag("facing", "west"));
+                    case 2 -> block_states.put(new StringTag("facing", "east"));
+                    case 3 -> block_states.put(new StringTag("facing", "north"));
+                    case 4 -> block_states.put(new StringTag("facing", "south"));
+
+                }
+            }
 
             //Saplings
             case 6 -> block_states.put(new StringTag("stage", "0"));
 
             //Shulker Boxes
+            case (byte) 219, (byte) 220, (byte) 221, (byte) 222, (byte) 223, (byte) 224, (byte) 225, (byte) 226, (byte) 227, (byte) 228, (byte) 229, (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234 -> {
+                switch (data) {
+
+                    case 0 -> block_states.put(new StringTag("facing", "down"));
+                    case 1 -> block_states.put(new StringTag("facing", "up"));
+                    case 2 -> block_states.put(new StringTag("facing", "north"));
+                    case 3 -> block_states.put(new StringTag("facing", "south"));
+                    case 4 -> block_states.put(new StringTag("facing", "west"));
+                    case 5 -> block_states.put(new StringTag("facing", "east"));
+
+                }
+            }
 
             //Sign
+            case 63 -> {
+
+                //rotation
+                block_states.put(new StringTag("rotation", String.valueOf(data)));
+
+                //waterlogged
+                block_states.put(new StringTag("waterlogged", "false"));
+
+            }
+
+            case 68 -> {
+
+                //facing
+                switch (data) {
+
+                    case 2 -> block_states.put(new StringTag("facing", "north"));
+                    case 3 -> block_states.put(new StringTag("facing", "south"));
+                    case 4 -> block_states.put(new StringTag("facing", "west"));
+                    case 5 -> block_states.put(new StringTag("facing", "east"));
+
+                }
+
+                //waterlogged
+                block_states.put(new StringTag("waterlogged", "false"));
+
+            }
 
             //Slabs
+            case 44, 126, (byte) 182, (byte) 205 -> {
+
+                //type
+                if (data < 8) {
+                    block_states.put(new StringTag("type", "bottom"));
+                } else {
+                    block_states.put(new StringTag("type", "top"));
+                }
+
+                //waterlogged
+                block_states.put(new StringTag("waterlogged", "false"));
+
+            }
+
+            case 43, 125, (byte) 181, (byte) 204 -> {
+
+                //type
+                if (data < 8) {
+                    block_states.put(new StringTag("type", "double"));
+                }
+
+                //waterlogged
+                block_states.put(new StringTag("waterlogged", "false"));
+
+            }
 
             //Snow
-
-            //Sponge
+            case 78 -> block_states.put(new StringTag("layer", String.valueOf((data + 1))));
 
             //Stairs
+            case 53, 67, 108, 109, 114, (byte) 128, (byte) 134, (byte) 135, (byte) 136,
+                    (byte) 156, (byte) 163, (byte) 164, (byte) 180, (byte) 203 -> {
+
+                //facing
+                switch (data) {
+
+                    case 0,4 -> block_states.put(new StringTag("facing", "east"));
+                    case 1,5 -> block_states.put(new StringTag("facing", "west"));
+                    case 2,6 -> block_states.put(new StringTag("facing", "south"));
+                    case 3,7 -> block_states.put(new StringTag("facing", "north"));
+
+                }
+
+                //half
+                if (data >= 4) {
+                    block_states.put(new StringTag("half", "top"));
+                } else {
+                    block_states.put(new StringTag("half", "bottom"));
+                }
+
+                //shape
+                block_states.put(new StringTag("shape", "straight"));
+
+                //waterlogged
+                block_states.put(new StringTag("waterlogged", "false"));
+
+            }
 
             //Structure Block
-
-            //Sugar Cane
+            case (byte) 255 -> block_states.put(new StringTag("mode", "data"));
 
             //TNT
             case 46 -> block_states.put(new StringTag("unstable", "false"));
 
             //Torch
+            case 50 -> {
+                switch (data) {
+
+                    case 1 -> block_states.put(new StringTag("facing", "east"));
+                    case 2 -> block_states.put(new StringTag("facing", "west"));
+                    case 3 -> block_states.put(new StringTag("facing", "south"));
+                    case 4 -> block_states.put(new StringTag("facing", "north"));
+
+                }
+            }
 
             //Trapdoors
+            case 96, (byte) 167 -> {
+
+                //facing
+                switch (data) {
+
+                    case 0,4,8,12 -> block_states.put(new StringTag("facing", "south"));
+                    case 1,5,9,13 -> block_states.put(new StringTag("facing", "north"));
+                    case 2,6,10,14 -> block_states.put(new StringTag("facing", "east"));
+                    case 3,7,11,15 -> block_states.put(new StringTag("facing", "west"));
+
+                }
+
+                //half
+                if (data >= 8) {
+                    block_states.put(new StringTag("half", "top"));
+                } else {
+                    block_states.put(new StringTag("half", "bottom"));
+                }
+
+                //open
+                switch (data) {
+
+                    case 4,5,6,7,12,13,14,15 -> block_states.put(new StringTag("open", "true"));
+                    default -> block_states.put(new StringTag("open", "false"));
+
+                }
+
+                //powered
+                block_states.put(new StringTag("powered", "false"));
+
+                //waterlogged
+                block_states.put(new StringTag("waterlogged", "false"));
+
+            }
 
             //Tripwire
+            case (byte) 132 -> {
+
+                //attached
+                switch (data) {
+
+                    case 4,5,6,7,12,13,14,15 -> block_states.put(new StringTag("attached", "true"));
+                    default -> block_states.put(new StringTag("attached", "false"));
+
+                }
+
+                //disarmed
+                if (data >= 8) {
+                    block_states.put(new StringTag("disarmed", "true"));
+                } else {
+                    block_states.put(new StringTag("disarmed", "false"));
+                }
+
+                //east
+                block_states.put(new StringTag("east", "false"));
+
+                //north
+                block_states.put(new StringTag("north", "false"));
+
+                //powered
+                if (data % 2 == 1) {
+                    block_states.put(new StringTag("powered", "true"));
+                } else {
+                    block_states.put(new StringTag("powered", "false"));
+                }
+
+                //south
+                block_states.put(new StringTag("south", "false"));
+
+                //west
+                block_states.put(new StringTag("west", "false"));
+
+            }
 
             //Tripwire Hook
+            case (byte) 131 -> {
+
+                //attached
+                switch (data) {
+
+                    case 4,5,6,7,12,13,14,15 -> block_states.put(new StringTag("attached", "true"));
+                    default -> block_states.put(new StringTag("attached", "false"));
+
+                }
+
+                //facing
+                switch (data) {
+
+                    case 0,4,8,12 -> block_states.put(new StringTag("facing", "south"));
+                    case 1,5,9,13 -> block_states.put(new StringTag("facing", "west"));
+                    case 2,6,10,14 -> block_states.put(new StringTag("facing", "north"));
+                    case 3,7,11,15 -> block_states.put(new StringTag("facing", "east"));
+
+                }
+
+                //powered
+                if (data >= 8) {
+                    block_states.put(new StringTag("powered", "true"));
+                } else {
+                    block_states.put(new StringTag("powered", "false"));
+                }
+
+            }
 
             //Vines
+            case 106 -> {
+
+                //east
+                if ((data & (byte) 8) == (byte) 8) {
+                    block_states.put(new StringTag("east", "true"));
+                } else {
+                    block_states.put(new StringTag("east", "false"));
+                }
+
+                //north
+                if ((data & (byte) 4) == (byte) 4) {
+                    block_states.put(new StringTag("north", "true"));
+                } else {
+                    block_states.put(new StringTag("north", "false"));
+                }
+
+                //south
+                if (data % 2 == 1) {
+                    block_states.put(new StringTag("south", "true"));
+                } else {
+                    block_states.put(new StringTag("false", "true"));
+                }
+
+                //up
+                block_states.put(new StringTag("up", "false"));
+
+                //west
+                if ((data & (byte) 2) == (byte) 2) {
+                    block_states.put(new StringTag("west", "true"));
+                } else {
+                    block_states.put(new StringTag("west", "false"));
+                }
+            }
 
             //Walls
+            case (byte) 139 -> {
+
+                block_states.put(new StringTag("east", "false"));
+                block_states.put(new StringTag("north", "false"));
+                block_states.put(new StringTag("south", "false"));
+                block_states.put(new StringTag("up", "false"));
+                block_states.put(new StringTag("waterlogged", "false"));
+                block_states.put(new StringTag("west", "false"));
+
+            }
 
             //Water
             case 8, 9 -> block_states.put(new StringTag("level", String.valueOf(data)));
-
-            //Wheat Crop
-
-            //Wood
-
-
-
-
 
         }
 
@@ -1053,7 +1498,7 @@ public class MinecraftIDConverter {
                 return "coal_ore";
             }
 
-            //Log
+            //Log and Wood
             case 17 -> {
                 switch (data) {
 
@@ -2604,7 +3049,12 @@ public class MinecraftIDConverter {
 
             //Red Sandstone Slab
             case (byte) 181, (byte) 182 -> {
-                return "red_sandstone_slab";
+
+                if (id == (byte) 182 && data == 8) {
+                    return "smooth_red_sandstone";
+                } else {
+                    return "red_sandstone_slab";
+                }
             }
 
             //Spruce Fence Gate
