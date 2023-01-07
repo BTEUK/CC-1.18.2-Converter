@@ -1,61 +1,49 @@
 package me.bteuk.converter.utils;
 
-import com.flowpowered.nbt.CompoundMap;
-import com.flowpowered.nbt.CompoundTag;
-import com.flowpowered.nbt.StringTag;
+import net.querz.nbt.tag.CompoundTag;
 
 public class MinecraftIDConverter {
 
     /*
 
-    This is the to-do list of unique cases which could otherwise be forgotten:
+    List of blocks for post-processing:
 
-    TODO: For double plant blocks we need to store the details of the bottom-half somewhere so when we get to a top-half we can query that list to figure out which top-half is needed,
-     since in 1.12.2 they all have the same id 175:11.
-
-    TODO: Do the same for stairs, fences and walls, iron bars, glass panes, chests, redstone dust, chorus plant
-
-    TODO: Change colour of the bed in post-processing, this can be retrieved from the block entity data.
-
-    TODO: Change colour of banners in post-processing and add the patterns.
-
-    TODO: Check if melon/pumpkin stem is attached to a melon/pumpkin in post-processing.
-
-    TODO: Convert flower pots to correct type in post-processing by using block entity data.
-
-    TODO: Convert mob heads in post-processing since the block entity data needs to be used.
-
-    TODO: Convert Note blocks in post-processing since the block entity data needs to be used.
-
-    TODO: Fix redstone wire format in post-processing, similar to fences.
-
-    TODO Redstone repeater locked and powered status in post-processing.
-
-    TODO Tripwire directions in post-processing.
-
-    TODO Vine Up block state, always true if there is a block above the vine.
+        175:11 (Top half of double_plant
+        53, 67, 108, 109, 114, 128, 134, 135, 136, 156, 163, 156, 163, 164, 180, 203 (Stairs shape)
+        85, 113, 188, 189, 190, 191, 192 (Fence connections)
+        139, 139:1 (Wall connections)
+        101 (Iron bar connections)
+        102, 160:0 to 160:15 (Glass pane connections)
+        54, 146 (Chest connections)
+        55 (Redstone connections)
+        199 (Chorus plant connections)
+        26 (Bed colour)
+        176, 177 (Banner colour and pattern)
+        104, 105 (Melon/Pumpking stem connection)
+        140 (Flower pot content)
+        144 (Mob head types and player head texture)
+        25 (Note block content)
+        93, 94 (Redstone repeated licked and powered status)
+        132 (Tripwire connections)
+        106 (Vine on the top side)
 
      */
-
-
-
 
     //Convert a legacy Minecraft block id and get the 1.18.2 palette for the block.
     public static CompoundTag getBlock(LegacyID id) {
 
         //Create map for block.
-        CompoundMap block = new CompoundMap();
+        CompoundTag block = new CompoundTag();
 
         //Add block name as String tag.
-        block.put(new StringTag("Name", getNameSpace(id.getID(), id.getData())));
+        block.putString("Name", getNameSpace(id.getID(), id.getData()));
 
         //If block has properties, add them.
         if (hasBlockStates(id.getID())) {
-            block.put(getBlockStates(id.getID(), id.getData()));
+            block.put("Properties", getBlockStates(id.getID(), id.getData()));
         }
 
-
-        return new CompoundTag("", block);
+        return block;
     }
 
 
@@ -110,10 +98,33 @@ public class MinecraftIDConverter {
 
     }
 
+    //Check if the block requires post-processing, in this case store the data in a txt file.
+    public static boolean requiredPostProcessing(byte id, byte data) {
+
+        switch (id) {
+
+            case (byte) 175 -> {
+                if (data == 11) {
+                    return true;
+                }
+            }
+
+            case 53, 67, 108, 109, 114, (byte) 128, (byte) 134, (byte) 135, (byte) 136, (byte) 156, (byte) 163,
+                    (byte) 164, (byte) 180, (byte) 203, 85, 113, (byte) 188, (byte) 189, (byte) 190, (byte) 191,
+                    (byte) 192, (byte) 139, 101, 102, (byte) 160, 54, (byte) 146, 55, (byte) 199, 26,
+                    (byte) 176, (byte) 177, 104, 105, (byte) 140, (byte) 144, 25, 93, 94, (byte) 132, 106 -> {
+                return true;
+            }
+        }
+
+        return false;
+
+    }
+
     //Get the block states of a block.
     public static CompoundTag getBlockStates(byte id, byte data) {
 
-        CompoundMap block_states = new CompoundMap();
+        CompoundTag block_states = new CompoundTag();
 
         switch (id) {
 
@@ -121,25 +132,25 @@ public class MinecraftIDConverter {
             case (byte) 145 -> {
 
                 switch (data) {
-                    case 0,4,8 -> block_states.put(new StringTag("facing", "south"));
-                    case 1,5,9 -> block_states.put(new StringTag("facing", "west"));
-                    case 2,6,10 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,7,11 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,4,8 -> block_states.putString("facing", "south");
+                    case 1,5,9 -> block_states.putString("facing", "west");
+                    case 2,6,10 -> block_states.putString("facing", "north");
+                    case 3,7,11 -> block_states.putString("facing", "east");
                 }
             }
 
             //Standing Banner
-            case (byte) 176 -> block_states.put(new StringTag("rotation", String.valueOf(data)));
+            case (byte) 176 -> block_states.putString("rotation", String.valueOf(data));
 
             //Wall Banner and Mob Heads
             case (byte) 177, (byte) 144 -> {
 
                 switch (data) {
 
-                    case 2 -> block_states.put(new StringTag("facing", "north"));
-                    case 3 -> block_states.put(new StringTag("facing", "south"));
-                    case 4 -> block_states.put(new StringTag("facing", "west"));
-                    case 5 -> block_states.put(new StringTag("facing", "east"));
+                    case 2 -> block_states.putString("facing", "north");
+                    case 3 -> block_states.putString("facing", "south");
+                    case 4 -> block_states.putString("facing", "west");
+                    case 5 -> block_states.putString("facing", "east");
 
                 }
             }
@@ -150,23 +161,23 @@ public class MinecraftIDConverter {
                 //part
                 switch (data) {
 
-                    case 0,1,2,3,4,5,6,7 -> block_states.put(new StringTag("part", "foot"));
-                    case 8,9,10,11,12,13,14,15 -> block_states.put(new StringTag("part", "head"));
+                    case 0,1,2,3,4,5,6,7 -> block_states.putString("part", "foot");
+                    case 8,9,10,11,12,13,14,15 -> block_states.putString("part", "head");
 
                 }
 
                 //facing
                 switch (data) {
 
-                    case 0,4,8,12 -> block_states.put(new StringTag("facing", "south"));
-                    case 1,5,9,13 -> block_states.put(new StringTag("facing", "west"));
-                    case 2,6,10,14 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,7,11,15 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,4,8,12 -> block_states.putString("facing", "south");
+                    case 1,5,9,13 -> block_states.putString("facing", "west");
+                    case 2,6,10,14 -> block_states.putString("facing", "north");
+                    case 3,7,11,15 -> block_states.putString("facing", "east");
 
                 }
 
                 //occupied
-                block_states.put(new StringTag("occupied", "false"));
+                block_states.putString("occupied", "false");
 
             }
 
@@ -175,9 +186,9 @@ public class MinecraftIDConverter {
 
                 switch (data) {
 
-                    case 0,1,2,3,12,13,14,15 -> block_states.put(new StringTag("axis", "y"));
-                    case 4,5,6,7 -> block_states.put(new StringTag("axis", "x"));
-                    case 8,9,10,11 -> block_states.put(new StringTag("axis", "z"));
+                    case 0,1,2,3,12,13,14,15 -> block_states.putString("axis", "y");
+                    case 4,5,6,7 -> block_states.putString("axis", "x");
+                    case 8,9,10,11 -> block_states.putString("axis", "z");
 
                 }
             }
@@ -188,24 +199,24 @@ public class MinecraftIDConverter {
                 //Has Bottle 0
                 switch (data) {
 
-                    case 0,2,4,6,8,10,12,14 -> block_states.put(new StringTag("has_bottle_0", "false"));
-                    case 1,3,5,7,9,11,13,15 -> block_states.put(new StringTag("has_bottle_0", "true"));
+                    case 0,2,4,6,8,10,12,14 -> block_states.putString("has_bottle_0", "false");
+                    case 1,3,5,7,9,11,13,15 -> block_states.putString("has_bottle_0", "true");
 
                 }
 
                 //Has Bottle 1
                 switch (data) {
 
-                    case 0,1,4,5,8,9,12,13 -> block_states.put(new StringTag("has_bottle_1", "false"));
-                    case 2,3,6,7,10,11,14,15 -> block_states.put(new StringTag("has_bottle_1", "true"));
+                    case 0,1,4,5,8,9,12,13 -> block_states.putString("has_bottle_1", "false");
+                    case 2,3,6,7,10,11,14,15 -> block_states.putString("has_bottle_1", "true");
 
                 }
 
                 //Has Bottle 2
                 switch (data) {
 
-                    case 0,1,2,3,8,9,10,11 -> block_states.put(new StringTag("has_bottle_2", "false"));
-                    case 4,5,6,7,12,13,14,15 -> block_states.put(new StringTag("has_bottle_2", "true"));
+                    case 0,1,2,3,8,9,10,11 -> block_states.putString("has_bottle_2", "false");
+                    case 4,5,6,7,12,13,14,15 -> block_states.putString("has_bottle_2", "true");
 
                 }
             }
@@ -216,38 +227,38 @@ public class MinecraftIDConverter {
                 //face
                 switch (data) {
 
-                    case 0,8 -> block_states.put(new StringTag("face", "ceiling"));
-                    case 1,2,3,4,9,10,11,12 -> block_states.put(new StringTag("face", "wall"));
-                    case 5,6,7,13,14,15 -> block_states.put(new StringTag("face", "floor"));
+                    case 0,8 -> block_states.putString("face", "ceiling");
+                    case 1,2,3,4,9,10,11,12 -> block_states.putString("face", "wall");
+                    case 5,6,7,13,14,15 -> block_states.putString("face", "floor");
 
                 }
 
                 //facing
                 switch (data) {
 
-                    case 0,4,5,6,7,8,12,13,14,15 -> block_states.put(new StringTag("facing", "north"));
-                    case 1,9 -> block_states.put(new StringTag("facing", "east"));
-                    case 2,10 -> block_states.put(new StringTag("facing", "west"));
-                    case 3,11 -> block_states.put(new StringTag("facing", "south"));
+                    case 0,4,5,6,7,8,12,13,14,15 -> block_states.putString("facing", "north");
+                    case 1,9 -> block_states.putString("facing", "east");
+                    case 2,10 -> block_states.putString("facing", "west");
+                    case 3,11 -> block_states.putString("facing", "south");
 
                 }
 
                 //powered
-                block_states.put(new StringTag("powered", "false"));
+                block_states.putString("powered", "false");
 
             }
 
             //Cactus
-            case 81 -> block_states.put(new StringTag("age", "0"));
+            case 81 -> block_states.putString("age", "0");
 
             //Cake
             case 92 -> {
-                block_states.put(new StringTag("bites", String.valueOf(data)));
-                block_states.put(new StringTag("lit", "false"));
+                block_states.putString("bites", String.valueOf(data));
+                block_states.putString("lit", "false");
             }
 
             //Cauldron
-            case 118 -> block_states.put(new StringTag("level", String.valueOf(data)));
+            case 118 -> block_states.putString("level", String.valueOf(data));
 
             //(Trapped) Chest
             case 54, (byte) 146 -> {
@@ -255,18 +266,18 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0,1,2,6,7,8,12,13,14 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,9,15 -> block_states.put(new StringTag("facing", "south"));
-                    case 4,10 -> block_states.put(new StringTag("facing", "west"));
-                    case 5,11 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,1,2,6,7,8,12,13,14 -> block_states.putString("facing", "north");
+                    case 3,9,15 -> block_states.putString("facing", "south");
+                    case 4,10 -> block_states.putString("facing", "west");
+                    case 5,11 -> block_states.putString("facing", "east");
 
                 }
 
                 //type
-                block_states.put(new StringTag("type", "single"));
+                block_states.putString("type", "single");
 
                 //waterlogged
-                block_states.put(new StringTag("waterlogged", "false"));
+                block_states.putString("waterlogged", "false");
 
             }
 
@@ -276,41 +287,41 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0,1,2,6,7,8,12,13,14 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,9,15 -> block_states.put(new StringTag("facing", "south"));
-                    case 4,10 -> block_states.put(new StringTag("facing", "west"));
-                    case 5,11 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,1,2,6,7,8,12,13,14 -> block_states.putString("facing", "north");
+                    case 3,9,15 -> block_states.putString("facing", "south");
+                    case 4,10 -> block_states.putString("facing", "west");
+                    case 5,11 -> block_states.putString("facing", "east");
 
                 }
 
                 //waterlogged
-                block_states.put(new StringTag("waterlogged", "false"));
+                block_states.putString("waterlogged", "false");
 
             }
 
             //Chorus Flower
-            case (byte) 200 -> block_states.put(new StringTag("age", String.valueOf(data)));
+            case (byte) 200 -> block_states.putString("age", String.valueOf(data));
 
             //Chorus Plant
             case (byte) 199 -> {
 
                 //down
-                block_states.put(new StringTag("down", "false"));
+                block_states.putString("down", "false");
 
                 //east
-                block_states.put(new StringTag("east", "false"));
+                block_states.putString("east", "false");
 
                 //north
-                block_states.put(new StringTag("north", "false"));
+                block_states.putString("north", "false");
 
                 //south
-                block_states.put(new StringTag("south", "false"));
+                block_states.putString("south", "false");
 
                 //up
-                block_states.put(new StringTag("up", "false"));
+                block_states.putString("up", "false");
 
                 //west
-                block_states.put(new StringTag("west", "false"));
+                block_states.putString("west", "false");
 
             }
 
@@ -320,19 +331,19 @@ public class MinecraftIDConverter {
                 //age
                 switch (data) {
 
-                    case 0,1,2,3 -> block_states.put(new StringTag("age", "0"));
-                    case 4,5,6,7 -> block_states.put(new StringTag("age", "1"));
-                    case 8,9,10,11 -> block_states.put(new StringTag("age", "2"));
+                    case 0,1,2,3 -> block_states.putString("age", "0");
+                    case 4,5,6,7 -> block_states.putString("age", "1");
+                    case 8,9,10,11 -> block_states.putString("age", "2");
 
                 }
 
                 //facing
                 switch (data) {
 
-                    case 0,4,8 -> block_states.put(new StringTag("facing", "south"));
-                    case 1,5,9 -> block_states.put(new StringTag("facing", "west"));
-                    case 2,6,10 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,7,11 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,4,8 -> block_states.putString("facing", "south");
+                    case 1,5,9 -> block_states.putString("facing", "west");
+                    case 2,6,10 -> block_states.putString("facing", "north");
+                    case 3,7,11 -> block_states.putString("facing", "east");
 
                 }
             }
@@ -343,20 +354,20 @@ public class MinecraftIDConverter {
                 //conditional
                 switch (data) {
 
-                    case 0,1,2,3,4,5,6,7 -> block_states.put(new StringTag("conditional", "false"));
-                    case 8,9,10,11,12,13,14,15 -> block_states.put(new StringTag("conditional", "true"));
+                    case 0,1,2,3,4,5,6,7 -> block_states.putString("conditional", "false");
+                    case 8,9,10,11,12,13,14,15 -> block_states.putString("conditional", "true");
 
                 }
 
                 //facing
                 switch (data) {
 
-                    case 0,6,8,14 -> block_states.put(new StringTag("facing", "down"));
-                    case 1,7,9,15 -> block_states.put(new StringTag("facing", "up"));
-                    case 2,10 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,11 -> block_states.put(new StringTag("facing", "south"));
-                    case 4,12 -> block_states.put(new StringTag("facing", "west"));
-                    case 5,13 -> block_states.put(new StringTag("facing", "earth"));
+                    case 0,6,8,14 -> block_states.putString("facing", "down");
+                    case 1,7,9,15 -> block_states.putString("facing", "up");
+                    case 2,10 -> block_states.putString("facing", "north");
+                    case 3,11 -> block_states.putString("facing", "south");
+                    case 4,12 -> block_states.putString("facing", "west");
+                    case 5,13 -> block_states.putString("facing", "earth");
 
                 }
             }
@@ -365,10 +376,10 @@ public class MinecraftIDConverter {
             case (byte) 151 -> {
 
                 //inverted
-                block_states.put(new StringTag("inverted", "false"));
+                block_states.putString("inverted", "false");
 
                 //power
-                block_states.put(new StringTag("power", "0"));
+                block_states.putString("power", "0");
 
 
             }
@@ -377,10 +388,10 @@ public class MinecraftIDConverter {
             case (byte) 178 -> {
 
                 //inverted
-                block_states.put(new StringTag("inverted", "true"));
+                block_states.putString("inverted", "true");
 
                 //power
-                block_states.put(new StringTag("power", "0"));
+                block_states.putString("power", "0");
 
             }
 
@@ -390,17 +401,17 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0,6,8,14 -> block_states.put(new StringTag("facing", "down"));
-                    case 1,7,9,15 -> block_states.put(new StringTag("facing", "up"));
-                    case 2,10 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,11 -> block_states.put(new StringTag("facing", "south"));
-                    case 4,12 -> block_states.put(new StringTag("facing", "west"));
-                    case 5,13 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,6,8,14 -> block_states.putString("facing", "down");
+                    case 1,7,9,15 -> block_states.putString("facing", "up");
+                    case 2,10 -> block_states.putString("facing", "north");
+                    case 3,11 -> block_states.putString("facing", "south");
+                    case 4,12 -> block_states.putString("facing", "west");
+                    case 5,13 -> block_states.putString("facing", "east");
 
                 }
 
                 //triggered
-                block_states.put(new StringTag("triggered", "false"));
+                block_states.putString("triggered", "false");
 
             }
 
@@ -410,39 +421,39 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0,4,8,12 -> block_states.put(new StringTag("facing", "east"));
-                    case 1,5,9,13 -> block_states.put(new StringTag("facing", "south"));
-                    case 2,6,10,14 -> block_states.put(new StringTag("facing", "west"));
-                    case 3,7,11,15 -> block_states.put(new StringTag("facing", "north"));
+                    case 0,4,8,12 -> block_states.putString("facing", "east");
+                    case 1,5,9,13 -> block_states.putString("facing", "south");
+                    case 2,6,10,14 -> block_states.putString("facing", "west");
+                    case 3,7,11,15 -> block_states.putString("facing", "north");
 
                 }
 
                 //half
                 switch (data) {
 
-                    case 0,1,2,3,4,5,6,7 -> block_states.put(new StringTag("half", "lower"));
-                    case 8,9,10,11,12,13,14,15 -> block_states.put(new StringTag("half", "upper"));
+                    case 0,1,2,3,4,5,6,7 -> block_states.putString("half", "lower");
+                    case 8,9,10,11,12,13,14,15 -> block_states.putString("half", "upper");
 
                 }
 
                 //hinge
                 switch (data) {
 
-                    case 9,11,13,15 -> block_states.put(new StringTag("hinge", "right"));
-                    default -> block_states.put(new StringTag("hinge", "left"));
+                    case 9,11,13,15 -> block_states.putString("hinge", "right");
+                    default -> block_states.putString("hinge", "left");
 
                 }
 
                 //open
                 switch (data) {
 
-                    case 4,5,6,7 -> block_states.put(new StringTag("open", "true"));
-                    default -> block_states.put(new StringTag("open", "false"));
+                    case 4,5,6,7 -> block_states.putString("open", "true");
+                    default -> block_states.putString("open", "false");
 
                 }
 
                 //powered
-                block_states.put(new StringTag("powered", "false"));
+                block_states.putString("powered", "false");
 
             }
 
@@ -452,18 +463,18 @@ public class MinecraftIDConverter {
                 //eye
                 switch (data) {
 
-                    case 4,5,6,7,12,13,14,15 -> block_states.put(new StringTag("eye", "true"));
-                    default -> block_states.put(new StringTag("eye", "false"));
+                    case 4,5,6,7,12,13,14,15 -> block_states.putString("eye", "true");
+                    default -> block_states.putString("eye", "false");
 
                 }
 
                 //facing
                 switch (data) {
 
-                    case 0,4,8,12 -> block_states.put(new StringTag("facing", "south"));
-                    case 1,5,9,13 -> block_states.put(new StringTag("facing", "west"));
-                    case 2,6,10,14 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,7,11,15 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,4,8,12 -> block_states.putString("facing", "south");
+                    case 1,5,9,13 -> block_states.putString("facing", "west");
+                    case 2,6,10,14 -> block_states.putString("facing", "north");
+                    case 3,7,11,15 -> block_states.putString("facing", "east");
 
                 }
             }
@@ -474,12 +485,12 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0,6,12 -> block_states.put(new StringTag("facing", "down"));
-                    case 1,7,13 -> block_states.put(new StringTag("facing", "up"));
-                    case 2,8,14 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,9,15 -> block_states.put(new StringTag("facing", "south"));
-                    case 4,10 -> block_states.put(new StringTag("facing", "west"));
-                    case 5,11 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,6,12 -> block_states.putString("facing", "down");
+                    case 1,7,13 -> block_states.putString("facing", "up");
+                    case 2,8,14 -> block_states.putString("facing", "north");
+                    case 3,9,15 -> block_states.putString("facing", "south");
+                    case 4,10 -> block_states.putString("facing", "west");
+                    case 5,11 -> block_states.putString("facing", "east");
 
                 }
             }
@@ -490,14 +501,14 @@ public class MinecraftIDConverter {
                 switch (data) {
 
                     //moisture
-                    case 0, 8 -> block_states.put(new StringTag("moisture", "0"));
-                    case 1, 9 -> block_states.put(new StringTag("moisture", "1"));
-                    case 2, 10 -> block_states.put(new StringTag("moisture", "2"));
-                    case 3, 11 -> block_states.put(new StringTag("moisture", "3"));
-                    case 4, 12 -> block_states.put(new StringTag("moisture", "4"));
-                    case 5, 13 -> block_states.put(new StringTag("moisture", "5"));
-                    case 6, 14 -> block_states.put(new StringTag("moisture", "6"));
-                    case 7, 15 -> block_states.put(new StringTag("moisture", "7"));
+                    case 0, 8 -> block_states.putString("moisture", "0");
+                    case 1, 9 -> block_states.putString("moisture", "1");
+                    case 2, 10 -> block_states.putString("moisture", "2");
+                    case 3, 11 -> block_states.putString("moisture", "3");
+                    case 4, 12 -> block_states.putString("moisture", "4");
+                    case 5, 13 -> block_states.putString("moisture", "5");
+                    case 6, 14 -> block_states.putString("moisture", "6");
+                    case 7, 15 -> block_states.putString("moisture", "7");
 
                 }
             }
@@ -505,11 +516,11 @@ public class MinecraftIDConverter {
             //Fences
             case 85, 113, (byte) 188, (byte) 189, (byte) 190, (byte) 191, (byte) 192 -> {
 
-                block_states.put(new StringTag("east", "false"));
-                block_states.put(new StringTag("north", "false"));
-                block_states.put(new StringTag("south", "false"));
-                block_states.put(new StringTag("waterlogged", "false"));
-                block_states.put(new StringTag("west", "false"));
+                block_states.putString("east", "false");
+                block_states.putString("north", "false");
+                block_states.putString("south", "false");
+                block_states.putString("waterlogged", "false");
+                block_states.putString("west", "false");
 
             }
 
@@ -519,38 +530,38 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0,4,8,12 -> block_states.put(new StringTag("facing", "south"));
-                    case 1,5,9,13 -> block_states.put(new StringTag("facing", "west"));
-                    case 2,6,10,14 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,7,11,15 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,4,8,12 -> block_states.putString("facing", "south");
+                    case 1,5,9,13 -> block_states.putString("facing", "west");
+                    case 2,6,10,14 -> block_states.putString("facing", "north");
+                    case 3,7,11,15 -> block_states.putString("facing", "east");
 
                 }
 
                 //in_wall
-                block_states.put(new StringTag("in_wall", "false"));
+                block_states.putString("in_wall", "false");
 
                 //open
                 switch (data) {
 
-                    case 4,5,6,7,12,13,14,15 -> block_states.put(new StringTag("open", "true"));
-                    default -> block_states.put(new StringTag("open", "false"));
+                    case 4,5,6,7,12,13,14,15 -> block_states.putString("open", "true");
+                    default -> block_states.putString("open", "false");
 
                 }
 
                 //powered
-                block_states.put(new StringTag("powered", "false"));
+                block_states.putString("powered", "false");
 
             }
 
             //Fire
             case 51 -> {
 
-                block_states.put(new StringTag("age", "0"));
-                block_states.put(new StringTag("east", "false"));
-                block_states.put(new StringTag("north", "false"));
-                block_states.put(new StringTag("south", "false"));
-                block_states.put(new StringTag("up", "false"));
-                block_states.put(new StringTag("west", "false"));
+                block_states.putString("age", "0");
+                block_states.putString("east", "false");
+                block_states.putString("north", "false");
+                block_states.putString("south", "false");
+                block_states.putString("up", "false");
+                block_states.putString("west", "false");
 
             }
 
@@ -558,9 +569,9 @@ public class MinecraftIDConverter {
             case (byte) 175 -> {
 
                 if (data == 11) {
-                    block_states.put(new StringTag("half", "upper"));
+                    block_states.putString("half", "upper");
                 } else {
-                    block_states.put(new StringTag("half", "lower"));
+                    block_states.putString("half", "lower");
                 }
 
             }
@@ -569,9 +580,9 @@ public class MinecraftIDConverter {
             case (byte) 212 -> {
 
                 if (data < 3) {
-                    block_states.put(new StringTag("age", String.valueOf(data)));
+                    block_states.putString("age", String.valueOf(data));
                 } else {
-                    block_states.put(new StringTag("age", "3"));
+                    block_states.putString("age", "3");
                 }
 
             }
@@ -581,18 +592,18 @@ public class MinecraftIDConverter {
 
                 //lit
                 if (id == 62) {
-                    block_states.put(new StringTag("lit", "true"));
+                    block_states.putString("lit", "true");
                 } else {
-                    block_states.put(new StringTag("lit", "false"));
+                    block_states.putString("lit", "false");
                 }
 
                 //facing
                 switch (data) {
 
-                    case 3,9,15 -> block_states.put(new StringTag("facing", "south"));
-                    case 4,10 -> block_states.put(new StringTag("facing", "west"));
-                    case 5,11 -> block_states.put(new StringTag("facing", "east"));
-                    default -> block_states.put(new StringTag("facing", "north"));
+                    case 3,9,15 -> block_states.putString("facing", "south");
+                    case 4,10 -> block_states.putString("facing", "west");
+                    case 5,11 -> block_states.putString("facing", "east");
+                    default -> block_states.putString("facing", "north");
 
                 }
             }
@@ -600,11 +611,11 @@ public class MinecraftIDConverter {
             //Glass Panes and Iron Bars
             case 102, (byte) 160, 101 -> {
 
-                block_states.put(new StringTag("east", "false"));
-                block_states.put(new StringTag("north", "false"));
-                block_states.put(new StringTag("south", "false"));
-                block_states.put(new StringTag("watterlogged", "false"));
-                block_states.put(new StringTag("west", "false"));
+                block_states.putString("east", "false");
+                block_states.putString("north", "false");
+                block_states.putString("south", "false");
+                block_states.putString("watterlogged", "false");
+                block_states.putString("west", "false");
 
             }
 
@@ -615,10 +626,10 @@ public class MinecraftIDConverter {
 
                 switch (data) {
 
-                    case 0,4,8,12 -> block_states.put(new StringTag("facing", "south"));
-                    case 1,5,9,13 -> block_states.put(new StringTag("facing", "west"));
-                    case 2,6,10,14 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,7,11,15 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,4,8,12 -> block_states.putString("facing", "south");
+                    case 1,5,9,13 -> block_states.putString("facing", "west");
+                    case 2,6,10,14 -> block_states.putString("facing", "north");
+                    case 3,7,11,15 -> block_states.putString("facing", "east");
 
                 }
             }
@@ -628,7 +639,7 @@ public class MinecraftIDConverter {
 
                 if (!(id == 3 && data != 2)) {
 
-                    block_states.put(new StringTag("snowy", "false"));
+                    block_states.putString("snowy", "false");
 
                 }
             }
@@ -638,9 +649,9 @@ public class MinecraftIDConverter {
 
                 switch (data) {
 
-                    case 4,5,6,7 -> block_states.put(new StringTag("axis", "x"));
-                    case 8,9,10,11 -> block_states.put(new StringTag("axis", "z"));
-                    default -> block_states.put(new StringTag("axis", "y"));
+                    case 4,5,6,7 -> block_states.putString("axis", "x");
+                    case 8,9,10,11 -> block_states.putString("axis", "z");
+                    default -> block_states.putString("axis", "y");
 
                 }
             }
@@ -649,45 +660,45 @@ public class MinecraftIDConverter {
             case (byte) 154 -> {
 
                 //enabled
-                block_states.put(new StringTag("enabled", "false"));
+                block_states.putString("enabled", "false");
 
                 //facing
                 switch (data) {
 
-                    case 0,6,8,14,15 -> block_states.put(new StringTag("facing", "down"));
-                    case 2,10 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,11 -> block_states.put(new StringTag("facing", "south"));
-                    case 4,12 -> block_states.put(new StringTag("facing", "west"));
-                    case 5,13 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,6,8,14,15 -> block_states.putString("facing", "down");
+                    case 2,10 -> block_states.putString("facing", "north");
+                    case 3,11 -> block_states.putString("facing", "south");
+                    case 4,12 -> block_states.putString("facing", "west");
+                    case 5,13 -> block_states.putString("facing", "east");
 
                 }
             }
 
             //Jukebox
-            case 84 -> block_states.put(new StringTag("has_record", "false"));
+            case 84 -> block_states.putString("has_record", "false");
 
             //Ladder
             case 65 -> {
 
                 switch (data) {
 
-                    case 3, 9, 15 -> block_states.put(new StringTag("facing", "south"));
-                    case 4, 10 -> block_states.put(new StringTag("facing", "west"));
-                    case 5, 11 -> block_states.put(new StringTag("facing", "east"));
-                    default -> block_states.put(new StringTag("facing", "north"));
+                    case 3, 9, 15 -> block_states.putString("facing", "south");
+                    case 4, 10 -> block_states.putString("facing", "west");
+                    case 5, 11 -> block_states.putString("facing", "east");
+                    default -> block_states.putString("facing", "north");
 
                 }
             }
 
             //Lava
-            case 10, 11 -> block_states.put(new StringTag("level", String.valueOf(data)));
+            case 10, 11 -> block_states.putString("level", String.valueOf(data));
 
             //Leaves
             case 18, (byte) 161 -> {
 
-                block_states.put(new StringTag("distance", "7"));
-                block_states.put(new StringTag("persistent", "true"));
-                block_states.put(new StringTag("waterlogged", "false"));
+                block_states.putString("distance", "7");
+                block_states.putString("persistent", "true");
+                block_states.putString("waterlogged", "false");
 
             }
 
@@ -697,27 +708,27 @@ public class MinecraftIDConverter {
                 //face
                 switch (data) {
 
-                    case 0,7,8,15 -> block_states.put(new StringTag("face", "floor"));
-                    case 5,6,13,14 -> block_states.put(new StringTag("face", "ceiling"));
-                    case 1,2,3,4,9,10,11,12 -> block_states.put(new StringTag("face", "wall"));
+                    case 0,7,8,15 -> block_states.putString("face", "floor");
+                    case 5,6,13,14 -> block_states.putString("face", "ceiling");
+                    case 1,2,3,4,9,10,11,12 -> block_states.putString("face", "wall");
 
                 }
 
                 //facing
                 switch (data) {
 
-                    case 0,1,6,8,9,14 -> block_states.put(new StringTag("facing", "east"));
-                    case 3,5,7,11,13,15 -> block_states.put(new StringTag("facing", "south"));
-                    case 2,10 -> block_states.put(new StringTag("facing", "west"));
-                    case 4,12 -> block_states.put(new StringTag("facing", "north"));
+                    case 0,1,6,8,9,14 -> block_states.putString("facing", "east");
+                    case 3,5,7,11,13,15 -> block_states.putString("facing", "south");
+                    case 2,10 -> block_states.putString("facing", "west");
+                    case 4,12 -> block_states.putString("facing", "north");
 
                 }
 
                 //powered
                 if (data >= 8) {
-                    block_states.put(new StringTag("powered", "true"));
+                    block_states.putString("powered", "true");
                 } else {
-                    block_states.put(new StringTag("powered", "false"));
+                    block_states.putString("powered", "false");
                 }
 
             }
@@ -726,9 +737,9 @@ public class MinecraftIDConverter {
             case 17, (byte) 162 -> {
                 switch (data) {
 
-                    case 5,6,7,8 -> block_states.put(new StringTag("axis", "x"));
-                    case 9,10,11,12 -> block_states.put(new StringTag("axis", "z"));
-                    default -> block_states.put(new StringTag("axis", "y"));
+                    case 5,6,7,8 -> block_states.putString("axis", "x");
+                    case 9,10,11,12 -> block_states.putString("axis", "z");
+                    default -> block_states.putString("axis", "y");
 
                 }
             }
@@ -738,61 +749,61 @@ public class MinecraftIDConverter {
 
                 //east
                 if (data == 3 || data == 6 || data == 9 || data == 10 || data == 14 || data == 15) {
-                    block_states.put(new StringTag("east", "true"));
+                    block_states.putString("east", "true");
                 } else {
-                    block_states.put(new StringTag("east", "false"));
+                    block_states.putString("east", "false");
                 }
 
                 //down
                 if (data == 14 || data == 15) {
-                    block_states.put(new StringTag("down", "true"));
+                    block_states.putString("down", "true");
                 } else {
-                    block_states.put(new StringTag("down", "false"));
+                    block_states.putString("down", "false");
                 }
 
                 //north
                 if (data == 1 || data == 2 || data == 3 || data == 10 || data == 14 || data == 15) {
-                    block_states.put(new StringTag("north", "true"));
+                    block_states.putString("north", "true");
                 } else {
-                    block_states.put(new StringTag("north", "false"));
+                    block_states.putString("north", "false");
                 }
 
                 //south
                 if (data == 7 || data == 8 || data == 9 || data == 10 || data == 14 || data == 15) {
-                    block_states.put(new StringTag("south", "true"));
+                    block_states.putString("south", "true");
                 } else {
-                    block_states.put(new StringTag("south", "false"));
+                    block_states.putString("south", "false");
                 }
 
                 //up
                 if (data == 0 || data == 10) {
-                    block_states.put(new StringTag("east", "false"));
+                    block_states.putString("east", "false");
                 } else {
-                    block_states.put(new StringTag("east", "true"));
+                    block_states.putString("east", "true");
                 }
 
                 //west
                 if (data == 1 || data == 4 || data == 7 || data == 10 || data == 14 || data == 15) {
-                    block_states.put(new StringTag("east", "true"));
+                    block_states.putString("east", "true");
                 } else {
-                    block_states.put(new StringTag("east", "false"));
+                    block_states.putString("east", "false");
                 }
             }
 
             //Nether Portal
             case 90 -> {
                 if (data == 1) {
-                    block_states.put(new StringTag("axis", "z"));
+                    block_states.putString("axis", "z");
                 } else {
-                    block_states.put(new StringTag("axis", "x"));
+                    block_states.putString("axis", "x");
                 }
             }
 
             //Note Block
             case 25 -> {
-                block_states.put(new StringTag("instrument", "harp"));
-                block_states.put(new StringTag("note", "0"));
-                block_states.put(new StringTag("powered", "false"));
+                block_states.putString("instrument", "harp");
+                block_states.putString("note", "0");
+                block_states.putString("powered", "false");
             }
 
             //Observer
@@ -801,17 +812,17 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0,8 -> block_states.put(new StringTag("facing", "down"));
-                    case 1,9 -> block_states.put(new StringTag("facing", "up"));
-                    case 2,10 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,11 -> block_states.put(new StringTag("facing", "south"));
-                    case 4,12 -> block_states.put(new StringTag("facing", "west"));
-                    case 5,13 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,8 -> block_states.putString("facing", "down");
+                    case 1,9 -> block_states.putString("facing", "up");
+                    case 2,10 -> block_states.putString("facing", "north");
+                    case 3,11 -> block_states.putString("facing", "south");
+                    case 4,12 -> block_states.putString("facing", "west");
+                    case 5,13 -> block_states.putString("facing", "east");
 
                 }
 
                 //powered
-                block_states.put(new StringTag("powered", "false"));
+                block_states.putString("powered", "false");
 
             }
 
@@ -820,20 +831,20 @@ public class MinecraftIDConverter {
 
                 //extended
                 if (data >= 8) {
-                    block_states.put(new StringTag("extended", "true"));
+                    block_states.putString("extended", "true");
                 } else {
-                    block_states.put(new StringTag("extended", "false"));
+                    block_states.putString("extended", "false");
                 }
 
                 //facing
                 switch (data) {
 
-                    case 0,8 -> block_states.put(new StringTag("facing", "down"));
-                    case 1,9 -> block_states.put(new StringTag("facing", "up"));
-                    case 2,10 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,11 -> block_states.put(new StringTag("facing", "south"));
-                    case 4,12 -> block_states.put(new StringTag("facing", "west"));
-                    case 5,13 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,8 -> block_states.putString("facing", "down");
+                    case 1,9 -> block_states.putString("facing", "up");
+                    case 2,10 -> block_states.putString("facing", "north");
+                    case 3,11 -> block_states.putString("facing", "south");
+                    case 4,12 -> block_states.putString("facing", "west");
+                    case 5,13 -> block_states.putString("facing", "east");
 
                 }
             }
@@ -844,40 +855,40 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0,8 -> block_states.put(new StringTag("facing", "down"));
-                    case 1,9 -> block_states.put(new StringTag("facing", "up"));
-                    case 2,10 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,11 -> block_states.put(new StringTag("facing", "south"));
-                    case 4,12 -> block_states.put(new StringTag("facing", "west"));
-                    case 5,13 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,8 -> block_states.putString("facing", "down");
+                    case 1,9 -> block_states.putString("facing", "up");
+                    case 2,10 -> block_states.putString("facing", "north");
+                    case 3,11 -> block_states.putString("facing", "south");
+                    case 4,12 -> block_states.putString("facing", "west");
+                    case 5,13 -> block_states.putString("facing", "east");
 
                 }
 
                 //short
-                block_states.put(new StringTag("short", "false"));
+                block_states.putString("short", "false");
 
                 //type
                 if (data >= 8) {
-                    block_states.put(new StringTag("type", "sticky"));
+                    block_states.putString("type", "sticky");
                 } else {
-                    block_states.put(new StringTag("type", "normal"));
+                    block_states.putString("type", "normal");
                 }
             }
 
             //Potatoes, Carrots, Beetroots, Nether Wart, Melon/Pumpkin Stem, Sugar Canes and Wheat
             case (byte) 142, (byte) 141, 59, (byte) 207, 115, 104, 105, 83 ->
-                    block_states.put(new StringTag("age", String.valueOf(data)));
+                    block_states.putString("age", String.valueOf(data));
 
             //Pressure Plates
-            case 70, 72, (byte) 147, (byte) 148 -> block_states.put(new StringTag("powered", "false"));
+            case 70, 72, (byte) 147, (byte) 148 -> block_states.putString("powered", "false");
 
             //Quartz Pillar
             case (byte) 155 -> {
                 switch (data) {
 
-                    case 2 -> block_states.put(new StringTag("axis", "y"));
-                    case 3 -> block_states.put(new StringTag("axis", "x"));
-                    case 4 -> block_states.put(new StringTag("axis", "z"));
+                    case 2 -> block_states.putString("axis", "y");
+                    case 3 -> block_states.putString("axis", "x");
+                    case 4 -> block_states.putString("axis", "z");
 
                 }
             }
@@ -888,21 +899,21 @@ public class MinecraftIDConverter {
                 //shape
                 switch (data) {
 
-                    case 0 -> block_states.put(new StringTag("shape", "north_south"));
-                    case 1 -> block_states.put(new StringTag("shape", "east_west"));
-                    case 2 -> block_states.put(new StringTag("shape", "ascending_east"));
-                    case 3 -> block_states.put(new StringTag("shape", "ascending_west"));
-                    case 4 -> block_states.put(new StringTag("shape", "ascending_north"));
-                    case 5 -> block_states.put(new StringTag("shape", "ascending_south"));
-                    case 6 -> block_states.put(new StringTag("shape", "south_east"));
-                    case 7 -> block_states.put(new StringTag("shape", "south_west"));
-                    case 8 -> block_states.put(new StringTag("shape", "north_west"));
-                    case 9 -> block_states.put(new StringTag("shape", "north_east"));
+                    case 0 -> block_states.putString("shape", "north_south");
+                    case 1 -> block_states.putString("shape", "east_west");
+                    case 2 -> block_states.putString("shape", "ascending_east");
+                    case 3 -> block_states.putString("shape", "ascending_west");
+                    case 4 -> block_states.putString("shape", "ascending_north");
+                    case 5 -> block_states.putString("shape", "ascending_south");
+                    case 6 -> block_states.putString("shape", "south_east");
+                    case 7 -> block_states.putString("shape", "south_west");
+                    case 8 -> block_states.putString("shape", "north_west");
+                    case 9 -> block_states.putString("shape", "north_east");
 
                 }
 
                 //waterlogged
-                block_states.put(new StringTag("waterlogged", "false"));
+                block_states.putString("waterlogged", "false");
 
             }
 
@@ -911,25 +922,25 @@ public class MinecraftIDConverter {
 
                 //powered
                 if (data >= 8) {
-                    block_states.put(new StringTag("powered", "true"));
+                    block_states.putString("powered", "true");
                 } else {
-                    block_states.put(new StringTag("powered", "false"));
+                    block_states.putString("powered", "false");
                 }
 
                 //shape
                 switch (data) {
 
-                    case 0,8 -> block_states.put(new StringTag("shape", "north_south"));
-                    case 1,9 -> block_states.put(new StringTag("shape", "east_west"));
-                    case 2,10 -> block_states.put(new StringTag("shape", "ascending_east"));
-                    case 3,11 -> block_states.put(new StringTag("shape", "ascending_west"));
-                    case 4,12 -> block_states.put(new StringTag("shape", "ascending_north"));
-                    case 5,13 -> block_states.put(new StringTag("shape", "ascending_south"));
+                    case 0,8 -> block_states.putString("shape", "north_south");
+                    case 1,9 -> block_states.putString("shape", "east_west");
+                    case 2,10 -> block_states.putString("shape", "ascending_east");
+                    case 3,11 -> block_states.putString("shape", "ascending_west");
+                    case 4,12 -> block_states.putString("shape", "ascending_north");
+                    case 5,13 -> block_states.putString("shape", "ascending_south");
 
                 }
 
                 //waterlogged
-                block_states.put(new StringTag("waterlogged", "false"));
+                block_states.putString("waterlogged", "false");
 
             }
 
@@ -939,43 +950,43 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0,4,8,12 -> block_states.put(new StringTag("facing", "north"));
-                    case 1,5,9,13 -> block_states.put(new StringTag("facing", "east"));
-                    case 2,6,10,14 -> block_states.put(new StringTag("facing", "south"));
-                    case 3,7,11,15 -> block_states.put(new StringTag("facing", "west"));
+                    case 0,4,8,12 -> block_states.putString("facing", "north");
+                    case 1,5,9,13 -> block_states.putString("facing", "east");
+                    case 2,6,10,14 -> block_states.putString("facing", "south");
+                    case 3,7,11,15 -> block_states.putString("facing", "west");
 
                 }
 
                 //mode
                 switch (data) {
 
-                    case 4,5,6,7,12,13,14,15 -> block_states.put(new StringTag("mode", "subtract"));
-                    default -> block_states.put(new StringTag("mode", "compare"));
+                    case 4,5,6,7,12,13,14,15 -> block_states.putString("mode", "subtract");
+                    default -> block_states.putString("mode", "compare");
 
                 }
 
                 //powered
                 if (data >= 8) {
-                    block_states.put(new StringTag("powered", "true"));
+                    block_states.putString("powered", "true");
                 } else {
-                    block_states.put(new StringTag("powered", "false"));
+                    block_states.putString("powered", "false");
                 }
             }
 
             //Redstone Dust
             case 55 -> {
 
-                block_states.put(new StringTag("east", "none"));
-                block_states.put(new StringTag("north", "none"));
-                block_states.put(new StringTag("power", "0"));
-                block_states.put(new StringTag("south", "none"));
-                block_states.put(new StringTag("west", "none"));
+                block_states.putString("east", "none");
+                block_states.putString("north", "none");
+                block_states.putString("power", "0");
+                block_states.putString("south", "none");
+                block_states.putString("west", "none");
 
             }
 
             //Redstone Lamp and Ore
-            case 123, 73 -> block_states.put(new StringTag("lit", "false"));
-            case 124, 74 -> block_states.put(new StringTag("lit", "true"));
+            case 123, 73 -> block_states.putString("lit", "false");
+            case 124, 74 -> block_states.putString("lit", "true");
 
             //Redstone Repeater
             case 93, 94 -> {
@@ -983,20 +994,20 @@ public class MinecraftIDConverter {
                 //delay
                 switch (data) {
 
-                    case 0,1,2,3 -> block_states.put(new StringTag("delay", "1"));
-                    case 4,5,6,7 -> block_states.put(new StringTag("delay", "2"));
-                    case 8,9,10,11 -> block_states.put(new StringTag("delay", "3"));
-                    case 12,13,14,15 -> block_states.put(new StringTag("delay", "4"));
+                    case 0,1,2,3 -> block_states.putString("delay", "1");
+                    case 4,5,6,7 -> block_states.putString("delay", "2");
+                    case 8,9,10,11 -> block_states.putString("delay", "3");
+                    case 12,13,14,15 -> block_states.putString("delay", "4");
 
                 }
 
                 //facing
                 switch (data) {
 
-                    case 0,4,8,12 -> block_states.put(new StringTag("facing", "north"));
-                    case 1,5,9,13 -> block_states.put(new StringTag("facing", "east"));
-                    case 2,6,10,14 -> block_states.put(new StringTag("facing", "south"));
-                    case 3,7,11,15 -> block_states.put(new StringTag("facing", "west"));
+                    case 0,4,8,12 -> block_states.putString("facing", "north");
+                    case 1,5,9,13 -> block_states.putString("facing", "east");
+                    case 2,6,10,14 -> block_states.putString("facing", "south");
+                    case 3,7,11,15 -> block_states.putString("facing", "west");
 
                 }
             }
@@ -1005,15 +1016,15 @@ public class MinecraftIDConverter {
             case 75 -> {
 
                 //lit
-                block_states.put(new StringTag("lit", "false"));
+                block_states.putString("lit", "false");
 
                 //facing
                 switch (data) {
 
-                    case 1 -> block_states.put(new StringTag("facing", "east"));
-                    case 2 -> block_states.put(new StringTag("facing", "west"));
-                    case 3 -> block_states.put(new StringTag("facing", "south"));
-                    case 4 -> block_states.put(new StringTag("facing", "north"));
+                    case 1 -> block_states.putString("facing", "east");
+                    case 2 -> block_states.putString("facing", "west");
+                    case 3 -> block_states.putString("facing", "south");
+                    case 4 -> block_states.putString("facing", "north");
 
                 }
             }
@@ -1021,32 +1032,32 @@ public class MinecraftIDConverter {
             case 76 -> {
 
                 //lit
-                block_states.put(new StringTag("lit", "true"));
+                block_states.putString("lit", "true");
 
                 //facing
                 switch (data) {
 
-                    case 1 -> block_states.put(new StringTag("facing", "west"));
-                    case 2 -> block_states.put(new StringTag("facing", "east"));
-                    case 3 -> block_states.put(new StringTag("facing", "north"));
-                    case 4 -> block_states.put(new StringTag("facing", "south"));
+                    case 1 -> block_states.putString("facing", "west");
+                    case 2 -> block_states.putString("facing", "east");
+                    case 3 -> block_states.putString("facing", "north");
+                    case 4 -> block_states.putString("facing", "south");
 
                 }
             }
 
             //Saplings
-            case 6 -> block_states.put(new StringTag("stage", "0"));
+            case 6 -> block_states.putString("stage", "0");
 
             //Shulker Boxes
             case (byte) 219, (byte) 220, (byte) 221, (byte) 222, (byte) 223, (byte) 224, (byte) 225, (byte) 226, (byte) 227, (byte) 228, (byte) 229, (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234 -> {
                 switch (data) {
 
-                    case 0 -> block_states.put(new StringTag("facing", "down"));
-                    case 1 -> block_states.put(new StringTag("facing", "up"));
-                    case 2 -> block_states.put(new StringTag("facing", "north"));
-                    case 3 -> block_states.put(new StringTag("facing", "south"));
-                    case 4 -> block_states.put(new StringTag("facing", "west"));
-                    case 5 -> block_states.put(new StringTag("facing", "east"));
+                    case 0 -> block_states.putString("facing", "down");
+                    case 1 -> block_states.putString("facing", "up");
+                    case 2 -> block_states.putString("facing", "north");
+                    case 3 -> block_states.putString("facing", "south");
+                    case 4 -> block_states.putString("facing", "west");
+                    case 5 -> block_states.putString("facing", "east");
 
                 }
             }
@@ -1055,10 +1066,10 @@ public class MinecraftIDConverter {
             case 63 -> {
 
                 //rotation
-                block_states.put(new StringTag("rotation", String.valueOf(data)));
+                block_states.putString("rotation", String.valueOf(data));
 
                 //waterlogged
-                block_states.put(new StringTag("waterlogged", "false"));
+                block_states.putString("waterlogged", "false");
 
             }
 
@@ -1067,15 +1078,15 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 2 -> block_states.put(new StringTag("facing", "north"));
-                    case 3 -> block_states.put(new StringTag("facing", "south"));
-                    case 4 -> block_states.put(new StringTag("facing", "west"));
-                    case 5 -> block_states.put(new StringTag("facing", "east"));
+                    case 2 -> block_states.putString("facing", "north");
+                    case 3 -> block_states.putString("facing", "south");
+                    case 4 -> block_states.putString("facing", "west");
+                    case 5 -> block_states.putString("facing", "east");
 
                 }
 
                 //waterlogged
-                block_states.put(new StringTag("waterlogged", "false"));
+                block_states.putString("waterlogged", "false");
 
             }
 
@@ -1084,13 +1095,13 @@ public class MinecraftIDConverter {
 
                 //type
                 if (data < 8) {
-                    block_states.put(new StringTag("type", "bottom"));
+                    block_states.putString("type", "bottom");
                 } else {
-                    block_states.put(new StringTag("type", "top"));
+                    block_states.putString("type", "top");
                 }
 
                 //waterlogged
-                block_states.put(new StringTag("waterlogged", "false"));
+                block_states.putString("waterlogged", "false");
 
             }
 
@@ -1098,16 +1109,16 @@ public class MinecraftIDConverter {
 
                 //type
                 if (data < 8) {
-                    block_states.put(new StringTag("type", "double"));
+                    block_states.putString("type", "double");
                 }
 
                 //waterlogged
-                block_states.put(new StringTag("waterlogged", "false"));
+                block_states.putString("waterlogged", "false");
 
             }
 
             //Snow
-            case 78 -> block_states.put(new StringTag("layer", String.valueOf((data + 1))));
+            case 78 -> block_states.putString("layer", String.valueOf((data + 1)));
 
             //Stairs
             case 53, 67, 108, 109, 114, (byte) 128, (byte) 134, (byte) 135, (byte) 136,
@@ -1116,42 +1127,42 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0,4 -> block_states.put(new StringTag("facing", "east"));
-                    case 1,5 -> block_states.put(new StringTag("facing", "west"));
-                    case 2,6 -> block_states.put(new StringTag("facing", "south"));
-                    case 3,7 -> block_states.put(new StringTag("facing", "north"));
+                    case 0,4 -> block_states.putString("facing", "east");
+                    case 1,5 -> block_states.putString("facing", "west");
+                    case 2,6 -> block_states.putString("facing", "south");
+                    case 3,7 -> block_states.putString("facing", "north");
 
                 }
 
                 //half
                 if (data >= 4) {
-                    block_states.put(new StringTag("half", "top"));
+                    block_states.putString("half", "top");
                 } else {
-                    block_states.put(new StringTag("half", "bottom"));
+                    block_states.putString("half", "bottom");
                 }
 
                 //shape
-                block_states.put(new StringTag("shape", "straight"));
+                block_states.putString("shape", "straight");
 
                 //waterlogged
-                block_states.put(new StringTag("waterlogged", "false"));
+                block_states.putString("waterlogged", "false");
 
             }
 
             //Structure Block
-            case (byte) 255 -> block_states.put(new StringTag("mode", "data"));
+            case (byte) 255 -> block_states.putString("mode", "data");
 
             //TNT
-            case 46 -> block_states.put(new StringTag("unstable", "false"));
+            case 46 -> block_states.putString("unstable", "false");
 
             //Torch
             case 50 -> {
                 switch (data) {
 
-                    case 1 -> block_states.put(new StringTag("facing", "east"));
-                    case 2 -> block_states.put(new StringTag("facing", "west"));
-                    case 3 -> block_states.put(new StringTag("facing", "south"));
-                    case 4 -> block_states.put(new StringTag("facing", "north"));
+                    case 1 -> block_states.putString("facing", "east");
+                    case 2 -> block_states.putString("facing", "west");
+                    case 3 -> block_states.putString("facing", "south");
+                    case 4 -> block_states.putString("facing", "north");
 
                 }
             }
@@ -1162,33 +1173,33 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0,4,8,12 -> block_states.put(new StringTag("facing", "south"));
-                    case 1,5,9,13 -> block_states.put(new StringTag("facing", "north"));
-                    case 2,6,10,14 -> block_states.put(new StringTag("facing", "east"));
-                    case 3,7,11,15 -> block_states.put(new StringTag("facing", "west"));
+                    case 0,4,8,12 -> block_states.putString("facing", "south");
+                    case 1,5,9,13 -> block_states.putString("facing", "north");
+                    case 2,6,10,14 -> block_states.putString("facing", "east");
+                    case 3,7,11,15 -> block_states.putString("facing", "west");
 
                 }
 
                 //half
                 if (data >= 8) {
-                    block_states.put(new StringTag("half", "top"));
+                    block_states.putString("half", "top");
                 } else {
-                    block_states.put(new StringTag("half", "bottom"));
+                    block_states.putString("half", "bottom");
                 }
 
                 //open
                 switch (data) {
 
-                    case 4,5,6,7,12,13,14,15 -> block_states.put(new StringTag("open", "true"));
-                    default -> block_states.put(new StringTag("open", "false"));
+                    case 4,5,6,7,12,13,14,15 -> block_states.putString("open", "true");
+                    default -> block_states.putString("open", "false");
 
                 }
 
                 //powered
-                block_states.put(new StringTag("powered", "false"));
+                block_states.putString("powered", "false");
 
                 //waterlogged
-                block_states.put(new StringTag("waterlogged", "false"));
+                block_states.putString("waterlogged", "false");
 
             }
 
@@ -1198,36 +1209,36 @@ public class MinecraftIDConverter {
                 //attached
                 switch (data) {
 
-                    case 4,5,6,7,12,13,14,15 -> block_states.put(new StringTag("attached", "true"));
-                    default -> block_states.put(new StringTag("attached", "false"));
+                    case 4,5,6,7,12,13,14,15 -> block_states.putString("attached", "true");
+                    default -> block_states.putString("attached", "false");
 
                 }
 
                 //disarmed
                 if (data >= 8) {
-                    block_states.put(new StringTag("disarmed", "true"));
+                    block_states.putString("disarmed", "true");
                 } else {
-                    block_states.put(new StringTag("disarmed", "false"));
+                    block_states.putString("disarmed", "false");
                 }
 
                 //east
-                block_states.put(new StringTag("east", "false"));
+                block_states.putString("east", "false");
 
                 //north
-                block_states.put(new StringTag("north", "false"));
+                block_states.putString("north", "false");
 
                 //powered
                 if (data % 2 == 1) {
-                    block_states.put(new StringTag("powered", "true"));
+                    block_states.putString("powered", "true");
                 } else {
-                    block_states.put(new StringTag("powered", "false"));
+                    block_states.putString("powered", "false");
                 }
 
                 //south
-                block_states.put(new StringTag("south", "false"));
+                block_states.putString("south", "false");
 
                 //west
-                block_states.put(new StringTag("west", "false"));
+                block_states.putString("west", "false");
 
             }
 
@@ -1237,26 +1248,26 @@ public class MinecraftIDConverter {
                 //attached
                 switch (data) {
 
-                    case 4,5,6,7,12,13,14,15 -> block_states.put(new StringTag("attached", "true"));
-                    default -> block_states.put(new StringTag("attached", "false"));
+                    case 4,5,6,7,12,13,14,15 -> block_states.putString("attached", "true");
+                    default -> block_states.putString("attached", "false");
 
                 }
 
                 //facing
                 switch (data) {
 
-                    case 0,4,8,12 -> block_states.put(new StringTag("facing", "south"));
-                    case 1,5,9,13 -> block_states.put(new StringTag("facing", "west"));
-                    case 2,6,10,14 -> block_states.put(new StringTag("facing", "north"));
-                    case 3,7,11,15 -> block_states.put(new StringTag("facing", "east"));
+                    case 0,4,8,12 -> block_states.putString("facing", "south");
+                    case 1,5,9,13 -> block_states.putString("facing", "west");
+                    case 2,6,10,14 -> block_states.putString("facing", "north");
+                    case 3,7,11,15 -> block_states.putString("facing", "east");
 
                 }
 
                 //powered
                 if (data >= 8) {
-                    block_states.put(new StringTag("powered", "true"));
+                    block_states.putString("powered", "true");
                 } else {
-                    block_states.put(new StringTag("powered", "false"));
+                    block_states.putString("powered", "false");
                 }
 
             }
@@ -1266,55 +1277,55 @@ public class MinecraftIDConverter {
 
                 //east
                 if ((data & (byte) 8) == (byte) 8) {
-                    block_states.put(new StringTag("east", "true"));
+                    block_states.putString("east", "true");
                 } else {
-                    block_states.put(new StringTag("east", "false"));
+                    block_states.putString("east", "false");
                 }
 
                 //north
                 if ((data & (byte) 4) == (byte) 4) {
-                    block_states.put(new StringTag("north", "true"));
+                    block_states.putString("north", "true");
                 } else {
-                    block_states.put(new StringTag("north", "false"));
+                    block_states.putString("north", "false");
                 }
 
                 //south
                 if (data % 2 == 1) {
-                    block_states.put(new StringTag("south", "true"));
+                    block_states.putString("south", "true");
                 } else {
-                    block_states.put(new StringTag("false", "true"));
+                    block_states.putString("false", "true");
                 }
 
                 //up
-                block_states.put(new StringTag("up", "false"));
+                block_states.putString("up", "false");
 
                 //west
                 if ((data & (byte) 2) == (byte) 2) {
-                    block_states.put(new StringTag("west", "true"));
+                    block_states.putString("west", "true");
                 } else {
-                    block_states.put(new StringTag("west", "false"));
+                    block_states.putString("west", "false");
                 }
             }
 
             //Walls
             case (byte) 139 -> {
 
-                block_states.put(new StringTag("east", "false"));
-                block_states.put(new StringTag("north", "false"));
-                block_states.put(new StringTag("south", "false"));
-                block_states.put(new StringTag("up", "false"));
-                block_states.put(new StringTag("waterlogged", "false"));
-                block_states.put(new StringTag("west", "false"));
+                block_states.putString("east", "false");
+                block_states.putString("north", "false");
+                block_states.putString("south", "false");
+                block_states.putString("up", "false");
+                block_states.putString("waterlogged", "false");
+                block_states.putString("west", "false");
 
             }
 
             //Water
-            case 8, 9 -> block_states.put(new StringTag("level", String.valueOf(data)));
+            case 8, 9 -> block_states.putString("level", String.valueOf(data));
 
         }
 
 
-        return new CompoundTag("Properties", block_states);
+        return block_states;
     }
 
     //Get the 1.18.2 block name.

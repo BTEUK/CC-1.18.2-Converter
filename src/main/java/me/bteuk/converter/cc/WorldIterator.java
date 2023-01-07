@@ -1,8 +1,5 @@
 package me.bteuk.converter.cc;
 
-import com.flowpowered.nbt.CompoundMap;
-import com.flowpowered.nbt.CompoundTag;
-import com.flowpowered.nbt.stream.NBTInputStream;
 import cubicchunks.regionlib.api.region.IRegionProvider;
 import cubicchunks.regionlib.api.region.key.RegionKey;
 import cubicchunks.regionlib.impl.EntryLocation2D;
@@ -15,6 +12,12 @@ import cubicchunks.regionlib.lib.provider.SimpleRegionProvider;
 import me.bteuk.converter.Main;
 import me.bteuk.converter.utils.LegacyID;
 import me.bteuk.converter.utils.MinecraftIDConverter;
+import net.querz.nbt.io.NBTInputStream;
+import net.querz.nbt.io.NamedTag;
+import net.querz.nbt.tag.CompoundTag;
+import net.querz.nbt.tag.ListTag;
+import net.querz.nbt.tag.Tag;
+import org.json.simple.JSONArray;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -33,7 +36,7 @@ public class WorldIterator {
     boolean unique;
     ArrayList<LegacyID> uniqueBlocks = new ArrayList<>();
     HashMap<LegacyID, Integer> paletteID = new HashMap<>();
-    List<CompoundTag> palette = new ArrayList<>();
+    ListTag<CompoundTag> palette = new ListTag<>(CompoundTag.class);
     byte meta;
     byte[] blocks;
     byte[] data;
@@ -44,14 +47,23 @@ public class WorldIterator {
 
      */
 
-    public WorldIterator(String path) {
+    public WorldIterator(String inputPath, String outputPath) {
 
         //Get the path from the String.
-        Path file = Paths.get(path);
+        Path file = Paths.get(inputPath);
+        Path output = Paths.get(outputPath);
 
         //Check if file exists.
-        if (!Files.exists(file)) {
+        if (!Files.exists(file) && !Files.exists(output)) {
             return;
+        }
+
+        //Create output sub-folders.
+        try {
+            Files.createDirectories(output.resolve("post-processing"));
+            Files.createDirectories(output.resolve("region"));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         SaveCubeColumns saveCubeColumns = createSave(file);
@@ -69,10 +81,14 @@ public class WorldIterator {
 
         for (String sFile : files) {
 
+            //Create new json array to store blocks for post-processing in.
+            JSONArray ja = new JSONArray();
+
             //Iterate through all possible chunk columns in the file and continue with any that contain data.
             //A region2d is 512x512 which is 32*32 in terms of chunks, so 1024 individual chunks to iterate.
             for (int i = 0; i < 1024; i++) {
 
+                long[] newData;
                 RegionKey key = new RegionKey(sFile);
                 EntryLocation2D e2d = provider2d.fromRegionAndId(key, i);
 
@@ -83,6 +99,9 @@ public class WorldIterator {
 
                     //Gets the data from the 2dr file.
                     Optional<ByteBuffer> column = saveCubeColumns.load(e2d, true);
+
+                    //Create a list of Block Entities for this chunk.
+                    List<CompoundTag> block_entities = new ArrayList<>();
 
                     //If the columndata is not empty
                     if (column.isPresent()) {
@@ -101,8 +120,8 @@ public class WorldIterator {
                             if (cube.isPresent()) {
 
                                 //Retrieve the data from the cube.
-                                CompoundTag cubeTag = readCompressedCC(new ByteArrayInputStream(cube.get().array()));
-                                CompoundMap cubeLevel = (CompoundMap) cubeTag.getValue().get("Level").getValue();
+                                CompoundTag cubeTag = (CompoundTag) readCompressedCC(new ByteArrayInputStream(cube.get().array())).getTag();
+                                CompoundTag cubeLevel = cubeTag.getCompoundTag("Level");
 
                                 if (cubeLevel == null) {
                                     continue;
@@ -113,13 +132,13 @@ public class WorldIterator {
                                 }
 
                                 //Get the sections from the cube.
-                                List<CompoundTag> oldSections = (List<CompoundTag>) cubeLevel.get("Sections").getValue();
+                                ListTag<CompoundTag> oldSections = (ListTag<CompoundTag>) cubeLevel.getListTag("Sections");
 
-                                CompoundMap oldSection = oldSections.get(0).getValue();
+                                CompoundTag oldSection = oldSections.get(0);
 
                                 //Get unique blocks in section using Blocks and Data.
-                                blocks = (byte[]) oldSection.get("Blocks").getValue();
-                                data = (byte[]) oldSection.get("Data").getValue();
+                                blocks = oldSection.getByteArray("Blocks");
+                                data = oldSection.getByteArray("Data");
 
                                 //Clear uniqueBlocks.
                                 uniqueBlocks.clear();
@@ -136,9 +155,17 @@ public class WorldIterator {
                                     //Add block if unique.
                                     addUnique(blocks[j], meta);
 
-                                    //TODO Store blocks such as double plants, stairs, ect.
-                                    // They will be fixed in post-processing.
+                                    //If block requires post-processing add it to the txt file.
+                                    if (MinecraftIDConverter.requiredPostProcessing(blocks[j], meta)) {
 
+                                        //If the block is a block entity, also get that data.
+                                        if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
+
+                                            //TODO Store blocks such as double plants, stairs, ect.
+                                            // They will be fixed in post-processing.
+
+                                        }
+                                    }
                                 }
 
                                 //Convert the list of unique blocks to a 1.18.2 block palette.
@@ -163,7 +190,7 @@ public class WorldIterator {
                                     //A long allows for 64 bits in total.
                                     int blockSize = log2(uniqueBlocks.size());
                                     int blocksPerLong = 64 / blockSize;
-                                    long[] newData = new long[(4096 + blocksPerLong - 1) / blocksPerLong];
+                                    newData = new long[(4096 + blocksPerLong - 1) / blocksPerLong];
                                     System.out.println(newData.length);
 
                                     counter = 0;
@@ -207,7 +234,17 @@ public class WorldIterator {
                                             newData[index] = blockStorage;
                                         }
 
-                                        //TODO: Check if the block is a block entity, if true also add it to the block entities list.
+                                        //Check if the block is a block entity, if true also add it to the block entities list.
+                                        if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
+
+                                            //If the block entity is going to be set in post-processing then add default values.
+                                            if (MinecraftIDConverter.requiredPostProcessing(blocks[j], meta)) {
+
+
+
+                                            }
+                                        }
+
 
                                     }
 
@@ -226,7 +263,20 @@ public class WorldIterator {
 
                                 }
 
-                                //TODO: Add section to sections.
+                                //Construct section.
+                                CompoundTag section = new CompoundTag();
+
+                                section.putByte("Y", (byte) y);
+
+                                //Create block_states compound tag.
+                                CompoundTag block_states = new CompoundTag();
+                                block_states.put("palette", palette);
+                                if (palette.size() > 1) {
+                                    block_states.putLongArray("data", newData);
+                                }
+
+                                //Add section to sections.
+
 
 
                             } else {
@@ -260,6 +310,21 @@ public class WorldIterator {
                     e.printStackTrace();
                 }
             }
+
+            try {
+
+                //Write the region to a file.
+
+                //Write the json array to a file.
+                FileWriter ppFile = new FileWriter(output.resolve("post-processing").toString() + "/" + sFile.replace(".2dr", ".txt"));
+                ppFile.write(ja.toJSONString());
+                ppFile.flush();
+                ppFile.close();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
         }
     }
 
@@ -325,9 +390,9 @@ public class WorldIterator {
 
     }
 
-    private CompoundTag readCompressedCC(InputStream is) throws IOException {
-        try (NBTInputStream nbtInputStream = new NBTInputStream(new BufferedInputStream(new GZIPInputStream(is)), false)) {
-            return (CompoundTag) nbtInputStream.readTag();
+    private NamedTag readCompressedCC(InputStream is) throws IOException {
+        try (NBTInputStream nbtInputStream = new NBTInputStream(new BufferedInputStream(new GZIPInputStream(is)))) {
+            return nbtInputStream.readTag(Tag.DEFAULT_MAX_DEPTH);
         }
     }
 
