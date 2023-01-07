@@ -39,7 +39,7 @@ public class MinecraftIDConverter {
         block.putString("Name", getNameSpace(id.getID(), id.getData()));
 
         //If block has properties, add them.
-        if (hasBlockStates(id.getID())) {
+        if (hasBlockStates(id.getID(), id.getData())) {
             block.put("Properties", getBlockStates(id.getID(), id.getData()));
         }
 
@@ -53,7 +53,16 @@ public class MinecraftIDConverter {
     }
 
     //Check if the block has block states in 1.18.2, in this case it needs a properties tag in the palette.
-    public static boolean hasBlockStates(byte id) {
+    public static boolean hasBlockStates(byte id, byte data) {
+
+        //Unique case for dirt.
+        if (id == 3) {
+            if (data == 2) {
+                return true;
+            } else {
+                return false;
+            }
+        }
 
         switch (id) {
 

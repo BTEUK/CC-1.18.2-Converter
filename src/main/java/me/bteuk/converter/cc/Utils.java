@@ -1,17 +1,14 @@
 package me.bteuk.converter.cc;
 
-import com.flowpowered.nbt.ByteArrayTag;
-import com.flowpowered.nbt.ByteTag;
-import com.flowpowered.nbt.CompoundMap;
-import com.flowpowered.nbt.CompoundTag;
-import com.flowpowered.nbt.IntArrayTag;
-import com.flowpowered.nbt.IntTag;
-import com.flowpowered.nbt.ListTag;
-import com.flowpowered.nbt.stream.NBTInputStream;
-import com.flowpowered.nbt.stream.NBTOutputStream;
 import cubicchunks.regionlib.impl.EntryLocation3D;
 import cubicchunks.regionlib.util.CheckedConsumer;
 import cubicchunks.regionlib.util.CheckedFunction;
+import net.querz.nbt.io.NBTInputStream;
+import net.querz.nbt.io.NBTOutputStream;
+import net.querz.nbt.tag.CompoundTag;
+import net.querz.nbt.tag.IntArrayTag;
+import net.querz.nbt.tag.ListTag;
+import net.querz.nbt.tag.Tag;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -199,12 +196,12 @@ public class Utils {
             throw new UnsupportedOperationException();
         }
 
-        return (CompoundTag) new NBTInputStream(data, false).readTag();
+        return (CompoundTag) new NBTInputStream(data).readTag(Tag.DEFAULT_MAX_DEPTH).getTag();
     }
 
     public static CompoundTag readCompressedCC(InputStream is) throws IOException {
-        try (NBTInputStream nbtInputStream = new NBTInputStream(new BufferedInputStream(new GZIPInputStream(is)), false)) {
-            return (CompoundTag) nbtInputStream.readTag();
+        try (NBTInputStream nbtInputStream = new NBTInputStream(new BufferedInputStream(new GZIPInputStream(is)))) {
+            return (CompoundTag) nbtInputStream.readTag(Tag.DEFAULT_MAX_DEPTH).getTag();
         }
     }
 
@@ -213,8 +210,8 @@ public class Utils {
         if (prefixFormat) {
             bytes.write(1); // mark as GZIP
         }
-        try (NBTOutputStream nbtOut = new NBTOutputStream(new BufferedOutputStream(new GZIPOutputStream(bytes)), false)) {
-            nbtOut.writeTag(tag);
+        try (NBTOutputStream nbtOut = new NBTOutputStream(new BufferedOutputStream(new GZIPOutputStream(bytes)))) {
+            nbtOut.writeTag(tag, Tag.DEFAULT_MAX_DEPTH);
         }
         return ByteBuffer.wrap(bytes.toByteArray());
     }
@@ -229,49 +226,38 @@ public class Utils {
     }
 
     public static CompoundTag emptyCube(int x, int y, int z) {
-        CompoundMap root = new CompoundMap();
+        CompoundTag root = new CompoundTag();
         {
-            CompoundMap level = new CompoundMap();
+            CompoundTag level = new CompoundTag();
 
             {
-                level.put(new ByteTag("v", (byte) 1));
-                level.put(new IntTag("x", x));
-                level.put(new IntTag("y", y));
-                level.put(new IntTag("z", z));
+                level.putByte("v", (byte) 1);
+                level.putInt("x", x);
+                level.putInt("y", y);
+                level.putInt("z", z);
 
-                level.put(new ByteTag("populated", true));
-                level.put(new ByteTag("fullyPopulated", true));
-                level.put(new ByteTag("isSurfaceTracked", true)); // it's empty, no need to re-track
+                level.putBoolean("populated", true);
+                level.putBoolean("fullyPopulated", true);
+                level.putBoolean("isSurfaceTracked", true); // it's empty, no need to re-track
 
+                level.put("Sections", new ListTag<CompoundTag>(CompoundTag.class));
 
-                level.put(new ListTag<>("Sections", CompoundTag.class, Collections.singletonList(createEmptySectionTag())));
+                level.putBoolean("initLightDone", false);
 
-                level.put(new ByteTag("initLightDone", false));
+                level.put("Entities", new ListTag<>(CompoundTag.class));
+                level.put("TileEntities", new ListTag<>(CompoundTag.class));
 
-                level.put(new ListTag<>("Entities", CompoundTag.class, emptyList()));
-                level.put(new ListTag<>("TileEntities", CompoundTag.class, emptyList()));
-
-                level.put(makeEmptyLightingInfo());
+                level.put("LightingInfo", makeEmptyLightingInfo());
             }
-            root.put(new CompoundTag("Level", level));
+            root.put("Level", level);
         }
-        return new CompoundTag("", root);
+        return root;
     }
 
-    public static CompoundTag createEmptySectionTag() {
-        CompoundMap sectionData = new CompoundMap();
-        sectionData.put("Blocks", new ByteArrayTag("Blocks", new byte[4096]));
-        sectionData.put("Data", new ByteArrayTag("Data", new byte[2048]));
-        sectionData.put("BlockLight", new ByteArrayTag("BlockLight", new byte[2048]));
-        sectionData.put("SkyLight", new ByteArrayTag("SkyLight", new byte[2048]));
-
-        return new CompoundTag("", sectionData);
-    }
     private static CompoundTag makeEmptyLightingInfo() {
-        IntArrayTag heightmap = new IntArrayTag("LastHeightMap", new int[256]);
-        CompoundMap lightingInfoMap = new CompoundMap();
-        lightingInfoMap.put(heightmap);
-        return new CompoundTag("LightingInfo", lightingInfoMap);
+        CompoundTag lightingInfoMap = new CompoundTag();
+        lightingInfoMap.putIntArray("LastHeightMap", new int[256]);
+        return lightingInfoMap;
     }
 
     /**

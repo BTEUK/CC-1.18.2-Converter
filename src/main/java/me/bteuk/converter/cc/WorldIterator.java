@@ -4,7 +4,10 @@ import cubicchunks.regionlib.api.region.IRegionProvider;
 import cubicchunks.regionlib.api.region.key.RegionKey;
 import cubicchunks.regionlib.impl.EntryLocation2D;
 import cubicchunks.regionlib.impl.EntryLocation3D;
+import cubicchunks.regionlib.impl.MinecraftChunkLocation;
 import cubicchunks.regionlib.impl.SaveCubeColumns;
+import cubicchunks.regionlib.impl.header.TimestampHeaderEntryProvider;
+import cubicchunks.regionlib.impl.save.MinecraftSaveSection;
 import cubicchunks.regionlib.impl.save.SaveSection2D;
 import cubicchunks.regionlib.impl.save.SaveSection3D;
 import cubicchunks.regionlib.lib.ExtRegion;
@@ -13,6 +16,7 @@ import me.bteuk.converter.Main;
 import me.bteuk.converter.utils.LegacyID;
 import me.bteuk.converter.utils.MinecraftIDConverter;
 import net.querz.nbt.io.NBTInputStream;
+import net.querz.nbt.io.NBTOutputStream;
 import net.querz.nbt.io.NamedTag;
 import net.querz.nbt.tag.CompoundTag;
 import net.querz.nbt.tag.ListTag;
@@ -25,7 +29,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+
+import static cubicchunks.regionlib.impl.save.MinecraftSaveSection.MinecraftRegionType.MCA;
 
 public class WorldIterator {
 
@@ -37,9 +45,12 @@ public class WorldIterator {
     ArrayList<LegacyID> uniqueBlocks = new ArrayList<>();
     HashMap<LegacyID, Integer> paletteID = new HashMap<>();
     ListTag<CompoundTag> palette = new ListTag<>(CompoundTag.class);
+    ListTag<CompoundTag> airPalette = new ListTag<>(CompoundTag.class);
     byte meta;
     byte[] blocks;
     byte[] data;
+    int entryX;
+    int entryZ;
 
     /*
 
@@ -48,6 +59,12 @@ public class WorldIterator {
      */
 
     public WorldIterator(String inputPath, String outputPath) {
+
+        //Add air to airPalette for empty sections.
+        CompoundTag block = new CompoundTag();
+        //Add block name as String tag.
+        block.putString("Name", "minecraft:air");
+        airPalette.add(block);
 
         //Get the path from the String.
         Path file = Paths.get(inputPath);
@@ -77,7 +94,6 @@ public class WorldIterator {
 
         //Create 2d and 3d region provider.
         EntryLocation2D.Provider provider2d = new EntryLocation2D.Provider();
-        EntryLocation3D.Provider provider3d = new EntryLocation3D.Provider();
 
         for (String sFile : files) {
 
@@ -88,20 +104,24 @@ public class WorldIterator {
             //A region2d is 512x512 which is 32*32 in terms of chunks, so 1024 individual chunks to iterate.
             for (int i = 0; i < 1024; i++) {
 
-                long[] newData;
+                CompoundTag chunk = new CompoundTag();
+
+                long[] newData = null;
                 RegionKey key = new RegionKey(sFile);
                 EntryLocation2D e2d = provider2d.fromRegionAndId(key, i);
+                entryX = e2d.getEntryX();
+                entryZ = e2d.getEntryZ();
 
                 try {
 
                     //Create list of sections to store the new sections in.
-                    List<CompoundTag> sections = new ArrayList<>();
+                    ListTag<CompoundTag> sections = new ListTag<>(CompoundTag.class);
 
                     //Gets the data from the 2dr file.
                     Optional<ByteBuffer> column = saveCubeColumns.load(e2d, true);
 
                     //Create a list of Block Entities for this chunk.
-                    List<CompoundTag> block_entities = new ArrayList<>();
+                    ListTag<CompoundTag> block_entities = new ListTag<>(CompoundTag.class);
 
                     //If the columndata is not empty
                     if (column.isPresent()) {
@@ -124,10 +144,12 @@ public class WorldIterator {
                                 CompoundTag cubeLevel = cubeTag.getCompoundTag("Level");
 
                                 if (cubeLevel == null) {
+                                    sections.add(createEmptySection(y));
                                     continue;
                                 }
 
                                 if (cubeLevel.get("Sections") == null) {
+                                    sections.add(createEmptySection(y));
                                     continue;
                                 }
 
@@ -169,7 +191,8 @@ public class WorldIterator {
                                 }
 
                                 //Convert the list of unique blocks to a 1.18.2 block palette.
-                                palette.clear();
+                                palette = new ListTag<>(CompoundTag.class);
+                                paletteID = new HashMap<>();
 
                                 int counter = 0;
                                 for (LegacyID id : uniqueBlocks) {
@@ -189,9 +212,9 @@ public class WorldIterator {
                                     //Find the number of blocks that will be stored in each long array. If the count is 16 or less then each block will use 4 bits.
                                     //A long allows for 64 bits in total.
                                     int blockSize = log2(uniqueBlocks.size());
+                                    if (blockSize < 4) { blockSize = 4; }
                                     int blocksPerLong = 64 / blockSize;
                                     newData = new long[(4096 + blocksPerLong - 1) / blocksPerLong];
-                                    System.out.println(newData.length);
 
                                     counter = 0;
                                     //To remember the index of the long.
@@ -241,26 +264,21 @@ public class WorldIterator {
                                             if (MinecraftIDConverter.requiredPostProcessing(blocks[j], meta)) {
 
 
-
                                             }
                                         }
 
 
                                     }
 
-                                    //Print the output of the long array.
-                                    System.out.println(Arrays.toString(blocks));
-                                    System.out.println(Arrays.toString(newData));
-
                                 } else {
 
                                     //If the single block is not air, set the chunk to not empty.
                                     if (uniqueBlocks.get(0).getID() != 0) {
                                         isEmpty = false;
+                                    } else {
+                                        sections.add(createEmptySection(y));
+                                        continue;
                                     }
-
-                                    continue;
-
                                 }
 
                                 //Construct section.
@@ -275,13 +293,17 @@ public class WorldIterator {
                                     block_states.putLongArray("data", newData);
                                 }
 
+                                section.put("block_states", block_states);
+
+                                //TODO Add biome, BlockLight and SkyLight
+
                                 //Add section to sections.
-
-
+                                sections.add(section);
 
                             } else {
 
-                                //Skip this cube.
+                                //Add empty section
+                                sections.add(createEmptySection(y));
                                 continue;
 
                             }
@@ -290,7 +312,11 @@ public class WorldIterator {
                         //If the whole chunk is empty, don't save it.
                         if (!isEmpty) {
 
+                            //Add sections to chunk.
+                            chunk.put("sections", sections);
+
                             //Save the chunk in the region file.
+                            save(output.resolve("region"), writeCompressed(chunk, true));
 
                         }
 
@@ -312,8 +338,6 @@ public class WorldIterator {
             }
 
             try {
-
-                //Write the region to a file.
 
                 //Write the json array to a file.
                 FileWriter ppFile = new FileWriter(output.resolve("post-processing").toString() + "/" + sFile.replace(".2dr", ".txt"));
@@ -419,5 +443,53 @@ public class WorldIterator {
 
     private int log2(int value) {
         return Integer.SIZE - Integer.numberOfLeadingZeros(value);
+    }
+
+    private void save(Path regionDir, ByteBuffer data) throws IOException {
+        Utils.createDirectories(regionDir);
+        MinecraftSaveSection save = new MinecraftSaveSection(new RWLockingCachedRegionProvider<>(
+                new SimpleRegionProvider<>(new MinecraftChunkLocation.Provider(MCA.name().toLowerCase()), regionDir, (keyProvider, regionKey) ->
+                        MemoryWriteRegion.<MinecraftChunkLocation>builder()
+                                .setDirectory(regionDir)
+                                .setSectorSize(4096)
+                                .setKeyProvider(keyProvider)
+                                .setRegionKey(regionKey)
+                                .addHeaderEntry(new TimestampHeaderEntryProvider<>(TimeUnit.SECONDS))
+                                .build(),
+                        (file, key) -> Files.exists(file)
+                )
+        ));
+        save.save(new MinecraftChunkLocation(entryX, entryZ, "mca"), data);
+    }
+
+    private ByteBuffer writeCompressed(CompoundTag tag, boolean prefixFormat) throws IOException {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        if (prefixFormat) {
+            bytes.write(1); // mark as GZIP
+        }
+        try (NBTOutputStream nbtOut = new NBTOutputStream(new BufferedOutputStream(new GZIPOutputStream(bytes)))) {
+            nbtOut.writeTag(tag, Tag.DEFAULT_MAX_DEPTH);
+        }
+        return ByteBuffer.wrap(bytes.toByteArray());
+    }
+
+    private CompoundTag createEmptySection(int y) {
+
+        //Construct section.
+        CompoundTag section = new CompoundTag();
+
+        section.putByte("Y", (byte) y);
+
+        //Create block_states compound tag.
+        CompoundTag block_states = new CompoundTag();
+
+        //Add palette with just air.
+        block_states.put("palette", airPalette);
+
+        section.put("block_states", block_states);
+
+        //TODO Add biome, BlockLight and SkyLight
+
+        return section;
     }
 }

@@ -1,12 +1,8 @@
 package me.bteuk.converter;
 
-import cubicchunks.regionlib.impl.EntryLocation2D;
-import me.bteuk.converter.cc.CubicChunkReader;
 import me.bteuk.converter.cc.WorldIterator;
 
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Date;
 
 public class Main {
 
@@ -27,7 +23,24 @@ public class Main {
 
     public static void main(String[] args) {
 
-        new WorldIterator(args[0]);
+        //Start time.
+        Date date = new Date();
+        Long start_time = date.getTime();
+
+        new WorldIterator(args[0], args[1]);
+
+        date = new Date();
+        Long end_time = date.getTime();
+
+        long durationInMillis = end_time-start_time;
+
+        long millis = durationInMillis % 1000;
+        long second = (durationInMillis / 1000) % 60;
+        long minute = (durationInMillis / (1000 * 60)) % 60;
+        long hour = (durationInMillis / (1000 * 60 * 60)) % 24;
+
+        String time = String.format("%02d:%02d:%02d.%d", hour, minute, second, millis);
+        System.out.println("Time Taken: " + time);
 
     }
 }
