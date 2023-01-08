@@ -1,4 +1,4 @@
-package me.bteuk.converter.cc;
+package me.bteuk.converter;
 
 import cubicchunks.regionlib.api.region.IRegionProvider;
 import cubicchunks.regionlib.api.region.key.RegionKey;
@@ -13,6 +13,10 @@ import cubicchunks.regionlib.impl.save.SaveSection3D;
 import cubicchunks.regionlib.lib.ExtRegion;
 import cubicchunks.regionlib.lib.provider.SimpleRegionProvider;
 import me.bteuk.converter.Main;
+import me.bteuk.converter.cc.MemoryReadRegion;
+import me.bteuk.converter.cc.MemoryWriteRegion;
+import me.bteuk.converter.cc.RWLockingCachedRegionProvider;
+import me.bteuk.converter.cc.Utils;
 import me.bteuk.converter.utils.LegacyID;
 import me.bteuk.converter.utils.MinecraftIDConverter;
 import net.querz.nbt.io.NBTInputStream;
@@ -46,11 +50,16 @@ public class WorldIterator {
     HashMap<LegacyID, Integer> paletteID = new HashMap<>();
     ListTag<CompoundTag> palette = new ListTag<>(CompoundTag.class);
     ListTag<CompoundTag> airPalette = new ListTag<>(CompoundTag.class);
+    ListTag<CompoundTag> tile_entities = new ListTag<>(CompoundTag.class);
+    CompoundTag block_entity = null;
     byte meta;
     byte[] blocks;
     byte[] data;
     int entryX;
     int entryZ;
+    int cX;
+    int cY;
+    int cZ;
 
     /*
 
@@ -155,7 +164,6 @@ public class WorldIterator {
 
                                 //Get the sections from the cube.
                                 ListTag<CompoundTag> oldSections = (ListTag<CompoundTag>) cubeLevel.getListTag("Sections");
-
                                 CompoundTag oldSection = oldSections.get(0);
 
                                 //Get unique blocks in section using Blocks and Data.
@@ -176,6 +184,35 @@ public class WorldIterator {
 
                                     //Add block if unique.
                                     addUnique(blocks[j], meta);
+
+                                    //If the block is a block entity, load it.
+                                    if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
+                                        tile_entities = (ListTag<CompoundTag>) cubeLevel.getListTag("TimeEntities");
+
+                                        //Convert current block to x,y,z coordinate.
+                                        //blockPos = y*256 + z*16 + x = i
+                                        cX = (i % 16);
+                                        cZ = (i % 256) / 16;
+                                        cY = i / 16;
+
+                                        //Find the tile entity from the list.
+                                        for (CompoundTag tile_entity : tile_entities) {
+
+                                            //If the coordinates are equal.
+                                            if (tile_entity.getInt("x") == (entryX * 512 + cX) &&
+                                                    tile_entity.getInt("z") == (entryZ * 512 + cZ) &&
+                                                    tile_entity.getInt("y") == y) {
+
+                                                //Get hte block entity
+                                                block_entity = MinecraftIDConverter.getBlockEntity(blocks[j], meta, tile_entity)
+
+                                                //Add the block entity to the list.
+                                                block_entities.add(block_entity);
+                                                break;
+
+                                            }
+                                        }
+                                    }
 
                                     //If block requires post-processing add it to the txt file.
                                     if (MinecraftIDConverter.requiredPostProcessing(blocks[j], meta)) {
@@ -311,6 +348,9 @@ public class WorldIterator {
 
                         //If the whole chunk is empty, don't save it.
                         if (!isEmpty) {
+
+                            //Add block entities to the chunk.
+                            chunk.put("block_entities", block_entities);
 
                             //Add sections to chunk.
                             chunk.put("sections", sections);

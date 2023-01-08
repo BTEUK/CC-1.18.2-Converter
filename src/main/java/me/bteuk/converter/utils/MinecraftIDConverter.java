@@ -1,6 +1,7 @@
 package me.bteuk.converter.utils;
 
 import net.querz.nbt.tag.CompoundTag;
+import net.querz.nbt.tag.ListTag;
 
 public class MinecraftIDConverter {
 
@@ -95,7 +96,7 @@ public class MinecraftIDConverter {
 
         switch (id) {
 
-            case 23, 26, 29, 33, 34, 52, 54, 61, 62, 63, 64, 84, 116, 117, 119, (byte) 130, (byte) 137, (byte) 138,
+            case 23, 26, 52, 54, 61, 62, 63, 68, 116, 117, 119, (byte) 130, (byte) 137, (byte) 138,
                     (byte) 144, (byte) 146, (byte) 149, (byte) 150, (byte) 151, (byte) 154, (byte) 158, (byte) 176,
                     (byte) 177, (byte) 178, (byte) 209, (byte) 210, (byte) 211, (byte) 219, (byte) 220, (byte) 221,
                     (byte) 222, (byte) 223, (byte) 224, (byte) 225, (byte) 226, (byte) 227, (byte) 228, (byte) 229,
@@ -128,6 +129,95 @@ public class MinecraftIDConverter {
 
         return false;
 
+    }
+
+    //Get the block entity of a block
+    public static CompoundTag getBlockEntity(byte id, byte data, CompoundTag tile_entity) {
+
+        CompoundTag block_entity = new CompoundTag();
+
+        //Add the global tags that are common to all block entities.
+        block_entity.putString("id", getNameSpace(id, data));
+        block_entity.putBoolean("keepPacked", false);
+        block_entity.putInt("x", tile_entity.getInt("x"));
+        block_entity.putInt("y", tile_entity.getInt("y"));
+        block_entity.putInt("z", tile_entity.getInt("z"));
+
+        //Now for the unique tags.
+        switch (id) {
+
+            //Dispenser, Chest and Dropper (all default values since we don't care what's inside)
+            case 23, 54, (byte) 158 -> block_entity.put("Items", new ListTag<>(CompoundTag.class));
+
+            //Mob Spawner (all default values)
+            case 52 -> {
+
+                block_entity.putShort("Delay", (short) 0);
+                block_entity.putShort("MaxNearbyEntities", (short) 6);
+                block_entity.putShort("MaxSpawnDelay", (short) 800);
+                block_entity.putShort("MinSpawnDelay", (short) 200);
+                block_entity.putShort("RequiredPlayerRange", (short) 16);
+                block_entity.putShort("SpawnCount", (short) 4);
+                block_entity.putShort("SpawnRange", (short) 4);
+
+                CompoundTag spawnData = new CompoundTag();
+                spawnData.putString("id", "minecraft:pig");
+
+                block_entity.put("SpawnData", spawnData);
+
+            }
+
+            //Furnace
+            case 61, 62 -> {
+
+                block_entity.put("Items", new ListTag<>(CompoundTag.class));
+                block_entity.put("RecipesUsed", new ListTag<>(CompoundTag.class));
+                block_entity.putShort("BurnTime", (short) 0);
+                block_entity.putShort("CookTime", (short) 0);
+                block_entity.putShort("CookTimeTotal", (short) 200);
+                block_entity.putShort("BurnTime", (short) 0);
+
+            }
+
+            //Sign
+            case 63, 68 -> {
+
+                block_entity.putBoolean("GlowingText", false);
+                block_entity.putString("Color", "black");
+                block_entity.putString("Text1", tile_entity.getString("Text1"));
+                block_entity.putString("Text2", tile_entity.getString("Text2"));
+                block_entity.putString("Text3", tile_entity.getString("Text3"));
+                block_entity.putString("Text4", tile_entity.getString("Text4"));
+
+            }
+
+            //Brewing Stand
+            case 117 -> {
+
+                block_entity.put("Items", new ListTag<>(CompoundTag.class));
+                block_entity.putShort("BrewTime", (short) 0);
+                block_entity.putByte("Fuel", (byte) 0);
+
+            }
+
+            //Add other block entities which only have default values.
+            //Includes: Bed, Enchantment Table, End Portal
+            default -> {
+
+            }
+
+
+
+
+
+
+                    (byte) 130, (byte) 137, (byte) 138,
+                    (byte) 144, (byte) 146, (byte) 149, (byte) 150, (byte) 151, (byte) 154, (byte) 176,
+                    (byte) 177, (byte) 178, (byte) 209, (byte) 210, (byte) 211, (byte) 219, (byte) 220, (byte) 221,
+                    (byte) 222, (byte) 223, (byte) 224, (byte) 225, (byte) 226, (byte) 227, (byte) 228, (byte) 229,
+                    (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234, (byte) 255 -> {return true;}
+
+        }
     }
 
     //Get the block states of a block.

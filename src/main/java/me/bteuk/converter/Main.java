@@ -1,7 +1,5 @@
 package me.bteuk.converter;
 
-import me.bteuk.converter.cc.WorldIterator;
-
 import java.util.Date;
 
 public class Main {
