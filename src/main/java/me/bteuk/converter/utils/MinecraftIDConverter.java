@@ -24,7 +24,7 @@ public class MinecraftIDConverter {
         140 (Flower pot content)
         144 (Mob head types and player head texture)
         25 (Note block content)
-        93, 94 (Redstone repeated licked and powered status)
+        93, 94 (Redstone repeater licked and powered status)
         132 (Tripwire connections)
         106 (Vine on the top side)
 
@@ -96,11 +96,26 @@ public class MinecraftIDConverter {
 
         switch (id) {
 
-            case 23, 26, 52, 54, 61, 62, 63, 68, 116, 117, 119, (byte) 130, (byte) 137, (byte) 138,
-                    (byte) 144, (byte) 146, (byte) 149, (byte) 150, (byte) 151, (byte) 154, (byte) 158, (byte) 176,
+            case 23, 25, 26, 52, 54, 61, 62, 63, 68, 116, 117, 119, (byte) 130, (byte) 137, (byte) 138, (byte) 144,
+                    (byte) 146, (byte) 149, (byte) 150, (byte) 151, (byte) 154, (byte) 158, (byte) 176,
                     (byte) 177, (byte) 178, (byte) 209, (byte) 210, (byte) 211, (byte) 219, (byte) 220, (byte) 221,
                     (byte) 222, (byte) 223, (byte) 224, (byte) 225, (byte) 226, (byte) 227, (byte) 228, (byte) 229,
                     (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234, (byte) 255 -> {return true;}
+
+        }
+
+        return false;
+
+    }
+
+    //Check if the block entity should not be added to the block entity list.
+    public static boolean blockEntityNotAdded(byte id) {
+
+        switch (id) {
+
+            //Note block (not a block entity in 1.18.2).
+            //Skull, since that will be done in post-processing.
+            case 25, (byte) 144 -> { return true; }
 
         }
 
@@ -146,8 +161,10 @@ public class MinecraftIDConverter {
         //Now for the unique tags.
         switch (id) {
 
-            //Dispenser, Chest and Dropper (all default values since we don't care what's inside)
-            case 23, 54, (byte) 158 -> block_entity.put("Items", new ListTag<>(CompoundTag.class));
+            //Dispenser, (Trapped) Chest, Shulker Boxes and Dropper (all default values since we don't care what's inside)
+            case 23, 54, (byte) 146, (byte) 158, (byte) 219, (byte) 220, (byte) 221,
+                    (byte) 222, (byte) 223, (byte) 224, (byte) 225, (byte) 226, (byte) 227, (byte) 228, (byte) 229,
+                    (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234 -> block_entity.put("Items", new ListTag<>(CompoundTag.class));
 
             //Mob Spawner (all default values)
             case 52 -> {
@@ -200,24 +217,89 @@ public class MinecraftIDConverter {
 
             }
 
-            //Add other block entities which only have default values.
-            //Includes: Bed, Enchantment Table, End Portal
-            default -> {
+            //Command Block
+            case (byte) 137, (byte) 210, (byte) 211 -> {
+
+                block_entity.putBoolean("auto", false);
+                block_entity.putString("Command", "");
+                block_entity.putBoolean("conditionMet", false);
+                block_entity.putLong("LastExecution", 0);
+                block_entity.putString("LastOutput", "");
+                block_entity.putBoolean("powered", false);
+                block_entity.putInt("SuccessCount", 0);
+                block_entity.putBoolean("TrackOutput", true);
+                block_entity.putBoolean("UpdateLastExecution", true);
 
             }
 
+            //Beacon
+            case (byte) 138 -> {
 
+                block_entity.putInt("Levels", 0);
+                block_entity.putInt("Primary", -1);
+                block_entity.putInt("Secondary", -1);
 
+            }
 
+            //Redstone Comparator
+            case (byte) 149, (byte) 150 -> block_entity.putInt("OutputSignal", 0);
 
+            //Hopper
+            case (byte) 154 -> {
 
-                    (byte) 130, (byte) 137, (byte) 138,
-                    (byte) 144, (byte) 146, (byte) 149, (byte) 150, (byte) 151, (byte) 154, (byte) 176,
-                    (byte) 177, (byte) 178, (byte) 209, (byte) 210, (byte) 211, (byte) 219, (byte) 220, (byte) 221,
-                    (byte) 222, (byte) 223, (byte) 224, (byte) 225, (byte) 226, (byte) 227, (byte) 228, (byte) 229,
-                    (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234, (byte) 255 -> {return true;}
+                block_entity.put("Items", new ListTag<>(CompoundTag.class));
+                block_entity.putInt("TransferCooldown", 0);
+
+            }
+
+            //Banners
+            case (byte) 176, (byte) 177 -> block_entity.put("Patterns", new ListTag<>(CompoundTag.class));
+
+            //End Gateway
+            case (byte) 209 -> {
+
+                block_entity.putLong("Age", 0);
+                block_entity.putBoolean("ExactTeleport", true);
+
+                CompoundTag exitPortal = new CompoundTag();
+                exitPortal.putInt("X", 0);
+                exitPortal.putInt("Y", 1);
+                exitPortal.putInt("Z", 0);
+
+                block_entity.put("ExitPortal", exitPortal);
+
+            }
+
+            //Structure Block
+            case (byte) 255 -> {
+
+                block_entity.putString("author", "?");
+                block_entity.putBoolean("ignoreEntities", true);
+                block_entity.putFloat("integrity", 1);
+                block_entity.putString("metadata", "");
+                block_entity.putString("mirror", "NONE");
+                block_entity.putString("mode", "DATA");
+                block_entity.putString("name", "");
+                block_entity.putInt("posX", 0);
+                block_entity.putInt("posY", 1);
+                block_entity.putInt("posZ", 0);
+                block_entity.putBoolean("powered", false);
+                block_entity.putString("rotation", "NONE");
+                block_entity.putLong("seed", 0);
+                block_entity.putBoolean("showboundingbox", false);
+                block_entity.putInt("sizeX", 1);
+                block_entity.putInt("sizeY", 1);
+                block_entity.putInt("sizeZ", 1);
+
+            }
+
+            //Other block entities which only have default values.
+            //Includes: Bed, Enchantment Table, End Portal, Ender Chest, Daylight Detector
 
         }
+
+        return block_entity;
+
     }
 
     //Get the block states of a block.

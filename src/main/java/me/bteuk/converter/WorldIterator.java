@@ -203,11 +203,14 @@ public class WorldIterator {
                                                     tile_entity.getInt("z") == (entryZ * 512 + cZ) &&
                                                     tile_entity.getInt("y") == y) {
 
-                                                //Get hte block entity
-                                                block_entity = MinecraftIDConverter.getBlockEntity(blocks[j], meta, tile_entity)
+                                                //Get the block entity
+                                                block_entity = MinecraftIDConverter.getBlockEntity(blocks[j], meta, tile_entity);
 
                                                 //Add the block entity to the list.
-                                                block_entities.add(block_entity);
+                                                //Only if the block entity needs to be added.
+                                                if (!MinecraftIDConverter.blockEntityNotAdded(blocks[j])) {
+                                                    block_entities.add(block_entity);
+                                                }
                                                 break;
 
                                             }
