@@ -8,6 +8,9 @@ public class Main {
     public static final int MIN_Y_CUBE = -8;
     public static final int MAX_Y_CUBE = 85;
 
+    //Default biome namespace
+    public static final String DEFAULT_BIOME = "minecraft:forest";
+
     //This is where the program will start.
     //This is cli application and thus the arguments will be provided through the args variable.
 

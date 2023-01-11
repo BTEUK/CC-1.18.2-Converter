@@ -47,6 +47,197 @@ public class MinecraftIDConverter {
         return block;
     }
 
+    //Convert a legacy Minecraft biome id and get teh 1.18.2 namespace.
+    public static String getBiome(byte id) {
+
+        switch (id) {
+
+            //Ocean
+            case 0 -> {
+                return "ocean";
+            }
+
+            //Plains
+            case 1 -> {
+                return "plains";
+            }
+
+            //Desert (Hills)
+            case 2, 17, (byte) 130 -> {
+                return "desert";
+            }
+
+            //Extreme Hills
+            case 3, (byte) 131 -> {
+                return "stony_peaks";
+            }
+
+            //Forest (Hills)
+            case 4, 18 -> {
+                return "forest";
+            }
+
+            //Taiga (Hills)
+            case 5, 19, (byte) 133 -> {
+                return "taiga";
+            }
+
+            //Swampland
+            case 6, (byte) 134 -> {
+                return "swamp";
+            }
+
+            //River
+            case 7 -> {
+                return "river";
+            }
+
+            //Hell
+            case 8 -> {
+                return "nether_wastes";
+            }
+
+            //Sky
+            case 9 -> {
+                return "the_end";
+            }
+
+            //Frozen Ocean
+            case 10 -> {
+                return "frozen_ocean";
+            }
+
+            //Frozen River
+            case 11 -> {
+                return "frozen_river";
+            }
+
+            //Ice Flats
+            case 12 -> {
+                return "snowy_plains";
+            }
+
+            //Ice Mountains
+            case 13 -> {
+                return "frozen_peaks";
+            }
+
+            //Mushroom Island (Shore)
+            case 14, 15 -> {
+                return "mushroom_fields";
+            }
+
+            //Beach
+            case 16 -> {
+                return "beach";
+            }
+
+            //Extreme Hills Edge
+            case 20 -> {
+                return "windswept_hills";
+            }
+
+            //Jungle (Hills)
+            case 21, 22, (byte) 149 -> {
+                return "jungle";
+            }
+
+            //Jungle Edge
+            case 23, (byte) 151 -> {
+                return "sparse_jungle";
+            }
+
+            //Deep Ocean
+            case 24 -> {
+                return "deep_ocean";
+            }
+
+            //Stone Beach
+            case 25 -> {
+                return "stony_shore";
+            }
+
+            //Cold Beach
+            case 26 -> {
+                return "snowy_beach";
+            }
+
+            //Birch Forest (Hills)
+            case 27, 28, (byte) 155, (byte) 156 -> {
+                return "birch_forest";
+            }
+
+            //Roofed Forest
+            case 29, (byte) 157 -> {
+                return "dark_forest";
+            }
+
+            //Cold Taiga (Hills)
+            case 30, 31, (byte) 158 -> {
+                return "snowy_taiga";
+            }
+
+            //Mega Taiga (Hills)
+            case 32, 33, (byte) 160, (byte) 161 -> {
+                return "old_growth_spruce_taiga";
+            }
+
+            //Extreme Hills+
+            case 34, (byte) 162 -> {
+                return "windswept_forest";
+            }
+
+            //Savanna
+            case 35, (byte) 163 -> {
+                return "savanna";
+            }
+
+            //Savanna Plateau
+            case 36, (byte) 164 -> {
+                return "savanna_plateau";
+            }
+
+            //Mesa (Plateau)
+            case 37, 39, (byte) 167 -> {
+                return "badlands";
+            }
+
+            //Mesa Plateau F
+            case 38, (byte) 166 -> {
+                return "wooded_badlands";
+            }
+
+            //Void
+            case 127 -> {
+                return "the_void";
+            }
+
+            //Sunflower Plains
+            case (byte) 129 -> {
+                return "sunflower_plains";
+            }
+
+            //Flower Forest
+            case (byte) 132 -> {
+                return "flower_forest";
+            }
+
+            //Ice Plains Spikes
+            case (byte) 140 -> {
+                return "ice_spikes";
+            }
+
+            //Mesa Bryce
+            case (byte) 165 -> {
+                return "eroded_badlands";
+            }
+
+            default -> {
+                return "forest";
+            }
+        }
+    }
+
 
     //Convert a legacy Minecraft block id and get the 1.18.2 namespace version.
     public static String getNameSpace(byte id, byte data) {
