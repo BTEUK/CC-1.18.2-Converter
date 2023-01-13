@@ -64,6 +64,8 @@ public class WorldIterator {
     int cX;
     int cY;
     int cZ;
+    int x;
+    int z;
     String biomeName;
 
     /*
@@ -124,7 +126,7 @@ public class WorldIterator {
                 CompoundTag chunk = new CompoundTag();
 
                 long[] newData = null;
-                long[] biomeData = null;
+                long[] biomeData;
                 RegionKey key = new RegionKey(sFile);
                 EntryLocation2D e2d = provider2d.fromRegionAndId(key, i);
                 entryX = e2d.getEntryX();
@@ -151,6 +153,109 @@ public class WorldIterator {
                         biomePalette.clear();
                         biomePaletteID.clear();
 
+                        CompoundTag columnTag = (CompoundTag) readCompressedCC(new ByteArrayInputStream(column.get().array())).getTag();
+                        CompoundTag columnLevel = columnTag.getCompoundTag("Level");
+
+                        CompoundTag biomes = new CompoundTag();
+
+                        //Get the biome data.
+                        byte[] oldBiomes = columnLevel.getByteArray("Biomes");
+                        if (oldBiomes != null) {
+
+                            //Get the biomes, since Minecraft 1.18.2 stored biomes in 4x4x4 cubes
+                            // we must create a 4x4x4 array of cubes to fill a section.
+                            //However we it is stored using a palette with a reference to the palette,
+                            // so we start by constructing the palette using the number of unique biomes.
+                            for (int ind = 0; ind < oldBiomes.length; ind++) {
+
+                                //We can skip 3 out of 4 indexes since we only need a 4x4 layer rather than 16x16.
+                                //We'll skip all indixes divisible by 2 and 3, this will leave the second index out of 4 (0,1,2,3).
+                                if (ind % 4 == 1 && ind / 16 % 4 == 1) {
+
+                                    biomeName = MinecraftIDConverter.getBiome(oldBiomes[ind]);
+                                    if (!containsBiome(biomeName)) {
+                                        //Index equals biome size before adding the new biome.
+                                        biomePaletteID.put(oldBiomes[ind], biomePalette.size());
+                                        biomePalette.add(new StringTag(biomeName));
+                                    }
+
+                                } else {
+                                    continue;
+                                }
+                            }
+
+                            //Add the biome palette
+                            biomes.put("palette", biomePalette);
+
+                            //If palette has more than 1 biome we need to create a data array.
+                            if (biomePalette.size() > 1) {
+
+                                //Find the number of blocks that will be stored in each long array. If the count is 16 or less then each block will use 4 bits.
+                                //A long allows for 64 bits in total.
+                                int blockSize = log2(biomePalette.size());
+                                int blocksPerLong = 64 / blockSize;
+                                biomeData = new long[(64 + blocksPerLong - 1) / blocksPerLong];
+
+                                int counter = 0;
+                                //To remember the index of the long.
+                                int index = 0;
+                                long blockIndex;
+
+                                //To get the index from the old biome array.
+                                int oldIndex = 0;
+
+                                //Long value
+                                long blockStorage = 0;
+
+                                //Convert the data to the new section structure of Minecraft 1.18.2
+                                for (int j = 0; j < 64; j++) {
+
+                                    //If counter is equal or greater than the blocksPerLong we need to create a new long and reset the counter.
+                                    if (counter >= blocksPerLong) {
+                                        counter = 0;
+                                        blockStorage = 0;
+                                        index++;
+                                    }
+
+                                    //Get data for block.
+                                    if (j % 2 == 0) {
+                                        meta = (byte) (data[j >> 1] & 0x0f);
+                                    } else {
+                                        meta = (byte) ((data[j >> 1] >> 4) & 0x0f);
+                                    }
+
+                                    //Find the next correct index for the old biome array.
+                                    while (oldIndex % 4 != 1 || oldIndex / 16 % 4 != 1) {
+                                        //If we've reached the end of the array indexes return to 1, which is the first valid index.
+                                        if (oldIndex >= 255) {
+                                            oldIndex = 1;
+                                        }
+                                        oldIndex++;
+                                    }
+
+                                    //Get the id for the block.
+                                    blockIndex = biomePaletteID.get(oldBiomes[oldIndex]);
+                                    oldIndex++;
+
+                                    //Shift the blockIndex by blockSize * counter so the value gets put in the right place in the long.
+                                    //Using the bitwise or function we can set the values in the long.
+                                    blockIndex = blockIndex << (counter * blockSize);
+                                    blockStorage = blockStorage | blockIndex;
+
+                                    //Update the counter.
+                                    counter++;
+
+                                    //Set the long in the array when the counter is at the blocksPerLong value.
+                                    if (counter == blocksPerLong) {
+                                        biomeData[index] = blockStorage;
+                                    }
+                                }
+
+                                //Add the biome data to the biomes tag.
+                                biomes.putLongArray("data", biomeData);
+                            }
+                        }
+
                         //Get all cubes that could be in the range of heights.
                         for (int y = Main.MIN_Y_CUBE; y < Main.MAX_Y_CUBE; y++) {
 
@@ -175,103 +280,6 @@ public class WorldIterator {
                                     continue;
                                 }
 
-                                //If the biomePalette has a value.
-                                //We only do it for empty since the biomes in 1.12.2 are 2d, so we only need to get it for one cube.
-                                if (biomePalette.size() == 0) {
-                                    byte[] oldBiomes = cubeLevel.getByteArray("Biomes");
-                                    if (oldBiomes != null) {
-
-                                        //Get the biomes, since Minecraft 1.18.2 stored biomes in 4x4x4 cubes
-                                        // we must create a 4x4x4 array of cubes to fill a section.
-                                        //However we it is stored using a palette with a reference to the palette,
-                                        // so we start by constructing the palette using the number of unique biomes.
-                                        for (int ind = 0; ind < oldBiomes.length; ind++) {
-
-                                            //We can skip 3 out of 4 indexes since we only need a 4x4 layer rather than 16x16.
-                                            //We'll skip all indixes divisible by 2 and 3, this will leave the second index out of 4 (0,1,2,3).
-                                            if (ind % 4 == 1 && ind / 16 % 4 == 1) {
-
-                                                biomeName = MinecraftIDConverter.getBiome(oldBiomes[i]);
-                                                if (!containsBiome(biomeName)) {
-                                                    //Index equals biome size before adding the new biome.
-                                                    biomePaletteID.put(oldBiomes[i],biomePalette.size());
-                                                    biomePalette.add(new StringTag(biomeName));
-                                                }
-
-                                            } else {
-                                                continue;
-                                            }
-                                        }
-
-                                        //If palette has more than 1 biome we need to create a data array.
-                                        if (biomePalette.size() > 1) {
-
-                                            //Find the number of blocks that will be stored in each long array. If the count is 16 or less then each block will use 4 bits.
-                                            //A long allows for 64 bits in total.
-                                            int blockSize = log2(biomePalette.size());
-                                            int blocksPerLong = 64 / blockSize;
-                                            biomeData = new long[(64 + blocksPerLong - 1) / blocksPerLong];
-
-                                            int counter = 0;
-                                            //To remember the index of the long.
-                                            int index = 0;
-                                            long blockIndex;
-
-                                            //To get the index from the old biome array.
-                                            int oldIndex = 0;
-
-                                            //Long value
-                                            long blockStorage = 0;
-
-                                            //Convert the data to the new section structure of Minecraft 1.18.2
-                                            for (int j = 0; j < 64; j++) {
-
-                                                //If counter is equal or greater than the blocksPerLong we need to create a new long and reset the counter.
-                                                if (counter >= blocksPerLong) {
-                                                    counter = 0;
-                                                    blockStorage = 0;
-                                                    index++;
-                                                }
-
-                                                //Get data for block.
-                                                if (j % 2 == 0) {
-                                                    meta = (byte) (data[j >> 1] & 0x0f);
-                                                } else {
-                                                    meta = (byte) ((data[j >> 1] >> 4) & 0x0f);
-                                                }
-
-                                                //Find the next correct index for the old biome array.
-                                                while (oldIndex % 4 != 1 || oldIndex / 16 % 4 != 1) {
-                                                    //If we've reached the end of the array indexes return to 1, which is the first valid index.
-                                                    if (oldIndex >= 255) {
-                                                        oldIndex = 1;
-                                                    }
-                                                    oldIndex++;
-                                                }
-
-                                                //Get the id for the block.
-                                                blockIndex = biomePaletteID.get(oldBiomes[oldIndex]);
-                                                oldIndex++;
-
-                                                //Shift the blockIndex by blockSize * counter so the value gets put in the right place in the long.
-                                                //Using the bitwise or function we can set the values in the long.
-                                                blockIndex = blockIndex << (counter * blockSize);
-                                                blockStorage = blockStorage | blockIndex;
-
-                                                //Update the counter.
-                                                counter++;
-
-                                                //Set the long in the array when the counter is at the blocksPerLong value.
-                                                if (counter == blocksPerLong) {
-                                                    biomeData[index] = blockStorage;
-                                                }
-                                            }
-                                        }
-
-
-                                    }
-                                }
-
                                 //Get the sections from the cube.
                                 ListTag<CompoundTag> oldSections = (ListTag<CompoundTag>) cubeLevel.getListTag("Sections");
                                 CompoundTag oldSection = oldSections.get(0);
@@ -282,6 +290,9 @@ public class WorldIterator {
 
                                 //Clear uniqueBlocks.
                                 uniqueBlocks.clear();
+
+                                //Load tile entities.
+                                tile_entities = (ListTag<CompoundTag>) cubeLevel.getListTag("TileEntities");
 
                                 for (int j = 0; j < 4096; j++) {
 
@@ -295,23 +306,24 @@ public class WorldIterator {
                                     //Add block if unique.
                                     addUnique(blocks[j], meta);
 
+                                    //Convert block entities
                                     //If the block is a block entity, load it.
                                     if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
-                                        tile_entities = (ListTag<CompoundTag>) cubeLevel.getListTag("TimeEntities");
 
                                         //Convert current block to x,y,z coordinate.
                                         //blockPos = y*256 + z*16 + x = i
-                                        cX = (i % 16);
-                                        cZ = (i % 256) / 16;
-                                        cY = i / 16;
+                                        cY = j / 256;
+                                        cZ = (j - (cY * 256)) / 16;
+                                        cX = j - (cY * 256) - (cZ * 16);
 
                                         //Find the tile entity from the list.
                                         for (CompoundTag tile_entity : tile_entities) {
 
+                                            x = tile_entity.getInt("x") >= 0 ? tile_entity.getInt("x") % 16 : 16 + (tile_entity.getInt("x") % 16);
+                                            z = tile_entity.getInt("z") >= 0 ? tile_entity.getInt("z") % 16 : 16 + (tile_entity.getInt("z") % 16);
+
                                             //If the coordinates are equal.
-                                            if (tile_entity.getInt("x") == (entryX * 512 + cX) &&
-                                                    tile_entity.getInt("z") == (entryZ * 512 + cZ) &&
-                                                    tile_entity.getInt("y") == y) {
+                                            if ((x == cX) && (z == cZ) && (tile_entity.getInt("y") == (y * 16 + cY))) {
 
                                                 //Get the block entity
                                                 block_entity = MinecraftIDConverter.getBlockEntity(blocks[j], meta, tile_entity);
@@ -362,7 +374,9 @@ public class WorldIterator {
                                     //Find the number of blocks that will be stored in each long array. If the count is 16 or less then each block will use 4 bits.
                                     //A long allows for 64 bits in total.
                                     int blockSize = log2(uniqueBlocks.size());
-                                    if (blockSize < 4) { blockSize = 4; }
+                                    if (blockSize < 4) {
+                                        blockSize = 4;
+                                    }
                                     int blocksPerLong = 64 / blockSize;
                                     newData = new long[(4096 + blocksPerLong - 1) / blocksPerLong];
 
@@ -416,8 +430,6 @@ public class WorldIterator {
 
                                             }
                                         }
-
-
                                     }
 
                                 } else {
@@ -444,6 +456,8 @@ public class WorldIterator {
                                 }
 
                                 section.put("block_states", block_states);
+
+                                section.put("biomes", biomes);
 
                                 //TODO Add biome, BlockLight and SkyLight
 

@@ -49,6 +49,9 @@ public class MinecraftIDConverter {
 
     //Convert a legacy Minecraft biome id and get teh 1.18.2 namespace.
     public static String getBiome(byte id) {
+        return "minecraft:" + getBiomeName(id);
+    }
+    public static String getBiomeName(byte id) {
 
         switch (id) {
 
@@ -70,11 +73,6 @@ public class MinecraftIDConverter {
             //Extreme Hills
             case 3, (byte) 131 -> {
                 return "stony_peaks";
-            }
-
-            //Forest (Hills)
-            case 4, 18 -> {
-                return "forest";
             }
 
             //Taiga (Hills)
