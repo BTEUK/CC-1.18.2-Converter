@@ -22,10 +22,8 @@ import me.bteuk.converter.utils.MinecraftIDConverter;
 import net.querz.nbt.io.NBTInputStream;
 import net.querz.nbt.io.NBTOutputStream;
 import net.querz.nbt.io.NamedTag;
-import net.querz.nbt.tag.CompoundTag;
-import net.querz.nbt.tag.ListTag;
-import net.querz.nbt.tag.StringTag;
-import net.querz.nbt.tag.Tag;
+import net.querz.nbt.tag.*;
+import org.checkerframework.checker.units.qual.C;
 import org.json.simple.JSONArray;
 
 import java.io.*;
@@ -67,6 +65,9 @@ public class WorldIterator {
     int x;
     int z;
     String biomeName;
+
+    ListTag<ListTag<ShortTag>> post_processing = new ListTag<>(ListTag.class);
+    CompoundTag structures = new CompoundTag();
 
     /*
 
@@ -113,6 +114,15 @@ public class WorldIterator {
 
         //Create 2d and 3d region provider.
         EntryLocation2D.Provider provider2d = new EntryLocation2D.Provider();
+
+        //Create empty post-processing compound list.
+        for (int p = Main.MIN_Y_CUBE; p < Main.MAX_Y_CUBE; p++) {
+            post_processing.add(new ListTag<>(ShortTag.class));
+        }
+
+        //Create empty structures tag.
+        structures.put("References", new CompoundTag());
+        structures.put("starts", new CompoundTag());
 
         for (String sFile : files) {
 
@@ -459,7 +469,8 @@ public class WorldIterator {
 
                                 section.put("biomes", biomes);
 
-                                //TODO Add biome, BlockLight and SkyLight
+                                section.putByteArray("BlockLight", oldSection.getByteArray("BlockLight"));
+                                section.putByteArray("SkyLight", oldSection.getByteArray("SkyLight"));
 
                                 //Add section to sections.
                                 sections.add(section);
@@ -481,6 +492,36 @@ public class WorldIterator {
 
                             //Add sections to chunk.
                             chunk.put("sections", sections);
+
+                            //Set chunk status.
+                            chunk.putString("Status", "heightmaps");
+
+                            //Set data version
+                            chunk.putInt("DataVersion", 2975);
+
+                            //Set position of chunk.
+                            chunk.putInt("xPos", columnLevel.getInt("x"));
+                            chunk.putInt("zPos", columnLevel.getInt("z"));
+                            chunk.putInt("yPos", Main.MIN_Y_CUBE);
+
+                            //Set last update.
+                            chunk.putLong("LastUpdate", 0);
+
+                            //Add block and fluid ticks.
+                            chunk.put("fluid_ticks", new ListTag<>(CompoundTag.class));
+                            chunk.put("block_ticks", new ListTag<>(CompoundTag.class));
+
+                            //Inhabited Time
+                            chunk.putLong("InhabitedTime", 0);
+
+                            //Add Post Processing
+                            chunk.put("PostProcessing", post_processing);
+
+                            //Add Structures
+                            chunk.put("structures", structures);
+
+                            //Is Light On
+                            chunk.putBoolean("isLightOn", true);
 
                             //Save the chunk in the region file.
                             save(output.resolve("region"), writeCompressed(chunk, true));
