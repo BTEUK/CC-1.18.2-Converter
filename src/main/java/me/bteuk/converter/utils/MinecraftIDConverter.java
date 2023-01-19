@@ -254,6 +254,15 @@ public class MinecraftIDConverter {
             }
         }
 
+        //Unique case for double slabs (smooth stone and smooth sandstone)
+        if (id == 43) {
+            if (data == 8 || data == 9) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+
         switch (id) {
 
             case (byte) 139, 106, (byte) 131, (byte) 132, 96, (byte) 167, 50, 46, (byte) 255, 53, 67, 108, 109,

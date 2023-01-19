@@ -202,7 +202,7 @@ public class WorldIterator {
 
                                 //Find the number of blocks that will be stored in each long array. If the count is 16 or less then each block will use 4 bits.
                                 //A long allows for 64 bits in total.
-                                int blockSize = log2(biomePalette.size());
+                                int blockSize = log2(biomePalette.size()-1);
                                 int blocksPerLong = 64 / blockSize;
                                 biomeData = new long[(64 + blocksPerLong - 1) / blocksPerLong];
 
@@ -256,7 +256,7 @@ public class WorldIterator {
                                     counter++;
 
                                     //Set the long in the array when the counter is at the blocksPerLong value.
-                                    if (counter == blocksPerLong) {
+                                    if (counter == blocksPerLong || j == 63) {
                                         biomeData[index] = blockStorage;
                                     }
                                 }
@@ -383,7 +383,7 @@ public class WorldIterator {
 
                                     //Find the number of blocks that will be stored in each long array. If the count is 16 or less then each block will use 4 bits.
                                     //A long allows for 64 bits in total.
-                                    int blockSize = log2(uniqueBlocks.size());
+                                    int blockSize = log2(uniqueBlocks.size()-1);
                                     if (blockSize < 4) {
                                         blockSize = 4;
                                     }
@@ -427,7 +427,7 @@ public class WorldIterator {
                                         counter++;
 
                                         //Set the long in the array when the counter is at the blocksPerLong value.
-                                        if (counter == blocksPerLong) {
+                                        if (counter == blocksPerLong || j == 4095) {
                                             newData[index] = blockStorage;
                                         }
 
@@ -527,8 +527,6 @@ public class WorldIterator {
                             save(output.resolve("region"), writeCompressed(chunk, true));
 
                         }
-
-
 
                         /*CompoundTag columnTag = column.get() == null ? null : readCompressedCC(new ByteArrayInputStream(column.get().array()));
                         CompoundMap columnLevel = (CompoundMap) columnTag.getValue().get("Level").getValue();
