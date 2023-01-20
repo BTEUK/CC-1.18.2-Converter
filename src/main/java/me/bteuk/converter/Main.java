@@ -20,6 +20,7 @@ public class Main {
         args[1]: path of output folder
         args[2]: y min
         args[3]: y max
+        args[4]: number of threads to use.
      */
 
     public static void main(String[] args) {
@@ -28,7 +29,7 @@ public class Main {
         Date date = new Date();
         Long start_time = date.getTime();
 
-        new WorldIterator(args[0], args[1]);
+        new WorldIterator(args[0], args[1], 2);
 
         date = new Date();
         Long end_time = date.getTime();
