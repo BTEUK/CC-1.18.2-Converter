@@ -320,35 +320,36 @@ public class RegionConverter extends Thread {
                                 //If block requires post-processing add it to the txt file.
                                 if (MinecraftIDConverter.requiredPostProcessing(blocks[j], meta)) {
 
+                                    //Create new json object for this block and add it to the array.
+                                    JSONObject obj = new JSONObject();
+                                    obj.put("block", MinecraftIDConverter.getNameSpace(blocks[j], meta));
+
+                                    String[] regionCoords = file.replace(".2dr", "").split("\\.");
+
+                                    //Convert current block to x,y,z coordinate in the chunk.
+                                    //blockPos = y*256 + z*16 + x = i
+                                    cY = j / 256;
+                                    cZ = (j - (cY * 256)) / 16;
+                                    cX = j - (cY * 256) - (cZ * 16);
+
+                                    //Add the coordinates of the block to the object.
+                                    obj.put("x", Integer.parseInt(regionCoords[0]) * 512 + entryX * 16 + cX);
+                                    obj.put("y", cY);
+                                    obj.put("z", Integer.parseInt(regionCoords[1]) * 512 + entryZ * 16 + cX);
+
+                                    //Add properties for certain blocks.
+
+                                    //TODO Store blocks such as double plants, stairs, ect.
+                                    // They will be fixed in post-processing.
+
                                     //If the block is a block entity, also get that data.
                                     if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
 
-                                        //Create new json object for this block and add it to the array.
-                                        JSONObject obj = new JSONObject();
-                                        obj.put("block", MinecraftIDConverter.getNameSpace(blocks[j], meta));
-
-                                        String[] regionCoords = file.replace(".2dr", "").split("\\.");
-
-                                        //Convert current block to x,y,z coordinate in the chunk.
-                                        //blockPos = y*256 + z*16 + x = i
-                                        cY = j / 256;
-                                        cZ = (j - (cY * 256)) / 16;
-                                        cX = j - (cY * 256) - (cZ * 16);
-
-                                        //Add the coordinates of the block to the object.
-                                        obj.put("x", Integer.parseInt(regionCoords[0]) * 512 + entryX * 16 + cX);
-                                        obj.put("y", cY);
-                                        obj.put("z", Integer.parseInt(regionCoords[1]) * 512 + entryZ * 16 + cX);
-
-                                        //Add properties for certain blocks.
-
-                                        //TODO Store blocks such as double plants, stairs, ect.
-                                        // They will be fixed in post-processing.
-
-                                        //Add object to array.
-                                        ja.add(obj);
 
                                     }
+
+                                    //Add object to array.
+                                    ja.add(obj);
                                 }
                             }
 
