@@ -97,11 +97,11 @@ public class RegionConverter extends Thread {
         int cX;
         int cY;
         int cZ;
-        int x;
-        int z;
+        int x = 0;
+        int z = 0;
 
         EntryLocation3D e3d;
-        CompoundTag block_entity;
+        CompoundTag block_entity = null;
 
         //Create new json array to store blocks for post-processing in.
         JSONArray ja = new JSONArray();
@@ -338,14 +338,28 @@ public class RegionConverter extends Thread {
                                     obj.put("z", Integer.parseInt(regionCoords[1]) * 512 + entryZ * 16 + cX);
 
                                     //Add properties for certain blocks.
+                                    if (MinecraftIDConverter.hasProperties(blocks[j])) {
+                                        //If it's a block entity.
+                                        if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
+                                            //Find the tile entity from the list.
+                                            for (CompoundTag tile_entity : tile_entities) {
+                                                //If the coordinates are equal.
+                                                if ((x == cX) && (z == cZ) && (tile_entity.getInt("y") == (y * 16 + cY))) {
 
-                                    //TODO Store blocks such as double plants, stairs, ect.
-                                    // They will be fixed in post-processing.
 
-                                    //If the block is a block entity, also get that data.
-                                    if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
+                                                    //Add the properties.
+                                                    obj.put("properties", MinecraftIDConverter.getProperties(blocks[j], meta, tile_entity));
 
+                                                    break;
 
+                                                }
+                                            }
+                                        } else {
+
+                                            //Add the properties
+                                            obj.put("properties", MinecraftIDConverter.getProperties(blocks[j], meta, null));
+
+                                        }
                                     }
 
                                     //Add object to array.

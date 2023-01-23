@@ -439,18 +439,20 @@ public class MinecraftIDConverter {
                 //Patterns
                 JSONArray ja = new JSONArray();
                 ListTag<CompoundTag> patterns = (ListTag<CompoundTag>) block_entity.getListTag("Patterns");
-                for (CompoundTag pattern : patterns) {
-                    JSONObject p = new JSONObject();
-                    p.put("colour", colourNameSpace(pattern.getInt("Color")));
-                    p.put("pattern", pattern.getString("Pattern"));
-                    ja.add(p);
+                if (patterns != null) {
+                    for (CompoundTag pattern : patterns) {
+                        JSONObject p = new JSONObject();
+                        p.put("colour", colourNameSpace(pattern.getInt("Color")));
+                        p.put("pattern", pattern.getString("Pattern"));
+                        ja.add(p);
+                    }
                 }
 
                 jo.put("patterns", ja);
 
             }
 
-            //Wall Banner and Mob Heads
+            //Wall Banner
             case (byte) 177 -> {
 
                 switch (data) {
@@ -468,17 +470,135 @@ public class MinecraftIDConverter {
                 //Patterns
                 JSONArray ja = new JSONArray();
                 ListTag<CompoundTag> patterns = (ListTag<CompoundTag>) block_entity.getListTag("Patterns");
-                for (CompoundTag pattern : patterns) {
-                    JSONObject p = new JSONObject();
-                    p.put("colour", colourNameSpace(pattern.getInt("Color")));
-                    p.put("pattern", pattern.getString("Pattern"));
-                    ja.add(p);
+                if (patterns != null) {
+                    for (CompoundTag pattern : patterns) {
+                        JSONObject p = new JSONObject();
+                        p.put("colour", colourNameSpace(pattern.getInt("Color")));
+                        p.put("pattern", pattern.getString("Pattern"));
+                        ja.add(p);
+                    }
                 }
 
                 jo.put("patterns", ja);
             }
 
+            //Melon/Pumpkin Stems
+            case 104, 105 -> jo.put("age", data);
+
+            //Flower Pot
+            case (byte) 140 -> {
+
+                //Null case
+                if (block_entity == null) {
+                    jo.put("type","flower_pot");
+                } else {
+
+                    //Sort by item.
+                    switch (block_entity.getString("Item")) {
+
+                        case "minecraft:air" -> jo.put("type", "flower_pot");
+
+                        case "minecraft:yellow_flower" -> jo.put("type", "potted_dandelion");
+
+                        case "minecraft:red_flower" -> {
+
+                            switch (block_entity.getByte("Data")) {
+
+                                case 0 -> jo.put("type", "potted_poppy");
+                                case 1 -> jo.put("type", "potted_blue_orchid");
+                                case 2 -> jo.put("type", "potted_allium");
+                                case 3 -> jo.put("type", "potted_azure_bluet");
+                                case 4 -> jo.put("type", "potted_red_tulip");
+                                case 5 -> jo.put("type", "potted_orange_tulip");
+                                case 6 -> jo.put("type", "potted_white_tulip");
+                                case 7 -> jo.put("type", "potted_pink_tulip");
+                                case 8 -> jo.put("type", "potted_oxeye_daisy");
+
+                            }
+                        }
+
+                        case "minecraft:sapling" -> {
+
+                            switch (block_entity.getByte("Data")) {
+
+                                case 0 -> jo.put("type", "potted_oak_sapling");
+                                case 1 -> jo.put("type", "potted_spruce_sapling");
+                                case 2 -> jo.put("type", "potted_birch_sapling");
+                                case 3 -> jo.put("type", "potted_jungle_sapling");
+                                case 4 -> jo.put("type", "potted_acacia_sapling");
+                                case 5 -> jo.put("type", "potted_dark_oak_sapling");
+
+                            }
+                        }
+
+                        case "minecraft:red_mushroom" -> jo.put("type", "potted_red_mushroom");
+                        case "minecraft:brown_mushroom" -> jo.put("type", "potted_brown_mushroom");
+
+                        case "minecraft:tallgrass" -> jo.put("type", "potted_fern");
+                        case "minecraft:deadbush" -> jo.put("type", "potted_dead_bush");
+                        case "minecraft:cactus" -> jo.put("type", "potted_cactus");
+
+                    }
+                }
+            }
+
+            //Mob and Player Heads
+            case (byte) 144 -> {
+
+                switch (data) {
+
+                    case 2 -> jo.put("facing", "north");
+                    case 3 -> jo.put("facing", "south");
+                    case 4 -> jo.put("facing", "west");
+                    case 5 -> jo.put("facing", "east");
+                    default -> jo.put("facing", "floor");
+
+                }
+
+                //Skull type.
+                switch (block_entity.getByte("SkullType")) {
+
+                    case 0 -> jo.put("type", "skeleton_skull");
+                    case 1 -> jo.put("type", "wither_skeleton_skull");
+                    case 2 -> jo.put("type", "zombie_head");
+                    case 3 -> {
+
+                        jo.put("type", "player_head");
+
+                        //Get owner data.
+                        CompoundTag owner = block_entity.getCompoundTag("Owner");
+
+                        if (owner != null) {
+
+                            jo.put("id", owner.getString("Id"));
+
+                            CompoundTag properties = owner.getCompoundTag("Properties");
+                            ListTag<CompoundTag> textures = (ListTag<CompoundTag>) properties.getListTag("textures");
+
+                            //Get first texture.
+                            CompoundTag texture = textures.get(0);
+
+                            jo.put("texture", texture.getString("Value"));
+
+                        }
+
+                    }
+                    case 4 -> jo.put("type", "creeper_head");
+                    case 5 -> jo.put("type", "dragon_head");
+
+                }
+
+                //Rotation
+                jo.put("rotation", block_entity.getByte("Rot"));
+
+            }
+
+            //Note Block
+            case 25 -> jo.put("note", block_entity.getByte("note"));
+
         }
+
+        return jo;
 
     }
 
