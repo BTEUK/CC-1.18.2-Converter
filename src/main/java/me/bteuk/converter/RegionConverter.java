@@ -335,7 +335,7 @@ public class RegionConverter extends Thread {
                                     //Add the coordinates of the block to the object.
                                     obj.put("x", (entryX * 16) + cX);
                                     obj.put("y", (y*16) + cY);
-                                    obj.put("z", (entryZ * 16) + cX);
+                                    obj.put("z", (entryZ * 16) + cZ);
 
                                     //Add properties for certain blocks.
                                     if (MinecraftIDConverter.hasProperties(blocks[j])) {
