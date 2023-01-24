@@ -86,7 +86,7 @@ public class Converter implements CommandExecutor {
                     JSONObject jObject = (JSONObject) object;
 
                     //Get the location of the block.
-                    Location l = new Location(world, (int) jObject.get("x"), (int) jObject.get("y"), (int) jObject.get("z"));
+                    Location l = new Location(world, (int)(long)jObject.get("x"), (int)(long)jObject.get("y"), (int)(long)jObject.get("z"));
 
                     //Set the block to its correct state.
                     setBlockData(jObject, l);
@@ -94,7 +94,7 @@ public class Converter implements CommandExecutor {
                 }
 
                 //Delete file when done.
-                File fFile = new File(file);
+                File fFile = new File(folder + "/" + file);
                 fFile.delete();
 
             } catch (IOException | ParseException e) {
@@ -112,11 +112,11 @@ public class Converter implements CommandExecutor {
 
         switch ((String) object.get("block")) {
 
-            case "sunflower" -> {
+            case "minecraft:sunflower" -> {
 
                 //Check the block below:
                 Location lYMin = new Location(world, l.getX(), l.getY() - 1, l.getZ());
-                BlockData bYMin = world.getBlockData(lYMin);
+                BlockData bYMin = world.getBlockAt(lYMin).getBlockData();
 
                 if (bYMin.getMaterial() == Material.SUNFLOWER) {
                     setTopFlower(Material.SUNFLOWER, l);
@@ -133,9 +133,9 @@ public class Converter implements CommandExecutor {
                 }
             }
 
-            case "oak_stairs", "cobblestone_stairs", "brick_stairs", "stone_brick_stairs", "nether_brick_stairs",
-                    "sandstone_stairs", "spruce_stairs", "birch_stairs", "jungle_stairs", "quartz_stairs", "acacia_stairs",
-                    "dark_oak_stairs", "red_sandstone_stairs", "purpur_stairs", "iron_bars" -> {
+            case "minecraft:oak_stairs", "minecraft:cobblestone_stairs", "minecraft:brick_stairs", "minecraft:stone_brick_stairs", "minecraft:nether_brick_stairs",
+                    "minecraft:sandstone_stairs", "minecraft:spruce_stairs", "minecraft:birch_stairs", "minecraft:jungle_stairs", "minecraft:quartz_stairs", "minecraft:acacia_stairs",
+                    "minecraft:dark_oak_stairs", "minecraft:red_sandstone_stairs", "minecraft:purpur_stairs", "minecraft:iron_bars" -> {
 
                 /*
 
@@ -176,8 +176,12 @@ public class Converter implements CommandExecutor {
                  */
 
                 //Get main stair.
-                /*
-                Stairs stair = (Stairs) world.getBlockData(l);
+                BlockData bd = world.getBlockData(l);
+                if (!(bd instanceof Stairs)) {
+                    instance.getLogger().info(bd.getMaterial().name());
+                    return;
+                }
+                Stairs stair = (Stairs) bd;
                 StairData[] stairs = new StairData[4];
                 StairData mainStair = new StairData(stair, l);
 
@@ -221,115 +225,110 @@ public class Converter implements CommandExecutor {
                 //Update the block.
                 world.setBlockData(l, stair);
 
-                 */
+            }
+
+            case "minecraft:oak_fence", "minecraft:birch_fence", "minecraft:spruce_fence", "minecraft:jungle_fence", "minecraft:acacia_fence", "minecraft:dark_oak_fence" -> {
 
                 Block b = world.getBlockAt(l);
                 b.getState().update(true, false);
 
             }
 
-            case "oak_fence", "birch_fence", "spruce_fence", "jungle_fence", "acacia_fence", "dark_oak_fence" -> {
+            case "minecraft:cobblestone_wall", "minecraft:mossy_cobblestone_wall" -> {
 
                 Block b = world.getBlockAt(l);
                 b.getState().update(true, false);
 
             }
 
-            case "cobblestone_wall", "mossy_cobblestone_wall" -> {
+            case "minecraft:glass_pane", "minecraft:red_stained_glass_pane", "minecraft:lime_stained_glass_pane", "minecraft:pink_stained_glass_pane", "minecraft:gray_stained_glass_pane",
+                    "minecraft:cyan_stained_glass_pane", "minecraft:blue_stained_glass_pane", "minecraft:white_stained_glass_pane", "minecraft:brown_stained_glass_pane",
+                    "minecraft:green_stained_glass_pane", "minecraft:black_stained_glass_pane", "minecraft:orange_stained_glass_pane", "minecraft:yellow_stained_glass_pane",
+                    "minecraft:purple_stained_glass_pane", "minecraft:magenta_stained_glass_pane", "minecraft:light_blue_stained_glass_pane", "minecraft:light_gray_stained_glass_pane" -> {
 
                 Block b = world.getBlockAt(l);
                 b.getState().update(true, false);
 
             }
 
-            case "glass_pane", "red_stained_glass_pane", "lime_stained_glass_pane", "pink_stained_glass_pane", "gray_stained_glass_pane",
-                    "cyan_stained_glass_pane", "blue_stained_glass_pane", "white_stained_glass_pane", "brown_stained_glass_pane",
-                    "green_stained_glass_pane", "black_stained_glass_pane", "orange_stained_glass_pane", "yellow_stained_glass_pane",
-                    "purple_stained_glass_pane", "magenta_stained_glass_pane", "light_blue_stained_glass_pane", "light_gray_stained_glass_pane" -> {
-
-                Block b = world.getBlockAt(l);
-                b.getState().update(true, false);
-
-            }
-
-            case "chest" -> {
+            case "minecraft:chest" -> {
 
                 //Set connection.
 
             }
 
-            case "redstone_wire" -> {
+            case "minecraft:redstone_wire" -> {
 
                 Block b = world.getBlockAt(l);
                 b.getState().update(true, false);
 
             }
 
-            case "chorus_plant" -> {
+            case "minecraft:chorus_plant" -> {
 
                 Block b = world.getBlockAt(l);
                 b.getState().update(true, false);
 
             }
 
-            case "red_bed" -> {
+            case "minecraft:red_bed" -> {
 
                 //Set colour.
 
             }
 
-            case "white_banner" -> {
+            case "minecraft:white_banner" -> {
 
                 //Set colour and pattern.
 
             }
 
-            case "white_wall_banner" -> {
+            case "minecraft:white_wall_banner" -> {
 
                 //Set colour and pattern.
 
             }
 
-            case "melon_stem", "pumpkin_stem" -> {
+            case "minecraft:melon_stem", "minecraft:pumpkin_stem" -> {
 
                 Block b = world.getBlockAt(l);
                 b.getState().update(true, false);
 
             }
 
-            case "flower_pot" -> {
+            case "minecraft:flower_pot" -> {
 
                 //Set flower pot type.
 
             }
 
-            case "skeleton_skull" -> {
+            case "minecraft:skeleton_skull" -> {
 
                 //Set skull types and if playerhead set texture.
 
             }
 
-            case "note_block" -> {
+            case "minecraft:note_block" -> {
 
                 //Set note of note block.
 
             }
 
-            case "repeater" -> {
+            case "minecraft:repeater" -> {
 
                 Block b = world.getBlockAt(l);
                 b.getState().update(true, false);
 
             }
 
-            case "tripwire" -> {
+            case "minecraft:tripwire" -> {
 
                 Block b = world.getBlockAt(l);
                 b.getState().update(true, false);
 
             }
 
-            case "vine" -> {
+            case "minecraft:vine" -> {
 
                 //Check if block above, if true, make it a vine.
 
