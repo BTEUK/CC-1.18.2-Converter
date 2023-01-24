@@ -11,6 +11,7 @@ public class Plugin extends JavaPlugin {
         saveDefaultConfig();
 
         this.getCommand("convert").setExecutor(new Converter(this));
+        this.getCommand("placeblock").setExecutor(new BlockUpdateTest(this));
 
     }
 }

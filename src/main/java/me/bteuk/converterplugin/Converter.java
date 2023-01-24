@@ -116,7 +116,7 @@ public class Converter implements CommandExecutor {
 
                 //Check the block below:
                 Location lYMin = new Location(world, l.getX(), l.getY() - 1, l.getZ());
-                BlockData bYMin = world.getBlockAt(lYMin).getBlockData();
+                BlockData bYMin = world.getBlockData(lYMin);
 
                 if (bYMin.getMaterial() == Material.SUNFLOWER) {
                     setTopFlower(Material.SUNFLOWER, l);
@@ -135,7 +135,7 @@ public class Converter implements CommandExecutor {
 
             case "minecraft:oak_stairs", "minecraft:cobblestone_stairs", "minecraft:brick_stairs", "minecraft:stone_brick_stairs", "minecraft:nether_brick_stairs",
                     "minecraft:sandstone_stairs", "minecraft:spruce_stairs", "minecraft:birch_stairs", "minecraft:jungle_stairs", "minecraft:quartz_stairs", "minecraft:acacia_stairs",
-                    "minecraft:dark_oak_stairs", "minecraft:red_sandstone_stairs", "minecraft:purpur_stairs", "minecraft:iron_bars" -> {
+                    "minecraft:dark_oak_stairs", "minecraft:red_sandstone_stairs", "minecraft:purpur_stairs" -> {
 
                 /*
 
@@ -176,7 +176,6 @@ public class Converter implements CommandExecutor {
                  */
 
                 //Get main stair.
-                /*
                 BlockData bd = world.getBlockData(l);
                 if (!(bd instanceof Stairs)) {
                     instance.getLogger().info(bd.getMaterial().name());
@@ -213,7 +212,7 @@ public class Converter implements CommandExecutor {
                 }
                 Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
                 if (world.getBlockData(lZMax) instanceof Stairs) {
-                    Stairs zMax = (Stairs) world.getBlockData(lXMax);
+                    Stairs zMax = (Stairs) world.getBlockData(lZMax);
                     if (mainStair.half == zMax.getHalf()) {
                         //Add it to the array at index 3.
                         stairs[3] = new StairData(zMax, lZMax, mainStair);
@@ -225,11 +224,6 @@ public class Converter implements CommandExecutor {
 
                 //Update the block.
                 world.setBlockData(l, stair);
-
-                 */
-
-                Block b = world.getBlockAt(l);
-                b.getState().update(true, false);
 
             }
 
@@ -250,7 +244,8 @@ public class Converter implements CommandExecutor {
             case "minecraft:glass_pane", "minecraft:red_stained_glass_pane", "minecraft:lime_stained_glass_pane", "minecraft:pink_stained_glass_pane", "minecraft:gray_stained_glass_pane",
                     "minecraft:cyan_stained_glass_pane", "minecraft:blue_stained_glass_pane", "minecraft:white_stained_glass_pane", "minecraft:brown_stained_glass_pane",
                     "minecraft:green_stained_glass_pane", "minecraft:black_stained_glass_pane", "minecraft:orange_stained_glass_pane", "minecraft:yellow_stained_glass_pane",
-                    "minecraft:purple_stained_glass_pane", "minecraft:magenta_stained_glass_pane", "minecraft:light_blue_stained_glass_pane", "minecraft:light_gray_stained_glass_pane" -> {
+                    "minecraft:purple_stained_glass_pane", "minecraft:magenta_stained_glass_pane", "minecraft:light_blue_stained_glass_pane", "minecraft:light_gray_stained_glass_pane",
+                    "minecraft:iron_bars" -> {
 
                 Block b = world.getBlockAt(l);
                 b.getState().update(true, false);
