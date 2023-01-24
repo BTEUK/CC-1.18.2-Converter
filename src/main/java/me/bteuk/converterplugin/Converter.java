@@ -176,6 +176,7 @@ public class Converter implements CommandExecutor {
                  */
 
                 //Get main stair.
+                /*
                 BlockData bd = world.getBlockData(l);
                 if (!(bd instanceof Stairs)) {
                     instance.getLogger().info(bd.getMaterial().name());
@@ -224,6 +225,11 @@ public class Converter implements CommandExecutor {
 
                 //Update the block.
                 world.setBlockData(l, stair);
+
+                 */
+
+                Block b = world.getBlockAt(l);
+                b.getState().update(true, false);
 
             }
 
