@@ -334,7 +334,7 @@ public class RegionConverter extends Thread {
 
                                     //Add the coordinates of the block to the object.
                                     obj.put("x", (entryX * 16) + cX);
-                                    obj.put("y", cY);
+                                    obj.put("y", (y*16) + cY);
                                     obj.put("z", (entryZ * 16) + cX);
 
                                     //Add properties for certain blocks.
