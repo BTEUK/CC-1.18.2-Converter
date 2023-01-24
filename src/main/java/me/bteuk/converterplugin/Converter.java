@@ -88,24 +88,27 @@ public class Converter implements CommandExecutor {
                     //Get the location of the block.
                     Location l = new Location(world, (int) jObject.get("x"), (int) jObject.get("y"), (int) jObject.get("z"));
 
-                    //Get the details of the block.
-
+                    //Set the block to its correct state.
+                    setBlockData(jObject, l);
 
                 }
 
+                //Delete file when done.
+                File fFile = new File(file);
+                fFile.delete();
 
             } catch (IOException | ParseException e) {
                 e.printStackTrace();
             }
 
+
         }
 
-
-        return false;
+        return true;
     }
 
-    //Check if block has properties.
-    private BlockData getBlockData(JSONObject object, Location l) {
+    //Set the blockData of the block.
+    private void setBlockData(JSONObject object, Location l) {
 
         switch ((String) object.get("block")) {
 
@@ -173,6 +176,7 @@ public class Converter implements CommandExecutor {
                  */
 
                 //Get main stair.
+                /*
                 Stairs stair = (Stairs) world.getBlockData(l);
                 StairData[] stairs = new StairData[4];
                 StairData mainStair = new StairData(stair, l);
@@ -217,13 +221,24 @@ public class Converter implements CommandExecutor {
                 //Update the block.
                 world.setBlockData(l, stair);
 
+                 */
+
+                Block b = world.getBlockAt(l);
+                b.getState().update(true, false);
+
             }
 
             case "oak_fence", "birch_fence", "spruce_fence", "jungle_fence", "acacia_fence", "dark_oak_fence" -> {
 
+                Block b = world.getBlockAt(l);
+                b.getState().update(true, false);
+
             }
 
             case "cobblestone_wall", "mossy_cobblestone_wall" -> {
+
+                Block b = world.getBlockAt(l);
+                b.getState().update(true, false);
 
             }
 
@@ -232,57 +247,91 @@ public class Converter implements CommandExecutor {
                     "green_stained_glass_pane", "black_stained_glass_pane", "orange_stained_glass_pane", "yellow_stained_glass_pane",
                     "purple_stained_glass_pane", "magenta_stained_glass_pane", "light_blue_stained_glass_pane", "light_gray_stained_glass_pane" -> {
 
+                Block b = world.getBlockAt(l);
+                b.getState().update(true, false);
+
             }
 
             case "chest" -> {
+
+                //Set connection.
 
             }
 
             case "redstone_wire" -> {
 
+                Block b = world.getBlockAt(l);
+                b.getState().update(true, false);
+
             }
 
             case "chorus_plant" -> {
+
+                Block b = world.getBlockAt(l);
+                b.getState().update(true, false);
 
             }
 
             case "red_bed" -> {
 
+                //Set colour.
+
             }
 
             case "white_banner" -> {
+
+                //Set colour and pattern.
 
             }
 
             case "white_wall_banner" -> {
 
+                //Set colour and pattern.
+
             }
 
             case "melon_stem", "pumpkin_stem" -> {
+
+                Block b = world.getBlockAt(l);
+                b.getState().update(true, false);
 
             }
 
             case "flower_pot" -> {
 
+                //Set flower pot type.
+
             }
 
             case "skeleton_skull" -> {
+
+                //Set skull types and if playerhead set texture.
 
             }
 
             case "note_block" -> {
 
+                //Set note of note block.
+
             }
 
             case "repeater" -> {
+
+                Block b = world.getBlockAt(l);
+                b.getState().update(true, false);
 
             }
 
             case "tripwire" -> {
 
+                Block b = world.getBlockAt(l);
+                b.getState().update(true, false);
+
             }
 
             case "vine" -> {
+
+                //Check if block above, if true, make it a vine.
 
             }
 

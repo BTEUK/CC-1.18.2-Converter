@@ -1,6 +1,6 @@
 name: Converter
 version: '${project.version}'
-main: me.bteuk.network.Network
+main: me.bteuk.converterplugin.Plugin
 api-version: 1.18
 
 commands:
