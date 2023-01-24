@@ -1,6 +1,7 @@
 package me.bteuk.converterplugin.utils.blocks.stairs;
 
 import me.bteuk.converterplugin.utils.Direction;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Bisected;
@@ -38,9 +39,9 @@ public class StairData {
     public void setShape(StairData s) {
         if ((d == 1 || d == 3) && (facing == s.facing)) {
             sh = Shape.STRAIGHT;
-        } else if (d == 2 && (facing % 2) != (s.facing % 2)) {
+        } else if (d == 0 && ((facing % 2) != (s.facing % 2))) {
             sh = Shape.ICORNER;
-        } else if (d == 0 && (facing % 2) != (s.facing % 2)) {
+        } else if (d == 2 && ((facing % 2) != (s.facing % 2))) {
             sh = Shape.OCORNER;
         } else {
             sh = Shape.NONE;
@@ -51,7 +52,7 @@ public class StairData {
     public void setDirection(StairData s) {
         switch (s.facing) {
             //Negative Z
-            case 1 -> {
+            case 0 -> {
                 if (this.l.getZ() < s.l.getZ()) {
                     d = directionNumber(Direction.UP);
                 } else if (this.l.getZ() > s.l.getZ()) {
@@ -63,7 +64,7 @@ public class StairData {
                 }
             }
             //Positive X
-            case 2 -> {
+            case 1 -> {
                 if (this.l.getZ() < s.l.getZ()) {
                     d = directionNumber(Direction.LEFT);
                 } else if (this.l.getZ() > s.l.getZ()) {
@@ -75,7 +76,7 @@ public class StairData {
                 }
             }
             //Positive Z
-            case 0 -> {
+            case 2 -> {
                 if (this.l.getZ() > s.l.getZ()) {
                     d = directionNumber(Direction.UP);
                 } else if (this.l.getZ() < s.l.getZ()) {
@@ -166,21 +167,21 @@ public class StairData {
         if (straight1 != null && straight2 != null) {
             return Stairs.Shape.STRAIGHT;
         } else if (straight1 != null && cornerI != null) {
-            if ((((cornerI.facing+1) % 4) == facing) && straight1.d == 1) {
-                return Stairs.Shape.INNER_LEFT;
-            } else if ((((cornerI.facing+3) % 4) == facing) && straight1.d == 3) {
+            if ((((cornerI.facing+3) % 4) == facing) && straight1.d == 1) {
                 return Stairs.Shape.INNER_RIGHT;
+            } else if ((((cornerI.facing+1) % 4) == facing) && straight1.d == 3) {
+                return Stairs.Shape.INNER_LEFT;
             }
         } else if (straight1 != null && cornerO != null) {
-            if ((((cornerO.facing + 1) % 4) == facing) && d == 3) {
-                return Stairs.Shape.OUTER_LEFT;
-            } else if ((((cornerO.facing + 3) % 4) == facing) && straight1.d == 1) {
+            if ((((cornerO.facing + 3) % 4) == facing) && straight1.d == 3) {
                 return Stairs.Shape.OUTER_RIGHT;
+            } else if ((((cornerO.facing + 1) % 4) == facing) && straight1.d == 1) {
+                return Stairs.Shape.OUTER_LEFT;
             }
-        } else if (cornerI != null && ((cornerI.facing+1) % 4) == facing) {
-            return Stairs.Shape.INNER_LEFT;
         } else if (cornerI != null && ((cornerI.facing+3) % 4) == facing) {
             return Stairs.Shape.INNER_RIGHT;
+        } else if (cornerI != null && ((cornerI.facing+1) % 4) == facing) {
+            return Stairs.Shape.INNER_LEFT;
         } else if (cornerO != null && ((cornerO.facing+1) % 4) == facing) {
             return Stairs.Shape.OUTER_LEFT;
         } else if (cornerO != null && ((cornerO.facing+3) % 4) == facing) {
