@@ -1,8 +1,10 @@
 package me.bteuk.converterplugin.utils.blocks.stairs;
 
 import me.bteuk.converterplugin.utils.Direction;
-import me.bteuk.converterplugin.utils.Facing;
 import org.bukkit.Location;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.Bisected;
+import org.bukkit.block.data.type.Stairs;
 
 public class StairData {
 
@@ -10,20 +12,22 @@ public class StairData {
     Location l;
     int d;
     Shape sh;
+    public Bisected.Half half;
 
     //Main stair constructor.
-    public void StairData(Facing facing, Location l) {
+    public StairData(Stairs stair, Location l) {
         this.l = l;
-        this.facing = facingNumber(facing);
+        this.facing = facingNumber(stair.getFacing());
+        this.half = stair.getHalf();
 
         //Default
         this.d = 0;
     }
 
     //Alt stair constructor.
-    public void StairData(Facing facing, Location l, StairData s) {
+    public StairData(Stairs stair, Location l, StairData s) {
         this.l = l;
-        this.facing = facingNumber(facing);
+        this.facing = facingNumber(stair.getFacing());
 
         //Set direction and shape in relation to main stair.
         setDirection(s);
@@ -108,17 +112,18 @@ public class StairData {
     }
 
     //Set facing direction to a number for convenience.
-    public int facingNumber(Facing f) {
+    public int facingNumber(BlockFace f) {
         switch (f) {
             case NORTH -> {return 0;}
             case EAST -> {return 1;}
             case WEST -> {return 3;}
-            default -> {return 2;}
+            case SOUTH -> {return 2;}
         }
+        return 0;
     }
 
     //Get the shape of the main stair based on the 4 adjacent stairs.
-    public Shape getShape(StairData[] sd) {
+    public Stairs.Shape getShape(StairData[] sd) {
 
         /*
         1. If contains Straight
@@ -142,6 +147,9 @@ public class StairData {
         StairData cornerO = null;
 
         for (StairData s : sd) {
+            if (s == null) {
+                continue;
+            }
             if (s.sh == Shape.STRAIGHT) {
                 if (straight1 == null) {
                     straight1 = s;
@@ -156,30 +164,30 @@ public class StairData {
         }
 
         if (straight1 != null && straight2 != null) {
-            return Shape.STRAIGHT;
+            return Stairs.Shape.STRAIGHT;
         } else if (straight1 != null && cornerI != null) {
             if ((((cornerI.facing+1) % 4) == facing) && straight1.d == 1) {
-                return Shape.INNER_LEFT;
+                return Stairs.Shape.INNER_LEFT;
             } else if ((((cornerI.facing+3) % 4) == facing) && straight1.d == 3) {
-                return Shape.INNER_RIGHT;
+                return Stairs.Shape.INNER_RIGHT;
             }
         } else if (straight1 != null && cornerO != null) {
             if ((((cornerO.facing + 1) % 4) == facing) && d == 3) {
-                return Shape.OUTER_LEFT;
+                return Stairs.Shape.OUTER_LEFT;
             } else if ((((cornerO.facing + 3) % 4) == facing) && straight1.d == 1) {
-                return Shape.OUTER_RIGHT;
+                return Stairs.Shape.OUTER_RIGHT;
             }
         } else if (cornerI != null && ((cornerI.facing+1) % 4) == facing) {
-            return Shape.INNER_LEFT;
+            return Stairs.Shape.INNER_LEFT;
         } else if (cornerI != null && ((cornerI.facing+3) % 4) == facing) {
-            return Shape.INNER_RIGHT;
+            return Stairs.Shape.INNER_RIGHT;
         } else if (cornerO != null && ((cornerO.facing+1) % 4) == facing) {
-            return Shape.OUTER_LEFT;
+            return Stairs.Shape.OUTER_LEFT;
         } else if (cornerO != null && ((cornerO.facing+3) % 4) == facing) {
-            return Shape.OUTER_RIGHT;
+            return Stairs.Shape.OUTER_RIGHT;
         }
 
-        return Shape.STRAIGHT;
+        return Stairs.Shape.STRAIGHT;
 
     }
 }

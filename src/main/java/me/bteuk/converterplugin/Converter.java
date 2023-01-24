@@ -6,6 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.type.Stairs;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -160,9 +161,50 @@ public class Converter implements CommandExecutor {
 
                  */
 
-                //Get facing direction.
+                //Get main stair.
+                Stairs stair = (Stairs) world.getBlockData(l);
+                StairData[] stairs = new StairData[4];
+                StairData mainStair = new StairData(stair, l);
 
+                //Get 4 adjacent stairs, if they are stairs.
+                Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
+                if (world.getBlockData(lXMin) instanceof Stairs) {
+                    Stairs xMin = (Stairs) world.getBlockData(lXMin);
+                    if (mainStair.half == xMin.getHalf()) {
+                        //Add it to the array at index 0.
+                        stairs[0] = new StairData(xMin, lXMin, mainStair);
+                    }
+                }
+                Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
+                if (world.getBlockData(lXMax) instanceof Stairs) {
+                    Stairs xMax = (Stairs) world.getBlockData(lXMax);
+                    if (mainStair.half == xMax.getHalf()) {
+                        //Add it to the array at index 1.
+                        stairs[1] = new StairData(xMax, lXMax, mainStair);
+                    }
+                }
+                Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
+                if (world.getBlockData(lZMin) instanceof Stairs) {
+                    Stairs zMin = (Stairs) world.getBlockData(lZMin);
+                    if (mainStair.half == zMin.getHalf()) {
+                        //Add it to the array at index 2.
+                        stairs[2] = new StairData(zMin, lZMin, mainStair);
+                    }
+                }
+                Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
+                if (world.getBlockData(lZMax) instanceof Stairs) {
+                    Stairs zMax = (Stairs) world.getBlockData(lXMax);
+                    if (mainStair.half == zMax.getHalf()) {
+                        //Add it to the array at index 3.
+                        stairs[3] = new StairData(zMax, lZMax, mainStair);
+                    }
+                }
 
+                //Set the stair shape.
+                stair.setShape(mainStair.getShape(stairs));
+
+                //Update the block.
+                world.setBlockData(l, stair);
 
             }
 
