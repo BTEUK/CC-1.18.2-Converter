@@ -1,10 +1,9 @@
 package me.bteuk.converterplugin;
 
 import me.bteuk.converterplugin.utils.blocks.stairs.StairData;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.*;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.command.Command;
@@ -102,8 +101,6 @@ public class Converter implements CommandExecutor {
         }
 
 
-
-
         return false;
     }
 
@@ -115,8 +112,22 @@ public class Converter implements CommandExecutor {
             case "sunflower" -> {
 
                 //Check the block below:
+                Location lYMin = new Location(world, l.getX(), l.getY() - 1, l.getZ());
+                BlockData bYMin = world.getBlockData(lYMin);
 
-
+                if (bYMin.getMaterial() == Material.SUNFLOWER) {
+                    setTopFlower(Material.SUNFLOWER, l);
+                } else if (bYMin.getMaterial() == Material.LILAC) {
+                    setTopFlower(Material.LILAC, l);
+                } else if (bYMin.getMaterial() == Material.ROSE_BUSH) {
+                    setTopFlower(Material.ROSE_BUSH, l);
+                } else if (bYMin.getMaterial() == Material.PEONY) {
+                    setTopFlower(Material.PEONY, l);
+                } else if (bYMin.getMaterial() == Material.TALL_GRASS) {
+                    setTopFlower(Material.TALL_GRASS, l);
+                } else if (bYMin.getMaterial() == Material.LARGE_FERN) {
+                    setTopFlower(Material.LARGE_FERN, l);
+                }
             }
 
             case "oak_stairs", "cobblestone_stairs", "brick_stairs", "stone_brick_stairs", "nether_brick_stairs",
@@ -276,9 +287,15 @@ public class Converter implements CommandExecutor {
             }
 
 
-
-
         }
 
+    }
+
+    private void setTopFlower(Material mat, Location l) {
+        BlockData newBD = mat.createBlockData();
+        world.setBlockData(l, newBD);
+        Bisected bisected = (Bisected) newBD;
+        bisected.setHalf(Bisected.Half.TOP);
+        world.setBlockData(l, bisected);
     }
 }
