@@ -3,9 +3,10 @@ package me.bteuk.converterplugin;
 import me.bteuk.converterplugin.utils.blocks.stairs.StairData;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.type.Stairs;
+import org.bukkit.block.data.type.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -86,7 +87,7 @@ public class Converter implements CommandExecutor {
                     JSONObject jObject = (JSONObject) object;
 
                     //Get the location of the block.
-                    Location l = new Location(world, (int)(long)jObject.get("x"), (int)(long)jObject.get("y"), (int)(long)jObject.get("z"));
+                    Location l = new Location(world, (int) (long) jObject.get("x"), (int) (long) jObject.get("y"), (int) (long) jObject.get("z"));
 
                     //Set the block to its correct state.
                     setBlockData(jObject, l);
@@ -347,4 +348,210 @@ public class Converter implements CommandExecutor {
         bisected.setHalf(Bisected.Half.TOP);
         world.setBlockData(l, bisected);
     }
+
+    private boolean canConnect(Material mat, Location l, BlockData bd, BlockFace face) {
+
+        //First check if the block is solid, return if true.
+        switch (bd.getMaterial()) {
+            case STONE, GRANITE, POLISHED_GRANITE, DIORITE, POLISHED_DIORITE, ANDESITE, POLISHED_ANDESITE,
+                    GRASS_BLOCK, DIRT, COARSE_DIRT, PODZOL, COBBLESTONE,
+                    OAK_PLANKS, SPRUCE_PLANKS, BIRCH_PLANKS, JUNGLE_PLANKS, ACACIA_PLANKS, DARK_OAK_PLANKS,
+                    BEDROCK, SAND, RED_SAND, GRAVEL,
+                    COAL_ORE, IRON_ORE, GOLD_ORE, REDSTONE_ORE, EMERALD_ORE, LAPIS_ORE, DIAMOND_ORE, NETHER_QUARTZ_ORE,
+                    COAL_BLOCK, IRON_BLOCK, GOLD_BLOCK, DIAMOND_BLOCK,
+                    OAK_LOG, SPRUCE_LOG, BIRCH_LOG, JUNGLE_LOG, ACACIA_LOG, DARK_OAK_LOG,
+                    OAK_WOOD, SPRUCE_WOOD, BIRCH_WOOD, JUNGLE_WOOD, ACACIA_WOOD, DARK_OAK_WOOD,
+                    SPONGE, WET_SPONGE, GLASS, LAPIS_BLOCK, SANDSTONE, CHISELED_SANDSTONE, CUT_SANDSTONE,
+                    WHITE_WOOL, ORANGE_WOOL, MAGENTA_WOOL, LIGHT_BLUE_WOOL, YELLOW_WOOL, LIME_WOOL, PINK_WOOL, GRAY_WOOL,
+                    LIGHT_GRAY_WOOL, CYAN_WOOL, PURPLE_WOOL, BLUE_WOOL, BROWN_WOOL, GREEN_WOOL, RED_WOOL, BLACK_WOOL,
+                    SMOOTH_QUARTZ, SMOOTH_RED_SANDSTONE, SMOOTH_SANDSTONE, SMOOTH_STONE, BRICKS, BOOKSHELF,
+                    MOSSY_COBBLESTONE, OBSIDIAN, PURPUR_BLOCK, PURPUR_PILLAR, CRAFTING_TABLE, FURNACE,
+                    ICE, SNOW_BLOCK, CLAY, JUKEBOX, NETHERRACK, SOUL_SAND, GLOWSTONE,
+                    INFESTED_STONE, INFESTED_COBBLESTONE, INFESTED_STONE_BRICKS, INFESTED_MOSSY_STONE_BRICKS, INFESTED_CRACKED_STONE_BRICKS, INFESTED_CHISELED_STONE_BRICKS,
+                    STONE_BRICKS, MOSSY_STONE_BRICKS, CRACKED_STONE_BRICKS, CHISELED_STONE_BRICKS,
+                    BROWN_MUSHROOM_BLOCK, RED_MUSHROOM_BLOCK, MUSHROOM_STEM, MYCELIUM, NETHER_BRICK, END_STONE, END_STONE_BRICKS,
+                    EMERALD_BLOCK, BEACON, CHISELED_QUARTZ_BLOCK, QUARTZ_BLOCK, QUARTZ_PILLAR,
+                    WHITE_TERRACOTTA, ORANGE_TERRACOTTA, MAGENTA_TERRACOTTA, LIGHT_BLUE_TERRACOTTA,
+                    YELLOW_TERRACOTTA, LIME_TERRACOTTA, PINK_TERRACOTTA, GRAY_TERRACOTTA,
+                    LIGHT_GRAY_TERRACOTTA, CYAN_TERRACOTTA, PURPLE_TERRACOTTA, BLUE_TERRACOTTA,
+                    BROWN_TERRACOTTA, GREEN_TERRACOTTA, RED_TERRACOTTA, BLACK_TERRACOTTA,
+                    HAY_BLOCK, TERRACOTTA, PACKED_ICE, PRISMARINE, PRISMARINE_BRICKS, DARK_PRISMARINE, SEA_LANTERN,
+                    RED_SANDSTONE, CHISELED_RED_SANDSTONE, CUT_RED_SANDSTONE, MAGMA_BLOCK, RED_NETHER_BRICKS, BONE_BLOCK,
+                    WHITE_GLAZED_TERRACOTTA, ORANGE_GLAZED_TERRACOTTA, MAGENTA_GLAZED_TERRACOTTA, LIGHT_BLUE_GLAZED_TERRACOTTA,
+                    YELLOW_GLAZED_TERRACOTTA, LIME_GLAZED_TERRACOTTA, PINK_GLAZED_TERRACOTTA, GRAY_GLAZED_TERRACOTTA,
+                    LIGHT_GRAY_GLAZED_TERRACOTTA, CYAN_GLAZED_TERRACOTTA, PURPLE_GLAZED_TERRACOTTA, BLUE_GLAZED_TERRACOTTA,
+                    BROWN_GLAZED_TERRACOTTA, GREEN_GLAZED_TERRACOTTA, RED_GLAZED_TERRACOTTA, BLACK_GLAZED_TERRACOTTA,
+                    WHITE_CONCRETE, ORANGE_CONCRETE, MAGENTA_CONCRETE, LIGHT_BLUE_CONCRETE, YELLOW_CONCRETE, LIME_CONCRETE, PINK_CONCRETE, GRAY_CONCRETE,
+                    LIGHT_GRAY_CONCRETE, CYAN_CONCRETE, PURPLE_CONCRETE, BLUE_CONCRETE, BROWN_CONCRETE, GREEN_CONCRETE, RED_CONCRETE, BLACK_CONCRETE,
+                    WHITE_CONCRETE_POWDER, ORANGE_CONCRETE_POWDER, MAGENTA_CONCRETE_POWDER, LIGHT_BLUE_CONCRETE_POWDER,
+                    YELLOW_CONCRETE_POWDER, LIME_CONCRETE_POWDER, PINK_CONCRETE_POWDER, GRAY_CONCRETE_POWDER,
+                    LIGHT_GRAY_CONCRETE_POWDER, CYAN_CONCRETE_POWDER, PURPLE_CONCRETE_POWDER, BLUE_CONCRETE_POWDER,
+                    BROWN_CONCRETE_POWDER, GREEN_CONCRETE_POWDER, RED_CONCRETE_POWDER, BLACK_CONCRETE_POWDER,
+                    REDSTONE_BLOCK, SLIME_BLOCK, PISTON, STICKY_PISTON, OBSERVER, DISPENSER, DROPPER,
+                    TNT, REDSTONE_LAMP, NOTE_BLOCK -> {
+                return true;
+            }
+        }
+
+        //Stair case
+        if (bd instanceof Stairs) {
+
+            Stairs stair = (Stairs) bd;
+
+            switch (face) {
+                case NORTH -> {
+                    if (stair.getFacing() == face) {
+                        return true;
+                    } else if (stair.getFacing() == BlockFace.WEST && stair.getShape() == Stairs.Shape.INNER_LEFT) {
+                        return true;
+                    } else if (stair.getFacing() == BlockFace.EAST && stair.getShape() == Stairs.Shape.INNER_RIGHT) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+                case WEST -> {
+                    if (stair.getFacing() == face) {
+                        return true;
+                    } else if (stair.getFacing() == BlockFace.SOUTH && stair.getShape() == Stairs.Shape.INNER_LEFT) {
+                        return true;
+                    } else if (stair.getFacing() == BlockFace.NORTH && stair.getShape() == Stairs.Shape.INNER_RIGHT) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+                case SOUTH -> {
+                    if (stair.getFacing() == face) {
+                        return true;
+                    } else if (stair.getFacing() == BlockFace.EAST && stair.getShape() == Stairs.Shape.INNER_LEFT) {
+                        return true;
+                    } else if (stair.getFacing() == BlockFace.WEST && stair.getShape() == Stairs.Shape.INNER_RIGHT) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+                case EAST -> {
+                    if (stair.getFacing() == face) {
+                        return true;
+                    } else if (stair.getFacing() == BlockFace.NORTH && stair.getShape() == Stairs.Shape.INNER_LEFT) {
+                        return true;
+                    } else if (stair.getFacing() == BlockFace.SOUTH && stair.getShape() == Stairs.Shape.INNER_RIGHT) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+                case UP -> {
+                    return (stair.getHalf() == Bisected.Half.BOTTOM);
+                }
+            }
+        }
+
+        //Slab Case
+        if (bd instanceof Slab) {
+            Slab slab = (Slab) bd;
+            if (face == BlockFace.UP) {
+                return (slab.getType() == Slab.Type.BOTTOM || slab.getType() == Slab.Type.DOUBLE);
+            }
+            return (slab.getType() == Slab.Type.DOUBLE);
+        }
+
+        //Fences
+        if (bd.getMaterial() == Material.NETHER_BRICK_FENCE) {
+            return (bd.getMaterial() == mat);
+        } else if (bd.getMaterial() == Material.OAK_FENCE || bd.getMaterial() == Material.SPRUCE_FENCE || bd.getMaterial() == Material.BIRCH_FENCE || bd.getMaterial() == Material.JUNGLE_FENCE || bd.getMaterial() == Material.ACACIA_FENCE || bd.getMaterial() == Material.DARK_OAK_FENCE) {
+            if (mat == Material.OAK_FENCE || mat == Material.SPRUCE_FENCE || mat == Material.BIRCH_FENCE || mat == Material.JUNGLE_FENCE || mat == Material.ACACIA_FENCE || mat == Material.DARK_OAK_FENCE) {
+                return true;
+            } else {
+                return false;
+            }
+        } else if (bd.getMaterial() == Material.GLASS_PANE || bd.getMaterial() == Material.IRON_BARS || bd.getMaterial() == Material.COBBLESTONE_WALL || bd.getMaterial() == Material.MOSSY_COBBLESTONE_WALL || (bd instanceof GlassPane)) {
+            if (mat == Material.GLASS_PANE || mat == Material.IRON_BARS || mat == Material.COBBLESTONE_WALL || mat == Material.MOSSY_COBBLESTONE_WALL ||
+                    mat == Material.WHITE_STAINED_GLASS_PANE || mat == Material.ORANGE_STAINED_GLASS_PANE || mat == Material.MAGENTA_STAINED_GLASS_PANE ||
+                    mat == Material.LIGHT_BLUE_STAINED_GLASS_PANE || mat == Material.YELLOW_STAINED_GLASS_PANE || mat == Material.LIME_STAINED_GLASS_PANE ||
+                    mat == Material.PINK_STAINED_GLASS_PANE || mat == Material.GRAY_STAINED_GLASS_PANE || mat == Material.LIGHT_GRAY_STAINED_GLASS_PANE ||
+                    mat == Material.CYAN_STAINED_GLASS_PANE || mat == Material.PURPLE_STAINED_GLASS_PANE || mat == Material.BLUE_STAINED_GLASS_PANE ||
+                    mat == Material.BROWN_STAINED_GLASS_PANE || mat == Material.GREEN_STAINED_GLASS_PANE || mat == Material.RED_STAINED_GLASS_PANE || mat == Material.BLACK_STAINED_GLASS_PANE) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        //Snow
+        if (bd.getMaterial() == Material.SNOW) {
+            Snow snow = (Snow) bd;
+            return (snow.getLayers() == 8 && face != BlockFace.UP);
+        }
+
+        //Trapdoors
+        if (bd instanceof TrapDoor) {
+            TrapDoor trapDoor = (TrapDoor) bd;
+            return (trapDoor.getFacing() == face && trapDoor.isOpen());
+        }
+
+        //Fence gates
+        if (bd instanceof Gate) {
+            Gate gate = (Gate) bd;
+            if (isFence(mat)) {
+                if (face == BlockFace.NORTH || face == BlockFace.SOUTH) {
+                    return (gate.getFacing() == BlockFace.WEST || gate.getFacing() == BlockFace.EAST);
+                } else if (face == BlockFace.EAST || face == BlockFace.WEST) {
+                    return (gate.getFacing() == BlockFace.NORTH || gate.getFacing() == BlockFace.SOUTH);
+                }
+            }
+            if (face == BlockFace.UP) {
+                return true;
+            }
+            return false;
+        }
+
+        //Doors
+        if (bd instanceof Door) {
+            Door door = (Door) bd;
+            return (door.getFacing() == face && !door.isOpen());
+
+            if (door.isOpen()) {
+                switch (face) {
+                    case NORTH -> {
+                        if (door.getHinge() == Door.Hinge.LEFT) {
+                            return (door.getFacing() == BlockFace.WEST);
+                        } else {
+                            return (door.getFacing() == BlockFace.EAST);
+                        }
+                    }
+                    case WEST -> {
+                        if (door.getHinge() == Door.Hinge.LEFT) {
+                            return (door.getFacing() == BlockFace.SOUTH);
+                        } else {
+                            return (door.getFacing() == BlockFace.NORTH);
+                        }
+                    }
+                    case SOUTH -> {
+                        if (door.getHinge() == Door.Hinge.LEFT) {
+                            return (door.getFacing() == BlockFace.EAST);
+                        } else {
+                            return (door.getFacing() == BlockFace.WEST);
+                        }
+                    }
+                    case EAST -> {
+                        if (door.getHinge() == Door.Hinge.LEFT) {
+                            return (door.getFacing() == BlockFace.NORTH);
+                        } else {
+                            return (door.getFacing() == BlockFace.SOUTH);
+                        }
+                    }
+                }
+            }}
+
+        //All other cases.
+        return false;
+    }
+
+    private boolean isFence(Material mat) {
+        return (mat == Material.OAK_FENCE || mat == Material.SPRUCE_FENCE || mat == Material.BIRCH_FENCE || mat == Material.JUNGLE_FENCE || mat == Material.ACACIA_FENCE || mat == Material.DARK_OAK_FENCE || mat == Material.NETHER_BRICK_FENCE);
+    }
+
 }
