@@ -1,18 +1,23 @@
 package me.bteuk.converterplugin;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
 import me.bteuk.converterplugin.utils.Direction;
 import me.bteuk.converterplugin.utils.blocks.stairs.StairData;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.Skull;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
+import org.bukkit.block.data.Rotatable;
 import org.bukkit.block.data.type.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.Player;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -22,15 +27,14 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.lang.reflect.Field;
 import java.nio.file.Path;
+import java.util.UUID;
 
 public class Converter implements CommandExecutor {
 
     private Plugin instance;
     private World world;
-
-    private StairData stair;
-    private StairData[] stairs;
 
     public Converter(Plugin instance) {
         this.instance = instance;
@@ -140,90 +144,13 @@ public class Converter implements CommandExecutor {
                     "minecraft:sandstone_stairs", "minecraft:spruce_stairs", "minecraft:birch_stairs", "minecraft:jungle_stairs", "minecraft:quartz_stairs", "minecraft:acacia_stairs",
                     "minecraft:dark_oak_stairs", "minecraft:red_sandstone_stairs", "minecraft:purpur_stairs" -> {
 
-                /*
-
-                Stair direction = direction 0
-                Stair facing away on left = direction 1
-                Stair facing away behind = direction 2
-                Stair facing away on right = direction 3
-
-                Order = Below-Left-Above-Right
-
-                Formations:
-                    Straight has priority
-                    Stair always prioritises itself
-                    Small corner over large corner
-
-                Each of the 4 directions has:
-                    Straight (Block is stair and attaches with a straight connection)
-                    CornerI (Block is stair and attaches with an inner corner)
-                    CornerO (Block is stair and attaches with an outer corner)
-                    None (Block is stair without connections or a non-stair)
-
-                Calculation:
-
-                    1. If contains Straight
-                        - Check for 2nd Straight ->
-                            return Straight
-                        - Check for CornerI ->
-                            if CornerI[facing] != Straight[direction] ->
-                                return CornerI in Straight[direction]
-                        - Check for CornerO ->
-                            if CornerO[facing] == Straight[direction] ->
-                                return CornerO in !Straight[direction]
-                        - Else return Straight
-
-                    2. If contains CornerI return CornerI in !CornerI[direction]
-                    3. If contains CornerO return CornerO in CornerO[direction]
-
-                 */
-
-                //Get main stair.
                 BlockData bd = world.getBlockData(l);
                 if (!(bd instanceof Stairs)) {
                     instance.getLogger().info("Not a stair at " + l.getX() + ", " + l.getY() + ", " + l.getZ());
                     return;
                 }
-                Stairs stair = (Stairs) bd;
-                StairData[] stairs = new StairData[4];
-                StairData mainStair = new StairData(stair, l);
 
-                //Get 4 adjacent stairs, if they are stairs.
-                Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
-                if (world.getBlockData(lXMin) instanceof Stairs) {
-                    Stairs xMin = (Stairs) world.getBlockData(lXMin);
-                    if (mainStair.half == xMin.getHalf()) {
-                        //Add it to the array at index 0.
-                        stairs[0] = new StairData(xMin, lXMin, mainStair);
-                    }
-                }
-                Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
-                if (world.getBlockData(lXMax) instanceof Stairs) {
-                    Stairs xMax = (Stairs) world.getBlockData(lXMax);
-                    if (mainStair.half == xMax.getHalf()) {
-                        //Add it to the array at index 1.
-                        stairs[1] = new StairData(xMax, lXMax, mainStair);
-                    }
-                }
-                Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
-                if (world.getBlockData(lZMin) instanceof Stairs) {
-                    Stairs zMin = (Stairs) world.getBlockData(lZMin);
-                    if (mainStair.half == zMin.getHalf()) {
-                        //Add it to the array at index 2.
-                        stairs[2] = new StairData(zMin, lZMin, mainStair);
-                    }
-                }
-                Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
-                if (world.getBlockData(lZMax) instanceof Stairs) {
-                    Stairs zMax = (Stairs) world.getBlockData(lZMax);
-                    if (mainStair.half == zMax.getHalf()) {
-                        //Add it to the array at index 3.
-                        stairs[3] = new StairData(zMax, lZMax, mainStair);
-                    }
-                }
-
-                //Set the stair shape.
-                stair.setShape(mainStair.getShape(stairs));
+                Stairs stair = getStair(l);
 
                 //Update the block.
                 world.setBlockData(l, stair);
@@ -243,25 +170,25 @@ public class Converter implements CommandExecutor {
 
                 //North (Negative Z)
                 Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
-                if (canConnect(block.getMaterial(), world.getBlockData(lZMin), BlockFace.NORTH)) {
+                if (canConnect(block.getMaterial(), lZMin, BlockFace.NORTH)) {
                     fence.setFace(BlockFace.NORTH, true);
                 }
 
                 //East (Positive X)
                 Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
-                if (canConnect(block.getMaterial(), world.getBlockData(lXMax), BlockFace.EAST)) {
+                if (canConnect(block.getMaterial(), lXMax, BlockFace.EAST)) {
                     fence.setFace(BlockFace.EAST, true);
                 }
 
                 //South (Positive Z)
                 Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
-                if (canConnect(block.getMaterial(), world.getBlockData(lZMax), BlockFace.SOUTH)) {
+                if (canConnect(block.getMaterial(), lZMax, BlockFace.SOUTH)) {
                     fence.setFace(BlockFace.SOUTH, true);
                 }
 
                 //West (Negative X)
                 Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
-                if (canConnect(block.getMaterial(), world.getBlockData(lXMin), BlockFace.WEST)) {
+                if (canConnect(block.getMaterial(), lXMin, BlockFace.WEST)) {
                     fence.setFace(BlockFace.WEST, true);
                 }
 
@@ -284,25 +211,25 @@ public class Converter implements CommandExecutor {
 
                 //North (Negative Z)
                 Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
-                if (canConnect(block.getMaterial(), world.getBlockData(lZMin), BlockFace.NORTH)) {
+                if (canConnect(block.getMaterial(), lZMin, BlockFace.NORTH)) {
                     fence.setFace(BlockFace.NORTH, true);
                 }
 
                 //East (Positive X)
                 Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
-                if (canConnect(block.getMaterial(), world.getBlockData(lXMax), BlockFace.EAST)) {
+                if (canConnect(block.getMaterial(), lXMax, BlockFace.EAST)) {
                     fence.setFace(BlockFace.EAST, true);
                 }
 
                 //South (Positive Z)
                 Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
-                if (canConnect(block.getMaterial(), world.getBlockData(lZMax), BlockFace.SOUTH)) {
+                if (canConnect(block.getMaterial(), lZMax, BlockFace.SOUTH)) {
                     fence.setFace(BlockFace.SOUTH, true);
                 }
 
                 //West (Negative X)
                 Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
-                if (canConnect(block.getMaterial(), world.getBlockData(lXMin), BlockFace.WEST)) {
+                if (canConnect(block.getMaterial(), lXMin, BlockFace.WEST)) {
                     fence.setFace(BlockFace.WEST, true);
                 }
 
@@ -376,8 +303,101 @@ public class Converter implements CommandExecutor {
 
             case "minecraft:skeleton_skull" -> {
 
-                //Set skull types and if playerhead set texture.
+                JSONObject properties = (JSONObject) object.get("properties");
 
+                //Get the current skull at the location.
+                Block block = world.getBlockAt(l);
+                BlockData bd = world.getBlockData(l);
+
+                //Set skull types and if playerhead set texture.
+                String type = (String) properties.get("type");
+
+                if (bd instanceof Rotatable) {
+                    //Skull
+
+                    Rotatable rot = (Rotatable) bd;
+
+                    //Set material.
+                    switch (type) {
+
+                        case "wither_skeleton_skull" -> block.setType(Material.WITHER_SKELETON_SKULL);
+                        case "zombie_head" -> block.setType(Material.ZOMBIE_HEAD);
+                        case "player_head" -> block.setType(Material.PLAYER_HEAD);
+                        case "creeper_head" -> block.setType(Material.CREEPER_HEAD);
+                        case "dragon_head" -> block.setType(Material.DRAGON_HEAD);
+
+                    }
+
+                    switch ((byte) properties.get("rot")) {
+
+                        case 0 -> rot.setRotation(BlockFace.SOUTH);
+                        case 1 -> rot.setRotation(BlockFace.SOUTH_SOUTH_WEST);
+                        case 2 -> rot.setRotation(BlockFace.SOUTH_WEST);
+                        case 3 -> rot.setRotation(BlockFace.WEST_SOUTH_WEST);
+                        case 4 -> rot.setRotation(BlockFace.WEST);
+                        case 5 -> rot.setRotation(BlockFace.WEST_NORTH_WEST);
+                        case 6 -> rot.setRotation(BlockFace.NORTH_WEST);
+                        case 7 -> rot.setRotation(BlockFace.NORTH_NORTH_WEST);
+                        case 8 -> rot.setRotation(BlockFace.NORTH);
+                        case 9 -> rot.setRotation(BlockFace.NORTH_NORTH_EAST);
+                        case 10 -> rot.setRotation(BlockFace.NORTH_EAST);
+                        case 11 -> rot.setRotation(BlockFace.EAST_NORTH_EAST);
+                        case 12 -> rot.setRotation(BlockFace.EAST);
+                        case 13 -> rot.setRotation(BlockFace.EAST_SOUTH_EAST);
+                        case 14 -> rot.setRotation(BlockFace.SOUTH_EAST);
+                        case 15 -> rot.setRotation(BlockFace.SOUTH_SOUTH_EAST);
+
+                    }
+
+                    block.setBlockData(rot);
+
+                } else if (bd instanceof Directional) {
+                    //Wall Skull
+
+                    Directional dir = (Directional) bd;
+
+                    //Set material.
+                    switch (type) {
+
+                        case "wither_skeleton_skull" -> block.setType(Material.WITHER_SKELETON_WALL_SKULL);
+                        case "zombie_head" -> block.setType(Material.ZOMBIE_WALL_HEAD);
+                        case "player_head" -> block.setType(Material.PLAYER_WALL_HEAD);
+                        case "creeper_head" -> block.setType(Material.CREEPER_WALL_HEAD);
+                        case "dragon_head" -> block.setType(Material.DRAGON_WALL_HEAD);
+
+                    }
+
+                    switch ((String) properties.get("facing")) {
+
+                        case "north" -> dir.setFacing(BlockFace.NORTH);
+                        case "south" -> dir.setFacing(BlockFace.SOUTH);
+                        case "west" -> dir.setFacing(BlockFace.WEST);
+                        case "east" -> dir.setFacing(BlockFace.EAST);
+
+                    }
+
+                    block.setBlockData(dir);
+
+                } else {
+                    instance.getLogger().info("Not a skull at " + l.getX() + ", " + l.getY() + ", " + l.getZ());
+                    return;
+                }
+
+                //If type is a player head, set the texture, ect.
+                if (type.equals("player_head")) {
+
+                    final Skull skull = (Skull) block.getState();
+                    PlayerProfile profile = instance.getServer().createProfile(UUID.fromString((String) properties.get("id")));
+                    profile.getProperties().add(new ProfileProperty("textures", (String) properties.get("texture")));
+
+                    try {
+                        Field profileField = skull.getClass().getDeclaredField("profile");
+                        profileField.setAccessible(true);
+                        profileField.set(skull, profile);
+                    }catch (NoSuchFieldException | IllegalAccessException e) { e.printStackTrace(); }
+                    skull.update(); // so that the result can be seen
+
+                }
             }
 
             case "minecraft:note_block" -> {
@@ -438,32 +458,34 @@ public class Converter implements CommandExecutor {
     private Wall setConnections(Location l, BlockData block, Wall wall, Wall.Height height) {
         //North (Negative Z)
         Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
-        if (canConnect(block.getMaterial(), world.getBlockData(lZMin), BlockFace.NORTH)) {
+        if (canConnect(block.getMaterial(), lZMin, BlockFace.NORTH)) {
             wall.setHeight(BlockFace.NORTH, height);
         }
 
         //East (Positive X)
         Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
-        if (canConnect(block.getMaterial(), world.getBlockData(lXMax), BlockFace.NORTH)) {
+        if (canConnect(block.getMaterial(), lXMax, BlockFace.NORTH)) {
             wall.setHeight(BlockFace.EAST, height);
         }
 
         //South (Positive Z)
         Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
-        if (canConnect(block.getMaterial(), world.getBlockData(lZMax), BlockFace.NORTH)) {
+        if (canConnect(block.getMaterial(), lZMax, BlockFace.NORTH)) {
             wall.setHeight(BlockFace.SOUTH, height);
         }
 
         //West (Negative X)
         Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
-        if (canConnect(block.getMaterial(), world.getBlockData(lXMin), BlockFace.NORTH)) {
+        if (canConnect(block.getMaterial(), lXMin, BlockFace.NORTH)) {
             wall.setHeight(BlockFace.WEST, height);
         }
 
         return wall;
     }
 
-    private boolean canConnect(Material mat, BlockData bd, BlockFace face) {
+    private boolean canConnect(Material mat, Location l, BlockFace face) {
+
+        BlockData bd = world.getBlockData(l);
 
         //First check if the block is solid, return if true.
         switch (bd.getMaterial()) {
@@ -510,7 +532,7 @@ public class Converter implements CommandExecutor {
         //Stair case
         if (bd instanceof Stairs) {
 
-            Stairs stair = (Stairs) bd;
+            Stairs stair = getStair(l);
 
             switch (face) {
                 case NORTH -> {
@@ -736,6 +758,91 @@ public class Converter implements CommandExecutor {
         return false;
     }
 
+    private Stairs getStair(Location l) {
+        /*
+
+                Stair direction = direction 0
+                Stair facing away on left = direction 1
+                Stair facing away behind = direction 2
+                Stair facing away on right = direction 3
+
+                Order = Below-Left-Above-Right
+
+                Formations:
+                    Straight has priority
+                    Stair always prioritises itself
+                    Small corner over large corner
+
+                Each of the 4 directions has:
+                    Straight (Block is stair and attaches with a straight connection)
+                    CornerI (Block is stair and attaches with an inner corner)
+                    CornerO (Block is stair and attaches with an outer corner)
+                    None (Block is stair without connections or a non-stair)
+
+                Calculation:
+
+                    1. If contains Straight
+                        - Check for 2nd Straight ->
+                            return Straight
+                        - Check for CornerI ->
+                            if CornerI[facing] != Straight[direction] ->
+                                return CornerI in Straight[direction]
+                        - Check for CornerO ->
+                            if CornerO[facing] == Straight[direction] ->
+                                return CornerO in !Straight[direction]
+                        - Else return Straight
+
+                    2. If contains CornerI return CornerI in !CornerI[direction]
+                    3. If contains CornerO return CornerO in CornerO[direction]
+
+                 */
+
+        //Get main stair.
+        BlockData bd = world.getBlockData(l);
+        Stairs stair = (Stairs) bd;
+        StairData[] stairs = new StairData[4];
+        StairData mainStair = new StairData(stair, l);
+
+        //Get 4 adjacent stairs, if they are stairs.
+        Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
+        if (world.getBlockData(lXMin) instanceof Stairs) {
+            Stairs xMin = (Stairs) world.getBlockData(lXMin);
+            if (mainStair.half == xMin.getHalf()) {
+                //Add it to the array at index 0.
+                stairs[0] = new StairData(xMin, lXMin, mainStair);
+            }
+        }
+        Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
+        if (world.getBlockData(lXMax) instanceof Stairs) {
+            Stairs xMax = (Stairs) world.getBlockData(lXMax);
+            if (mainStair.half == xMax.getHalf()) {
+                //Add it to the array at index 1.
+                stairs[1] = new StairData(xMax, lXMax, mainStair);
+            }
+        }
+        Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
+        if (world.getBlockData(lZMin) instanceof Stairs) {
+            Stairs zMin = (Stairs) world.getBlockData(lZMin);
+            if (mainStair.half == zMin.getHalf()) {
+                //Add it to the array at index 2.
+                stairs[2] = new StairData(zMin, lZMin, mainStair);
+            }
+        }
+        Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
+        if (world.getBlockData(lZMax) instanceof Stairs) {
+            Stairs zMax = (Stairs) world.getBlockData(lZMax);
+            if (mainStair.half == zMax.getHalf()) {
+                //Add it to the array at index 3.
+                stairs[3] = new StairData(zMax, lZMax, mainStair);
+            }
+        }
+
+        //Set the stair shape.
+        stair.setShape(mainStair.getShape(stairs));
+
+        return stair;
+    }
+
     private Wall getWall(Location l) {
 
         //Check if the fence can connect to adjacent blocks.
@@ -761,7 +868,7 @@ public class Converter implements CommandExecutor {
             //Check in which directions it is connected.
             //North (Negative Z)
             Location lZMin = new Location(world, lAbove.getX(), lAbove.getY(), lAbove.getZ() - 1);
-            if (canConnect(block.getMaterial(), world.getBlockData(lZMin), BlockFace.NORTH)) {
+            if (canConnect(block.getMaterial(), lZMin, BlockFace.NORTH)) {
                 if (wall.getHeight(BlockFace.NORTH) == Wall.Height.LOW) {
                     wall.setHeight(BlockFace.NORTH, Wall.Height.TALL);
                 }
@@ -769,7 +876,7 @@ public class Converter implements CommandExecutor {
 
             //East (Positive X)
             Location lXMax = new Location(world, lAbove.getX() + 1, lAbove.getY(), lAbove.getZ());
-            if (canConnect(block.getMaterial(), world.getBlockData(lXMax), BlockFace.EAST)) {
+            if (canConnect(block.getMaterial(), lXMax, BlockFace.EAST)) {
                 if (wall.getHeight(BlockFace.EAST) == Wall.Height.LOW) {
                     wall.setHeight(BlockFace.EAST, Wall.Height.TALL);
                 }
@@ -777,7 +884,7 @@ public class Converter implements CommandExecutor {
 
             //South (Positive Z)
             Location lZMax = new Location(world, lAbove.getX(), lAbove.getY(), lAbove.getZ() + 1);
-            if (canConnect(block.getMaterial(), world.getBlockData(lZMax), BlockFace.SOUTH)) {
+            if (canConnect(block.getMaterial(), lZMax, BlockFace.SOUTH)) {
                 if (wall.getHeight(BlockFace.SOUTH) == Wall.Height.LOW) {
                     wall.setHeight(BlockFace.SOUTH, Wall.Height.TALL);
                 }
@@ -785,7 +892,7 @@ public class Converter implements CommandExecutor {
 
             //West (Negative X)
             Location lXMin = new Location(world, lAbove.getX() - 1, lAbove.getY(), lAbove.getZ());
-            if (canConnect(block.getMaterial(), world.getBlockData(lXMin), BlockFace.WEST)) {
+            if (canConnect(block.getMaterial(), lXMin, BlockFace.WEST)) {
                 if (wall.getHeight(BlockFace.WEST) == Wall.Height.LOW) {
                     wall.setHeight(BlockFace.WEST, Wall.Height.TALL);
                 }
