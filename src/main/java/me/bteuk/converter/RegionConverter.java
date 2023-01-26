@@ -324,8 +324,6 @@ public class RegionConverter extends Thread {
                                     JSONObject obj = new JSONObject();
                                     obj.put("block", MinecraftIDConverter.getNameSpace(blocks[j], meta));
 
-                                    String[] regionCoords = file.replace(".2dr", "").split("\\.");
-
                                     //Convert current block to x,y,z coordinate in the chunk.
                                     //blockPos = y*256 + z*16 + x = i
                                     cY = j / 256;
@@ -342,21 +340,21 @@ public class RegionConverter extends Thread {
                                         //If it's a block entity.
                                         if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
                                             //Find the tile entity from the list.
-                                            boolean found = false;
                                             for (CompoundTag tile_entity : tile_entities) {
+
+                                                x = tile_entity.getInt("x") >= 0 ? tile_entity.getInt("x") % 16 : 16 + (tile_entity.getInt("x") % 16);
+                                                z = tile_entity.getInt("z") >= 0 ? tile_entity.getInt("z") % 16 : 16 + (tile_entity.getInt("z") % 16);
+
                                                 //If the coordinates are equal.
                                                 if ((x == cX) && (z == cZ) && (tile_entity.getInt("y") == (y * 16 + cY))) {
 
+                                                    //System.out.println("Coords: " + tile_entity.getInt("x") + ", " + tile_entity.getInt("y") + ", " + tile_entity.getInt("z"));
 
                                                     //Add the properties.
                                                     obj.put("properties", MinecraftIDConverter.getProperties(blocks[j], meta, tile_entity));
-                                                    found = true;
                                                     break;
 
                                                 }
-                                            }
-                                            if (!found) {
-                                                obj.put("properties", MinecraftIDConverter.getProperties(blocks[j], meta, null));
                                             }
                                         } else {
 

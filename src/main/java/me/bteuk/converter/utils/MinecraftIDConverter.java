@@ -433,27 +433,22 @@ public class MinecraftIDConverter {
 
                 jo.put("rotation", String.valueOf(data));
 
-                if (block_entity != null) {
-                    //Banner colour
-                    jo.put("colour", colourNameSpace(block_entity.getInt("Base")));
+                //Banner colour
+                jo.put("colour", colourNameSpace(block_entity.getInt("Base")));
 
-                    //Patterns
-                    JSONArray ja = new JSONArray();
-                    ListTag<CompoundTag> patterns = (ListTag<CompoundTag>) block_entity.getListTag("Patterns");
-                    if (patterns != null) {
-                        for (CompoundTag pattern : patterns) {
-                            JSONObject p = new JSONObject();
-                            p.put("colour", colourNameSpace(pattern.getInt("Color")));
-                            p.put("pattern", pattern.getString("Pattern"));
-                            ja.add(p);
-                        }
+                //Patterns
+                JSONArray ja = new JSONArray();
+                ListTag<CompoundTag> patterns = (ListTag<CompoundTag>) block_entity.getListTag("Patterns");
+                if (patterns != null) {
+                    for (CompoundTag pattern : patterns) {
+                        JSONObject p = new JSONObject();
+                        p.put("colour", colourNameSpace(pattern.getInt("Color")));
+                        p.put("pattern", pattern.getString("Pattern"));
+                        ja.add(p);
                     }
-
-                    jo.put("patterns", ja);
-                } else {
-                    jo.put("colour", "white");
                 }
 
+                jo.put("patterns", ja);
             }
 
             //Wall Banner
@@ -468,26 +463,22 @@ public class MinecraftIDConverter {
 
                 }
 
-                if (block_entity != null) {
-                    //Banner colour
-                    jo.put("colour", colourNameSpace(block_entity.getInt("Base")));
+                //Banner colour
+                jo.put("colour", colourNameSpace(block_entity.getInt("Base")));
 
-                    //Patterns
-                    JSONArray ja = new JSONArray();
-                    ListTag<CompoundTag> patterns = (ListTag<CompoundTag>) block_entity.getListTag("Patterns");
-                    if (patterns != null) {
-                        for (CompoundTag pattern : patterns) {
-                            JSONObject p = new JSONObject();
-                            p.put("colour", colourNameSpace(pattern.getInt("Color")));
-                            p.put("pattern", pattern.getString("Pattern"));
-                            ja.add(p);
-                        }
+                //Patterns
+                JSONArray ja = new JSONArray();
+                ListTag<CompoundTag> patterns = (ListTag<CompoundTag>) block_entity.getListTag("Patterns");
+                if (patterns != null) {
+                    for (CompoundTag pattern : patterns) {
+                        JSONObject p = new JSONObject();
+                        p.put("colour", colourNameSpace(pattern.getInt("Color")));
+                        p.put("pattern", pattern.getString("Pattern"));
+                        ja.add(p);
                     }
-
-                    jo.put("patterns", ja);
-                } else {
-                    jo.put("colour", "white");
                 }
+
+                jo.put("patterns", ja);
             }
 
             //Melon/Pumpkin Stems
@@ -498,7 +489,7 @@ public class MinecraftIDConverter {
 
                 //Null case
                 if (block_entity == null) {
-                    jo.put("type","flower_pot");
+                    jo.put("type", "flower_pot");
                 } else {
 
                     //Sort by item.
@@ -562,60 +553,46 @@ public class MinecraftIDConverter {
                     default -> jo.put("facing", "floor");
 
                 }
+                //Skull type.
+                switch (block_entity.getByte("SkullType")) {
 
-                if (block_entity != null) {
+                    case 0 -> jo.put("type", "skeleton_skull");
+                    case 1 -> jo.put("type", "wither_skeleton_skull");
+                    case 2 -> jo.put("type", "zombie_head");
+                    case 3 -> {
 
-                    //Skull type.
-                    switch (block_entity.getByte("SkullType")) {
+                        jo.put("type", "player_head");
 
-                        case 0 -> jo.put("type", "skeleton_skull");
-                        case 1 -> jo.put("type", "wither_skeleton_skull");
-                        case 2 -> jo.put("type", "zombie_head");
-                        case 3 -> {
+                        //Get owner data.
+                        CompoundTag owner = block_entity.getCompoundTag("Owner");
 
-                            jo.put("type", "player_head");
+                        if (owner != null) {
 
-                            //Get owner data.
-                            CompoundTag owner = block_entity.getCompoundTag("Owner");
+                            jo.put("id", owner.getString("Id"));
 
-                            if (owner != null) {
+                            CompoundTag properties = owner.getCompoundTag("Properties");
+                            ListTag<CompoundTag> textures = (ListTag<CompoundTag>) properties.getListTag("textures");
 
-                                jo.put("id", owner.getString("Id"));
+                            //Get first texture.
+                            CompoundTag texture = textures.get(0);
 
-                                CompoundTag properties = owner.getCompoundTag("Properties");
-                                ListTag<CompoundTag> textures = (ListTag<CompoundTag>) properties.getListTag("textures");
-
-                                //Get first texture.
-                                CompoundTag texture = textures.get(0);
-
-                                jo.put("texture", texture.getString("Value"));
-
-                            }
+                            jo.put("texture", texture.getString("Value"));
 
                         }
-                        case 4 -> jo.put("type", "creeper_head");
-                        case 5 -> jo.put("type", "dragon_head");
 
                     }
-
-                    //Rotation
-                    jo.put("rotation", block_entity.getByte("Rot"));
-
-                } else {
-
-                    //Set default.
-                    jo.put("type", "skeleton_skull");
+                    case 4 -> jo.put("type", "creeper_head");
+                    case 5 -> jo.put("type", "dragon_head");
 
                 }
+
+                //Rotation
+                jo.put("rotation", block_entity.getByte("Rot"));
             }
 
             //Note Block
             case 25 -> {
-                if (block_entity == null) {
-                    jo.put("note", (byte) 0);
-                } else {
-                    jo.put("note", block_entity.getByte("note"));
-                }
+                jo.put("note", block_entity.getByte("note"));
             }
 
         }
@@ -737,7 +714,7 @@ public class MinecraftIDConverter {
             block_entity.putString("id", "minecraft:bed");
         } else if (id == (byte) 219 || id == (byte) 220 || id == (byte) 221 || id == (byte) 222 ||
                 id == (byte) 223 || id == (byte) 224 || id == (byte) 225 || id == (byte) 226 ||
-                id == (byte) 227 || id == (byte) 228 || id == (byte) 229 || id ==(byte) 230 ||
+                id == (byte) 227 || id == (byte) 228 || id == (byte) 229 || id == (byte) 230 ||
                 id == (byte) 231 || id == (byte) 232 || id == (byte) 233 || id == (byte) 234) {
             block_entity.putString("id", "minecraft:shulker_box");
         } else if (id == 63 || id == 68) {
