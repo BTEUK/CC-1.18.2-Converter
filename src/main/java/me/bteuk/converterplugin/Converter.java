@@ -18,6 +18,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -328,25 +329,31 @@ public class Converter implements CommandExecutor {
 
                     }
 
-                    switch ((byte) properties.get("rot")) {
+                    Object oRot = properties.get("rot");
 
-                        case 0 -> rot.setRotation(BlockFace.SOUTH);
-                        case 1 -> rot.setRotation(BlockFace.SOUTH_SOUTH_WEST);
-                        case 2 -> rot.setRotation(BlockFace.SOUTH_WEST);
-                        case 3 -> rot.setRotation(BlockFace.WEST_SOUTH_WEST);
-                        case 4 -> rot.setRotation(BlockFace.WEST);
-                        case 5 -> rot.setRotation(BlockFace.WEST_NORTH_WEST);
-                        case 6 -> rot.setRotation(BlockFace.NORTH_WEST);
-                        case 7 -> rot.setRotation(BlockFace.NORTH_NORTH_WEST);
-                        case 8 -> rot.setRotation(BlockFace.NORTH);
-                        case 9 -> rot.setRotation(BlockFace.NORTH_NORTH_EAST);
-                        case 10 -> rot.setRotation(BlockFace.NORTH_EAST);
-                        case 11 -> rot.setRotation(BlockFace.EAST_NORTH_EAST);
-                        case 12 -> rot.setRotation(BlockFace.EAST);
-                        case 13 -> rot.setRotation(BlockFace.EAST_SOUTH_EAST);
-                        case 14 -> rot.setRotation(BlockFace.SOUTH_EAST);
-                        case 15 -> rot.setRotation(BlockFace.SOUTH_SOUTH_EAST);
+                    if (oRot == null) {
+                        rot.setRotation(BlockFace.SOUTH);
+                    } else {
+                        switch ((byte) oRot) {
 
+                            case 0 -> rot.setRotation(BlockFace.SOUTH);
+                            case 1 -> rot.setRotation(BlockFace.SOUTH_SOUTH_WEST);
+                            case 2 -> rot.setRotation(BlockFace.SOUTH_WEST);
+                            case 3 -> rot.setRotation(BlockFace.WEST_SOUTH_WEST);
+                            case 4 -> rot.setRotation(BlockFace.WEST);
+                            case 5 -> rot.setRotation(BlockFace.WEST_NORTH_WEST);
+                            case 6 -> rot.setRotation(BlockFace.NORTH_WEST);
+                            case 7 -> rot.setRotation(BlockFace.NORTH_NORTH_WEST);
+                            case 8 -> rot.setRotation(BlockFace.NORTH);
+                            case 9 -> rot.setRotation(BlockFace.NORTH_NORTH_EAST);
+                            case 10 -> rot.setRotation(BlockFace.NORTH_EAST);
+                            case 11 -> rot.setRotation(BlockFace.EAST_NORTH_EAST);
+                            case 12 -> rot.setRotation(BlockFace.EAST);
+                            case 13 -> rot.setRotation(BlockFace.EAST_SOUTH_EAST);
+                            case 14 -> rot.setRotation(BlockFace.SOUTH_EAST);
+                            case 15 -> rot.setRotation(BlockFace.SOUTH_SOUTH_EAST);
+
+                        }
                     }
 
                     block.setBlockData(rot);
@@ -388,14 +395,10 @@ public class Converter implements CommandExecutor {
 
                     final Skull skull = (Skull) block.getState();
                     PlayerProfile profile = instance.getServer().createProfile(UUID.fromString((String) properties.get("id")));
-                    profile.getProperties().add(new ProfileProperty("textures", (String) properties.get("texture")));
-
-                    try {
-                        Field profileField = skull.getClass().getDeclaredField("profile");
-                        profileField.setAccessible(true);
-                        profileField.set(skull, profile);
-                    }catch (NoSuchFieldException | IllegalAccessException e) { e.printStackTrace(); }
+                    profile.setProperty(new ProfileProperty("textures", (String) properties.get("texture")));
+                    skull.setPlayerProfile(profile);
                     skull.update(); // so that the result can be seen
+
 
                 }
             }
@@ -853,11 +856,6 @@ public class Converter implements CommandExecutor {
         //Only then check which should be tall/low.
         wall = setConnections(l, block, wall, Wall.Height.LOW);
 
-        if (l.getX() == 2777193 && l.getY() == 3 && l.getZ() == -5411033) {
-            instance.getLogger().info("North = " + wall.getHeight(BlockFace.NORTH) + "\nSouth = " + wall.getHeight(BlockFace.SOUTH) +
-                    "\nWest = " + wall.getHeight(BlockFace.WEST) + "\nEast = " + wall.getHeight(BlockFace.EAST) + "\nUp = " + wall.isUp());
-        }
-
         //Get the blocks above
         //If the block above is a fence or wall more checks are needed.
         Location lAbove = new Location(world, l.getX(), (l.getY() + 1), l.getZ());
@@ -923,19 +921,11 @@ public class Converter implements CommandExecutor {
             //Check of the wall can connect to the block above.
             if (canConnectAbove(bAbove)) {
 
-                if (l.getX() == 2777193 && l.getY() == 3 && l.getZ() == -5411033) {
-                    instance.getLogger().info("Can connect above, " + bAbove.getMaterial());
-                }
 
                 //Set all heights to tall.
                 wall = setConnections(l, block, wall, Wall.Height.TALL);
 
             }
-        }
-
-        if (l.getX() == 2777193 && l.getY() == 3 && l.getZ() == -5411033) {
-            instance.getLogger().info("North = " + wall.getHeight(BlockFace.NORTH) + "\nSouth = " + wall.getHeight(BlockFace.SOUTH) +
-                    "\nWest = " + wall.getHeight(BlockFace.WEST) + "\nEast = " + wall.getHeight(BlockFace.EAST) + "\nUp = " + wall.isUp());
         }
 
         //Check if the walls up=true.
@@ -997,11 +987,6 @@ public class Converter implements CommandExecutor {
                     wall.setUp(true);
                 }
             }
-        }
-
-        if (l.getX() == 2777193 && l.getY() == 3 && l.getZ() == -5411033) {
-            instance.getLogger().info("North = " + wall.getHeight(BlockFace.NORTH) + "\nSouth = " + wall.getHeight(BlockFace.SOUTH) +
-                    "\nWest = " + wall.getHeight(BlockFace.WEST) + "\nEast = " + wall.getHeight(BlockFace.EAST) + "\nUp = " + wall.isUp());
         }
 
         return wall;
