@@ -342,6 +342,7 @@ public class RegionConverter extends Thread {
                                         //If it's a block entity.
                                         if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
                                             //Find the tile entity from the list.
+                                            boolean found = false;
                                             for (CompoundTag tile_entity : tile_entities) {
                                                 //If the coordinates are equal.
                                                 if ((x == cX) && (z == cZ) && (tile_entity.getInt("y") == (y * 16 + cY))) {
@@ -349,10 +350,13 @@ public class RegionConverter extends Thread {
 
                                                     //Add the properties.
                                                     obj.put("properties", MinecraftIDConverter.getProperties(blocks[j], meta, tile_entity));
-
+                                                    found = true;
                                                     break;
 
                                                 }
+                                            }
+                                            if (!found) {
+                                                obj.put("properties", MinecraftIDConverter.getProperties(blocks[j], meta, null));
                                             }
                                         } else {
 
