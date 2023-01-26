@@ -232,11 +232,7 @@ public class Converter implements CommandExecutor {
 
             //Fences, Iron bar and Glass panes.
             case "minecraft:oak_fence", "minecraft:birch_fence", "minecraft:spruce_fence", "minecraft:jungle_fence", "minecraft:acacia_fence", "minecraft:dark_oak_fence",
-                    "minecraft:nether_brick_fence", "minecraft:glass_pane", "minecraft:red_stained_glass_pane", "minecraft:lime_stained_glass_pane",
-                    "minecraft:pink_stained_glass_pane", "minecraft:gray_stained_glass_pane", "minecraft:cyan_stained_glass_pane", "minecraft:blue_stained_glass_pane",
-                    "minecraft:white_stained_glass_pane", "minecraft:brown_stained_glass_pane", "minecraft:green_stained_glass_pane", "minecraft:black_stained_glass_pane",
-                    "minecraft:orange_stained_glass_pane", "minecraft:yellow_stained_glass_pane", "minecraft:purple_stained_glass_pane",
-                    "minecraft:magenta_stained_glass_pane", "minecraft:light_blue_stained_glass_pane", "minecraft:light_gray_stained_glass_pane", "minecraft:iron_bars" -> {
+                    "minecraft:nether_brick_fence", "minecraft:glass_pane", "minecraft:iron_bars" -> {
 
                 //Check if the fence can connect to adjacent blocks.
                 BlockData block = world.getBlockData(l);
@@ -270,6 +266,48 @@ public class Converter implements CommandExecutor {
                 }
 
                 world.setBlockData(l, fence);
+            }
+
+            //Stained glass (for some reason it's a different data type from normal glass panes, even though the data is the exact same)
+            case "minecraft:red_stained_glass_pane", "minecraft:lime_stained_glass_pane",
+                    "minecraft:pink_stained_glass_pane", "minecraft:gray_stained_glass_pane", "minecraft:cyan_stained_glass_pane", "minecraft:blue_stained_glass_pane",
+                    "minecraft:white_stained_glass_pane", "minecraft:brown_stained_glass_pane", "minecraft:green_stained_glass_pane", "minecraft:black_stained_glass_pane",
+                    "minecraft:orange_stained_glass_pane", "minecraft:yellow_stained_glass_pane", "minecraft:purple_stained_glass_pane",
+                    "minecraft:magenta_stained_glass_pane", "minecraft:light_blue_stained_glass_pane", "minecraft:light_gray_stained_glass_pane" -> {
+
+                //Check if the fence can connect to adjacent blocks.
+                BlockData block = world.getBlockData(l);
+                if (!(block instanceof GlassPane)) {
+                    instance.getLogger().info("Not a glass pane at " + l.getX() + ", " + l.getY() + ", " + l.getZ());
+                }
+                GlassPane fence = (GlassPane) block;
+
+                //North (Negative Z)
+                Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
+                if (canConnect(block.getMaterial(), world.getBlockData(lZMin), BlockFace.NORTH)) {
+                    fence.setFace(BlockFace.NORTH, true);
+                }
+
+                //East (Positive X)
+                Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
+                if (canConnect(block.getMaterial(), world.getBlockData(lXMax), BlockFace.EAST)) {
+                    fence.setFace(BlockFace.EAST, true);
+                }
+
+                //South (Positive Z)
+                Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
+                if (canConnect(block.getMaterial(), world.getBlockData(lZMax), BlockFace.SOUTH)) {
+                    fence.setFace(BlockFace.SOUTH, true);
+                }
+
+                //West (Negative X)
+                Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
+                if (canConnect(block.getMaterial(), world.getBlockData(lXMin), BlockFace.WEST)) {
+                    fence.setFace(BlockFace.WEST, true);
+                }
+
+                world.setBlockData(l, fence);
+
             }
 
             case "minecraft:cobblestone_wall", "minecraft:mossy_cobblestone_wall" -> {
@@ -708,9 +746,14 @@ public class Converter implements CommandExecutor {
         //Only then check which should be tall/low.
         wall = setConnections(l, block, wall, Wall.Height.LOW);
 
+        if (l.getX() == 2777193 && l.getY() == 3 && l.getZ() == -5411033) {
+            instance.getLogger().info("North = " + wall.getHeight(BlockFace.NORTH) + "\nSouth = " + wall.getHeight(BlockFace.SOUTH) +
+                    "\nWest = " + wall.getHeight(BlockFace.WEST) + "\nEast = " + wall.getHeight(BlockFace.EAST) + "\nUp = " + wall.isUp());
+        }
+
         //Get the blocks above
         //If the block above is a fence or wall more checks are needed.
-        Location lAbove = new Location(world, l.getX(), l.getY() + 1, l.getX());
+        Location lAbove = new Location(world, l.getX(), (l.getY() + 1), l.getZ());
         BlockData bAbove = world.getBlockData(lAbove);
 
         if (isFenceOrWall(bAbove)) {
@@ -773,10 +816,19 @@ public class Converter implements CommandExecutor {
             //Check of the wall can connect to the block above.
             if (canConnectAbove(bAbove)) {
 
+                if (l.getX() == 2777193 && l.getY() == 3 && l.getZ() == -5411033) {
+                    instance.getLogger().info("Can connect above, " + bAbove.getMaterial());
+                }
+
                 //Set all heights to tall.
                 wall = setConnections(l, block, wall, Wall.Height.TALL);
 
             }
+        }
+
+        if (l.getX() == 2777193 && l.getY() == 3 && l.getZ() == -5411033) {
+            instance.getLogger().info("North = " + wall.getHeight(BlockFace.NORTH) + "\nSouth = " + wall.getHeight(BlockFace.SOUTH) +
+                    "\nWest = " + wall.getHeight(BlockFace.WEST) + "\nEast = " + wall.getHeight(BlockFace.EAST) + "\nUp = " + wall.isUp());
         }
 
         //Check if the walls up=true.
@@ -788,13 +840,13 @@ public class Converter implements CommandExecutor {
 
         //If wall has a straight or cross shape.
         if (
-                (wall.getHeight(BlockFace.NORTH) == wall.getHeight(BlockFace.SOUTH) &&
-                        wall.getHeight(BlockFace.WEST) == Wall.Height.NONE && wall.getHeight(BlockFace.EAST) == Wall.Height.NONE)
+                ((wall.getHeight(BlockFace.NORTH) == wall.getHeight(BlockFace.SOUTH)) && wall.getHeight(BlockFace.NORTH) != Wall.Height.NONE &&
+                        (wall.getHeight(BlockFace.WEST) == Wall.Height.NONE && wall.getHeight(BlockFace.EAST) == Wall.Height.NONE))
                         ||
-                        (wall.getHeight(BlockFace.EAST) == wall.getHeight(BlockFace.WEST) &&
+                        (wall.getHeight(BlockFace.EAST) == wall.getHeight(BlockFace.WEST) && wall.getHeight(BlockFace.EAST) != Wall.Height.NONE &&
                                 wall.getHeight(BlockFace.NORTH) == Wall.Height.NONE && wall.getHeight(BlockFace.SOUTH) == Wall.Height.NONE)
                         ||
-                        ((wall.getHeight(BlockFace.NORTH) == wall.getHeight(BlockFace.SOUTH)) == (wall.getHeight(BlockFace.EAST) == wall.getHeight(BlockFace.WEST)))
+                        ((wall.getHeight(BlockFace.NORTH) == wall.getHeight(BlockFace.SOUTH)) && (wall.getHeight(BlockFace.EAST) == wall.getHeight(BlockFace.WEST)) && wall.getHeight(BlockFace.NORTH) != Wall.Height.NONE)
         ) {
             wall.setUp(false);
 
@@ -838,6 +890,11 @@ public class Converter implements CommandExecutor {
                     wall.setUp(true);
                 }
             }
+        }
+
+        if (l.getX() == 2777193 && l.getY() == 3 && l.getZ() == -5411033) {
+            instance.getLogger().info("North = " + wall.getHeight(BlockFace.NORTH) + "\nSouth = " + wall.getHeight(BlockFace.SOUTH) +
+                    "\nWest = " + wall.getHeight(BlockFace.WEST) + "\nEast = " + wall.getHeight(BlockFace.EAST) + "\nUp = " + wall.isUp());
         }
 
         return wall;
