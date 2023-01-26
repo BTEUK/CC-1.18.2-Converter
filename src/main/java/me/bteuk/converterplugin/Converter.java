@@ -179,7 +179,7 @@ public class Converter implements CommandExecutor {
                 //Get main stair.
                 BlockData bd = world.getBlockData(l);
                 if (!(bd instanceof Stairs)) {
-                    instance.getLogger().info(bd.getMaterial().name());
+                    instance.getLogger().info("Not a stair at " + l.getX() + ", " + l.getY() + ", " + l.getZ());
                     return;
                 }
                 Stairs stair = (Stairs) bd;
@@ -228,25 +228,49 @@ public class Converter implements CommandExecutor {
 
             }
 
-            case "minecraft:oak_fence", "minecraft:birch_fence", "minecraft:spruce_fence", "minecraft:jungle_fence", "minecraft:acacia_fence", "minecraft:dark_oak_fence" -> {
+            //Fences, Iron bar and Glass panes.
+            case "minecraft:oak_fence", "minecraft:birch_fence", "minecraft:spruce_fence", "minecraft:jungle_fence", "minecraft:acacia_fence", "minecraft:dark_oak_fence",
+                    "minecraft:nether_brick_fence", "minecraft:glass_pane", "minecraft:red_stained_glass_pane", "minecraft:lime_stained_glass_pane",
+                    "minecraft:pink_stained_glass_pane", "minecraft:gray_stained_glass_pane", "minecraft:cyan_stained_glass_pane", "minecraft:blue_stained_glass_pane",
+                    "minecraft:white_stained_glass_pane", "minecraft:brown_stained_glass_pane", "minecraft:green_stained_glass_pane", "minecraft:black_stained_glass_pane",
+                    "minecraft:orange_stained_glass_pane", "minecraft:yellow_stained_glass_pane", "minecraft:purple_stained_glass_pane",
+                    "minecraft:magenta_stained_glass_pane", "minecraft:light_blue_stained_glass_pane", "minecraft:light_gray_stained_glass_pane", "minecraft:iron_bars" -> {
 
-                Block b = world.getBlockAt(l);
-                b.getState().update(true, false);
+                //Check if the fence can connect to adjacent blocks.
+                BlockData block = world.getBlockData(l);
+                if (!(block instanceof Fence)) {
+                    instance.getLogger().info("Not a fence at " + l.getX() + ", " + l.getY() + ", " + l.getZ());
+                }
+                Fence fence = (Fence) block;
 
+                //North (Negative Z)
+                Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
+                if (canConnect(block.getMaterial(), world.getBlockData(lZMin), BlockFace.NORTH)) {
+                    fence.setFace(BlockFace.NORTH, true);
+                }
+
+                //East (Positive X)
+                Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
+                if (canConnect(block.getMaterial(), world.getBlockData(lZMin), BlockFace.NORTH)) {
+                    fence.setFace(BlockFace.EAST, true);
+                }
+
+                //South (Positive Z)
+                Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
+                if (canConnect(block.getMaterial(), world.getBlockData(lZMin), BlockFace.NORTH)) {
+                    fence.setFace(BlockFace.SOUTH, true);
+                }
+
+                //West (Negative X)
+                Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
+                if (canConnect(block.getMaterial(), world.getBlockData(lZMin), BlockFace.NORTH)) {
+                    fence.setFace(BlockFace.WEST, true);
+                }
+
+                world.setBlockData(l, fence);
             }
 
             case "minecraft:cobblestone_wall", "minecraft:mossy_cobblestone_wall" -> {
-
-                Block b = world.getBlockAt(l);
-                b.getState().update(true, false);
-
-            }
-
-            case "minecraft:glass_pane", "minecraft:red_stained_glass_pane", "minecraft:lime_stained_glass_pane", "minecraft:pink_stained_glass_pane", "minecraft:gray_stained_glass_pane",
-                    "minecraft:cyan_stained_glass_pane", "minecraft:blue_stained_glass_pane", "minecraft:white_stained_glass_pane", "minecraft:brown_stained_glass_pane",
-                    "minecraft:green_stained_glass_pane", "minecraft:black_stained_glass_pane", "minecraft:orange_stained_glass_pane", "minecraft:yellow_stained_glass_pane",
-                    "minecraft:purple_stained_glass_pane", "minecraft:magenta_stained_glass_pane", "minecraft:light_blue_stained_glass_pane", "minecraft:light_gray_stained_glass_pane",
-                    "minecraft:iron_bars" -> {
 
                 Block b = world.getBlockAt(l);
                 b.getState().update(true, false);
@@ -349,7 +373,7 @@ public class Converter implements CommandExecutor {
         world.setBlockData(l, bisected);
     }
 
-    private boolean canConnect(Material mat, Location l, BlockData bd, BlockFace face) {
+    private boolean canConnect(Material mat, BlockData bd, BlockFace face) {
 
         //First check if the block is solid, return if true.
         switch (bd.getMaterial()) {
