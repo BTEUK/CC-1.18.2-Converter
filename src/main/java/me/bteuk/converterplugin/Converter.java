@@ -1,11 +1,13 @@
 package me.bteuk.converterplugin;
 
+import me.bteuk.converterplugin.utils.Direction;
 import me.bteuk.converterplugin.utils.blocks.stairs.StairData;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.type.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -251,19 +253,19 @@ public class Converter implements CommandExecutor {
 
                 //East (Positive X)
                 Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
-                if (canConnect(block.getMaterial(), world.getBlockData(lZMin), BlockFace.NORTH)) {
+                if (canConnect(block.getMaterial(), world.getBlockData(lXMax), BlockFace.EAST)) {
                     fence.setFace(BlockFace.EAST, true);
                 }
 
                 //South (Positive Z)
                 Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
-                if (canConnect(block.getMaterial(), world.getBlockData(lZMin), BlockFace.NORTH)) {
+                if (canConnect(block.getMaterial(), world.getBlockData(lZMax), BlockFace.SOUTH)) {
                     fence.setFace(BlockFace.SOUTH, true);
                 }
 
                 //West (Negative X)
                 Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
-                if (canConnect(block.getMaterial(), world.getBlockData(lZMin), BlockFace.NORTH)) {
+                if (canConnect(block.getMaterial(), world.getBlockData(lXMin), BlockFace.WEST)) {
                     fence.setFace(BlockFace.WEST, true);
                 }
 
@@ -272,8 +274,14 @@ public class Converter implements CommandExecutor {
 
             case "minecraft:cobblestone_wall", "minecraft:mossy_cobblestone_wall" -> {
 
-                Block b = world.getBlockAt(l);
-                b.getState().update(true, false);
+                //Check if the fence can connect to adjacent blocks.
+                BlockData block = world.getBlockData(l);
+                if (!(block instanceof Wall)) {
+                    instance.getLogger().info("Not a wall at " + l.getX() + ", " + l.getY() + ", " + l.getZ());
+                    return;
+                }
+
+                world.setBlockData(l, getWall(l));
 
             }
 
@@ -373,6 +381,50 @@ public class Converter implements CommandExecutor {
         world.setBlockData(l, bisected);
     }
 
+    //Check if the material is of a fence.
+    private boolean isFence(Material mat) {
+        return (mat == Material.OAK_FENCE || mat == Material.SPRUCE_FENCE || mat == Material.BIRCH_FENCE || mat == Material.JUNGLE_FENCE || mat == Material.ACACIA_FENCE || mat == Material.DARK_OAK_FENCE || mat == Material.NETHER_BRICK_FENCE);
+    }
+
+    //Check if the material is of a fence or wall type.
+    private boolean isFenceOrWall(BlockData bd) {
+        return (bd instanceof Fence || bd instanceof GlassPane || bd instanceof Wall);
+    }
+
+    //Check if the material is of a fence gate.
+    private boolean isFenceGate(Material mat) {
+        return (mat == Material.OAK_FENCE_GATE || mat == Material.SPRUCE_FENCE_GATE || mat == Material.BIRCH_FENCE_GATE || mat == Material.JUNGLE_FENCE_GATE || mat == Material.ACACIA_FENCE_GATE || mat == Material.DARK_OAK_FENCE_GATE);
+    }
+
+    //Set the connections for walls with low or high.
+    private Wall setConnections(Location l, BlockData block, Wall wall, Wall.Height height) {
+        //North (Negative Z)
+        Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
+        if (canConnect(block.getMaterial(), world.getBlockData(lZMin), BlockFace.NORTH)) {
+            wall.setHeight(BlockFace.NORTH, height);
+        }
+
+        //East (Positive X)
+        Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
+        if (canConnect(block.getMaterial(), world.getBlockData(lXMax), BlockFace.NORTH)) {
+            wall.setHeight(BlockFace.EAST, height);
+        }
+
+        //South (Positive Z)
+        Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
+        if (canConnect(block.getMaterial(), world.getBlockData(lZMax), BlockFace.NORTH)) {
+            wall.setHeight(BlockFace.SOUTH, height);
+        }
+
+        //West (Negative X)
+        Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
+        if (canConnect(block.getMaterial(), world.getBlockData(lXMin), BlockFace.NORTH)) {
+            wall.setHeight(BlockFace.WEST, height);
+        }
+
+        return wall;
+    }
+
     private boolean canConnect(Material mat, BlockData bd, BlockFace face) {
 
         //First check if the block is solid, return if true.
@@ -467,18 +519,12 @@ public class Converter implements CommandExecutor {
                         return false;
                     }
                 }
-                case UP -> {
-                    return (stair.getHalf() == Bisected.Half.BOTTOM);
-                }
             }
         }
 
         //Slab Case
         if (bd instanceof Slab) {
             Slab slab = (Slab) bd;
-            if (face == BlockFace.UP) {
-                return (slab.getType() == Slab.Type.BOTTOM || slab.getType() == Slab.Type.DOUBLE);
-            }
             return (slab.getType() == Slab.Type.DOUBLE);
         }
 
@@ -526,16 +572,15 @@ public class Converter implements CommandExecutor {
                     return (gate.getFacing() == BlockFace.NORTH || gate.getFacing() == BlockFace.SOUTH);
                 }
             }
-            if (face == BlockFace.UP) {
-                return true;
-            }
             return false;
         }
 
         //Doors
         if (bd instanceof Door) {
             Door door = (Door) bd;
-            return (door.getFacing() == face && !door.isOpen());
+            if (door.getFacing() == face && !door.isOpen()) {
+                return true;
+            }
 
             if (door.isOpen()) {
                 switch (face) {
@@ -568,14 +613,233 @@ public class Converter implements CommandExecutor {
                         }
                     }
                 }
-            }}
+            }
+        }
 
         //All other cases.
         return false;
     }
 
-    private boolean isFence(Material mat) {
-        return (mat == Material.OAK_FENCE || mat == Material.SPRUCE_FENCE || mat == Material.BIRCH_FENCE || mat == Material.JUNGLE_FENCE || mat == Material.ACACIA_FENCE || mat == Material.DARK_OAK_FENCE || mat == Material.NETHER_BRICK_FENCE);
+    //Check if the wall can connect to this block above.
+    private boolean canConnectAbove(BlockData bd) {
+
+        //First check if the block is solid, return if true.
+        switch (bd.getMaterial()) {
+            case STONE, GRANITE, POLISHED_GRANITE, DIORITE, POLISHED_DIORITE, ANDESITE, POLISHED_ANDESITE,
+                    GRASS_BLOCK, DIRT, COARSE_DIRT, PODZOL, COBBLESTONE,
+                    OAK_PLANKS, SPRUCE_PLANKS, BIRCH_PLANKS, JUNGLE_PLANKS, ACACIA_PLANKS, DARK_OAK_PLANKS,
+                    BEDROCK, SAND, RED_SAND, GRAVEL,
+                    COAL_ORE, IRON_ORE, GOLD_ORE, REDSTONE_ORE, EMERALD_ORE, LAPIS_ORE, DIAMOND_ORE, NETHER_QUARTZ_ORE,
+                    COAL_BLOCK, IRON_BLOCK, GOLD_BLOCK, DIAMOND_BLOCK,
+                    OAK_LOG, SPRUCE_LOG, BIRCH_LOG, JUNGLE_LOG, ACACIA_LOG, DARK_OAK_LOG,
+                    OAK_WOOD, SPRUCE_WOOD, BIRCH_WOOD, JUNGLE_WOOD, ACACIA_WOOD, DARK_OAK_WOOD,
+                    SPONGE, WET_SPONGE, GLASS, LAPIS_BLOCK, SANDSTONE, CHISELED_SANDSTONE, CUT_SANDSTONE,
+                    WHITE_WOOL, ORANGE_WOOL, MAGENTA_WOOL, LIGHT_BLUE_WOOL, YELLOW_WOOL, LIME_WOOL, PINK_WOOL, GRAY_WOOL,
+                    LIGHT_GRAY_WOOL, CYAN_WOOL, PURPLE_WOOL, BLUE_WOOL, BROWN_WOOL, GREEN_WOOL, RED_WOOL, BLACK_WOOL,
+                    SMOOTH_QUARTZ, SMOOTH_RED_SANDSTONE, SMOOTH_SANDSTONE, SMOOTH_STONE, BRICKS, BOOKSHELF,
+                    MOSSY_COBBLESTONE, OBSIDIAN, PURPUR_BLOCK, PURPUR_PILLAR, CRAFTING_TABLE, FURNACE,
+                    ICE, SNOW_BLOCK, CLAY, JUKEBOX, NETHERRACK, SOUL_SAND, GLOWSTONE,
+                    INFESTED_STONE, INFESTED_COBBLESTONE, INFESTED_STONE_BRICKS, INFESTED_MOSSY_STONE_BRICKS, INFESTED_CRACKED_STONE_BRICKS, INFESTED_CHISELED_STONE_BRICKS,
+                    STONE_BRICKS, MOSSY_STONE_BRICKS, CRACKED_STONE_BRICKS, CHISELED_STONE_BRICKS,
+                    BROWN_MUSHROOM_BLOCK, RED_MUSHROOM_BLOCK, MUSHROOM_STEM, MYCELIUM, NETHER_BRICK, END_STONE, END_STONE_BRICKS,
+                    EMERALD_BLOCK, BEACON, CHISELED_QUARTZ_BLOCK, QUARTZ_BLOCK, QUARTZ_PILLAR,
+                    WHITE_TERRACOTTA, ORANGE_TERRACOTTA, MAGENTA_TERRACOTTA, LIGHT_BLUE_TERRACOTTA,
+                    YELLOW_TERRACOTTA, LIME_TERRACOTTA, PINK_TERRACOTTA, GRAY_TERRACOTTA,
+                    LIGHT_GRAY_TERRACOTTA, CYAN_TERRACOTTA, PURPLE_TERRACOTTA, BLUE_TERRACOTTA,
+                    BROWN_TERRACOTTA, GREEN_TERRACOTTA, RED_TERRACOTTA, BLACK_TERRACOTTA,
+                    HAY_BLOCK, TERRACOTTA, PACKED_ICE, PRISMARINE, PRISMARINE_BRICKS, DARK_PRISMARINE, SEA_LANTERN,
+                    RED_SANDSTONE, CHISELED_RED_SANDSTONE, CUT_RED_SANDSTONE, MAGMA_BLOCK, RED_NETHER_BRICKS, BONE_BLOCK,
+                    WHITE_GLAZED_TERRACOTTA, ORANGE_GLAZED_TERRACOTTA, MAGENTA_GLAZED_TERRACOTTA, LIGHT_BLUE_GLAZED_TERRACOTTA,
+                    YELLOW_GLAZED_TERRACOTTA, LIME_GLAZED_TERRACOTTA, PINK_GLAZED_TERRACOTTA, GRAY_GLAZED_TERRACOTTA,
+                    LIGHT_GRAY_GLAZED_TERRACOTTA, CYAN_GLAZED_TERRACOTTA, PURPLE_GLAZED_TERRACOTTA, BLUE_GLAZED_TERRACOTTA,
+                    BROWN_GLAZED_TERRACOTTA, GREEN_GLAZED_TERRACOTTA, RED_GLAZED_TERRACOTTA, BLACK_GLAZED_TERRACOTTA,
+                    WHITE_CONCRETE, ORANGE_CONCRETE, MAGENTA_CONCRETE, LIGHT_BLUE_CONCRETE, YELLOW_CONCRETE, LIME_CONCRETE, PINK_CONCRETE, GRAY_CONCRETE,
+                    LIGHT_GRAY_CONCRETE, CYAN_CONCRETE, PURPLE_CONCRETE, BLUE_CONCRETE, BROWN_CONCRETE, GREEN_CONCRETE, RED_CONCRETE, BLACK_CONCRETE,
+                    WHITE_CONCRETE_POWDER, ORANGE_CONCRETE_POWDER, MAGENTA_CONCRETE_POWDER, LIGHT_BLUE_CONCRETE_POWDER,
+                    YELLOW_CONCRETE_POWDER, LIME_CONCRETE_POWDER, PINK_CONCRETE_POWDER, GRAY_CONCRETE_POWDER,
+                    LIGHT_GRAY_CONCRETE_POWDER, CYAN_CONCRETE_POWDER, PURPLE_CONCRETE_POWDER, BLUE_CONCRETE_POWDER,
+                    BROWN_CONCRETE_POWDER, GREEN_CONCRETE_POWDER, RED_CONCRETE_POWDER, BLACK_CONCRETE_POWDER,
+                    REDSTONE_BLOCK, SLIME_BLOCK, PISTON, STICKY_PISTON, OBSERVER, DISPENSER, DROPPER,
+                    TNT, REDSTONE_LAMP, NOTE_BLOCK,
+
+                    OAK_LEAVES, SPRUCE_LEAVES, BIRCH_LEAVES, JUNGLE_LEAVES, ACACIA_LEAVES, DARK_OAK_LEAVES,
+                    FARMLAND, DIRT_PATH, CARVED_PUMPKIN, JACK_O_LANTERN, MELON, ENCHANTING_TABLE, END_PORTAL_FRAME,
+                    WHITE_CARPET, ORANGE_CARPET, MAGENTA_CARPET, LIGHT_BLUE_CARPET, YELLOW_CARPET, LIME_CARPET,
+                    PINK_CARPET, GRAY_CARPET, LIGHT_GRAY_CARPET, CYAN_CARPET, PURPLE_CARPET, BLUE_CARPET,
+                    BROWN_CARPET, GREEN_CARPET, RED_CARPET, BLACK_CARPET,
+                    SHULKER_BOX, WHITE_SHULKER_BOX, ORANGE_SHULKER_BOX, MAGENTA_SHULKER_BOX, LIGHT_BLUE_SHULKER_BOX,
+                    YELLOW_SHULKER_BOX, LIME_SHULKER_BOX, PINK_SHULKER_BOX, GRAY_SHULKER_BOX, LIGHT_GRAY_SHULKER_BOX,
+                    CYAN_SHULKER_BOX, PURPLE_SHULKER_BOX, BLUE_SHULKER_BOX, BROWN_SHULKER_BOX, GREEN_SHULKER_BOX,
+                    RED_SHULKER_BOX, BLACK_SHULKER_BOX, DAYLIGHT_DETECTOR -> {
+                return true;
+            }
+        }
+
+        //Stair case
+        if (bd instanceof Stairs) {
+
+            Stairs stair = (Stairs) bd;
+            return (stair.getHalf() == Bisected.Half.BOTTOM);
+        }
+
+        //Slab Case
+        if (bd instanceof Slab) {
+            Slab slab = (Slab) bd;
+            return (slab.getType() == Slab.Type.DOUBLE || slab.getType() == Slab.Type.BOTTOM);
+        }
+
+        //Trapdoors
+        if (bd instanceof TrapDoor) {
+            TrapDoor trapDoor = (TrapDoor) bd;
+            return (trapDoor.getHalf() == Bisected.Half.BOTTOM && !trapDoor.isOpen());
+        }
+
+        //All other cases.
+        return false;
     }
 
+    private Wall getWall(Location l) {
+
+        //Check if the fence can connect to adjacent blocks.
+        BlockData block = world.getBlockData(l);
+        Wall wall = (Wall) block;
+
+        //First check which directions are connected for the wall.
+        //Only then check which should be tall/low.
+        wall = setConnections(l, block, wall, Wall.Height.LOW);
+
+        //Get the blocks above
+        //If the block above is a fence or wall more checks are needed.
+        Location lAbove = new Location(world, l.getX(), l.getY() + 1, l.getX());
+        BlockData bAbove = world.getBlockData(lAbove);
+
+        if (isFenceOrWall(bAbove)) {
+
+            //Check in which directions it is connected.
+            //North (Negative Z)
+            Location lZMin = new Location(world, lAbove.getX(), lAbove.getY(), lAbove.getZ() - 1);
+            if (canConnect(block.getMaterial(), world.getBlockData(lZMin), BlockFace.NORTH)) {
+                if (wall.getHeight(BlockFace.NORTH) == Wall.Height.LOW) {
+                    wall.setHeight(BlockFace.NORTH, Wall.Height.TALL);
+                }
+            }
+
+            //East (Positive X)
+            Location lXMax = new Location(world, lAbove.getX() + 1, lAbove.getY(), lAbove.getZ());
+            if (canConnect(block.getMaterial(), world.getBlockData(lXMax), BlockFace.EAST)) {
+                if (wall.getHeight(BlockFace.EAST) == Wall.Height.LOW) {
+                    wall.setHeight(BlockFace.EAST, Wall.Height.TALL);
+                }
+            }
+
+            //South (Positive Z)
+            Location lZMax = new Location(world, lAbove.getX(), lAbove.getY(), lAbove.getZ() + 1);
+            if (canConnect(block.getMaterial(), world.getBlockData(lZMax), BlockFace.SOUTH)) {
+                if (wall.getHeight(BlockFace.SOUTH) == Wall.Height.LOW) {
+                    wall.setHeight(BlockFace.SOUTH, Wall.Height.TALL);
+                }
+            }
+
+            //West (Negative X)
+            Location lXMin = new Location(world, lAbove.getX() - 1, lAbove.getY(), lAbove.getZ());
+            if (canConnect(block.getMaterial(), world.getBlockData(lXMin), BlockFace.WEST)) {
+                if (wall.getHeight(BlockFace.WEST) == Wall.Height.LOW) {
+                    wall.setHeight(BlockFace.WEST, Wall.Height.TALL);
+                }
+            }
+        } else if (isFenceGate(bAbove.getMaterial())) {
+
+            //Check the direction of the fence gate.
+            Gate gate = (Gate) bAbove;
+
+            if (gate.getFacing() == BlockFace.NORTH || gate.getFacing() == BlockFace.SOUTH) {
+                if (wall.getHeight(BlockFace.EAST) == Wall.Height.LOW) {
+                    wall.setHeight(BlockFace.EAST, Wall.Height.TALL);
+                }
+
+                if (wall.getHeight(BlockFace.WEST) == Wall.Height.LOW) {
+                    wall.setHeight(BlockFace.WEST, Wall.Height.TALL);
+                }
+            } else {
+                if (wall.getHeight(BlockFace.NORTH) == Wall.Height.LOW) {
+                    wall.setHeight(BlockFace.NORTH, Wall.Height.TALL);
+                }
+
+                if (wall.getHeight(BlockFace.SOUTH) == Wall.Height.LOW) {
+                    wall.setHeight(BlockFace.SOUTH, Wall.Height.TALL);
+                }
+            }
+        } else {
+            //Check of the wall can connect to the block above.
+            if (canConnectAbove(bAbove)) {
+
+                //Set all heights to tall.
+                wall = setConnections(l, block, wall, Wall.Height.TALL);
+
+            }
+        }
+
+        //Check if the walls up=true.
+        //This is true if there are no connections, a single connection, a corner only connection.
+        //Also a lot of other blocks will cause this
+        //Set up to true by default.
+        //Check for cases where this is not true.
+        wall.setUp(true);
+
+        //If wall has a straight or cross shape.
+        if (
+                (wall.getHeight(BlockFace.NORTH) == wall.getHeight(BlockFace.SOUTH) &&
+                        wall.getHeight(BlockFace.WEST) == Wall.Height.NONE && wall.getHeight(BlockFace.EAST) == Wall.Height.NONE)
+                        ||
+                        (wall.getHeight(BlockFace.EAST) == wall.getHeight(BlockFace.WEST) &&
+                                wall.getHeight(BlockFace.NORTH) == Wall.Height.NONE && wall.getHeight(BlockFace.SOUTH) == Wall.Height.NONE)
+                        ||
+                        ((wall.getHeight(BlockFace.NORTH) == wall.getHeight(BlockFace.SOUTH)) == (wall.getHeight(BlockFace.EAST) == wall.getHeight(BlockFace.WEST)))
+        ) {
+            wall.setUp(false);
+
+            //Check for cases where this wouldn't be true.
+            //Certain blocks will still set the wall to up.
+            switch (bAbove.getMaterial()) {
+
+                case TORCH, REDSTONE_TORCH, STONE_PRESSURE_PLATE, OAK_PRESSURE_PLATE,
+                        LIGHT_WEIGHTED_PRESSURE_PLATE, HEAVY_WEIGHTED_PRESSURE_PLATE,
+                        OAK_SIGN, BREWING_STAND, FLOWER_POT, POTTED_DANDELION, POTTED_POPPY,
+                        POTTED_BLUE_ORCHID, POTTED_ALLIUM, POTTED_AZURE_BLUET, POTTED_RED_TULIP,
+                        POTTED_ORANGE_TULIP, POTTED_WHITE_TULIP, POTTED_PINK_TULIP, POTTED_OXEYE_DAISY,
+                        POTTED_OAK_SAPLING, POTTED_SPRUCE_SAPLING, POTTED_BIRCH_SAPLING, POTTED_JUNGLE_SAPLING,
+                        POTTED_ACACIA_SAPLING, POTTED_DARK_OAK_SAPLING, POTTED_RED_MUSHROOM, POTTED_BROWN_MUSHROOM,
+                        POTTED_FERN, POTTED_DEAD_BUSH, POTTED_CACTUS,
+                        SKELETON_SKULL, WITHER_SKELETON_SKULL, PLAYER_HEAD, ZOMBIE_HEAD, CREEPER_HEAD, DRAGON_HEAD,
+                        WHITE_BANNER, ORANGE_BANNER, MAGENTA_BANNER, LIGHT_BLUE_BANNER, YELLOW_BANNER, LIME_BANNER,
+                        PINK_BANNER, GRAY_BANNER, LIGHT_GRAY_BANNER, CYAN_BANNER, PURPLE_BANNER, BLUE_BANNER,
+                        BROWN_BANNER, GREEN_BANNER, RED_BANNER, BLACK_BANNER -> {
+
+                    wall.setUp(true);
+                }
+
+                case END_ROD, HOPPER -> {
+                    Directional direction = (Directional) bAbove;
+                    if (direction.getFacing() == BlockFace.UP || direction.getFacing() == BlockFace.DOWN) {
+                        wall.setUp(true);
+                    }
+                }
+            }
+
+            if (isFenceGate(bAbove.getMaterial())) {
+                if (wall.getHeight(BlockFace.NORTH) != Wall.Height.TALL || wall.getHeight(BlockFace.SOUTH) != Wall.Height.TALL
+                        || wall.getHeight(BlockFace.EAST) != Wall.Height.TALL || wall.getHeight(BlockFace.WEST) == Wall.Height.TALL) {
+                    wall.setUp(true);
+                }
+            } else if (bAbove instanceof Wall) {
+
+                //Check if the wall above is up or not, if it's up then this wall will also be up.
+                if (getWall(lAbove).isUp()) {
+                    wall.setUp(true);
+                }
+            }
+        }
+
+        return wall;
+    }
 }

@@ -1,6 +1,6 @@
 package me.bteuk.converterplugin.utils.blocks.stairs;
 
-public enum Shape {
+public enum StairShape {
     STRAIGHT,
     ICORNER,
     OCORNER,

@@ -12,7 +12,7 @@ public class StairData {
     int facing;
     Location l;
     int d;
-    Shape sh;
+    StairShape sh;
     public Bisected.Half half;
 
     //Main stair constructor.
@@ -38,13 +38,13 @@ public class StairData {
     //Set shape of alt stair based on main stair.
     public void setShape(StairData s) {
         if ((d == 1 || d == 3) && (facing == s.facing)) {
-            sh = Shape.STRAIGHT;
+            sh = StairShape.STRAIGHT;
         } else if (d == 0 && ((facing % 2) != (s.facing % 2))) {
-            sh = Shape.ICORNER;
+            sh = StairShape.ICORNER;
         } else if (d == 2 && ((facing % 2) != (s.facing % 2))) {
-            sh = Shape.OCORNER;
+            sh = StairShape.OCORNER;
         } else {
-            sh = Shape.NONE;
+            sh = StairShape.NONE;
         }
     }
 
@@ -151,15 +151,15 @@ public class StairData {
             if (s == null) {
                 continue;
             }
-            if (s.sh == Shape.STRAIGHT) {
+            if (s.sh == StairShape.STRAIGHT) {
                 if (straight1 == null) {
                     straight1 = s;
                 } else {
                     straight2 = s;
                 }
-            } else if (s.sh == Shape.ICORNER) {
+            } else if (s.sh == StairShape.ICORNER) {
                 cornerI = s;
-            } else if (s.sh == Shape.OCORNER) {
+            } else if (s.sh == StairShape.OCORNER) {
                 cornerO = s;
             }
         }
