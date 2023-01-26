@@ -706,7 +706,23 @@ public class MinecraftIDConverter {
         CompoundTag block_entity = new CompoundTag();
 
         //Add the global tags that are common to all block entities.
-        block_entity.putString("id", getNameSpace(id, data));
+        //For unique case of spawner, beds, shulker boxes, signs and banners, the namespace of the block entity differs from the actual block namespace.
+        if (id == 52) {
+            block_entity.putString("id", "minecraft:mob_spawner");
+        } else if (id == (byte) 176 || id == (byte) 177) {
+            block_entity.putString("id", "minecraft:banner");
+        } else if (id == 26) {
+            block_entity.putString("id", "minecraft:bed");
+        } else if (id == (byte) 219 || id == (byte) 220 || id == (byte) 221 || id == (byte) 222 ||
+                id == (byte) 223 || id == (byte) 224 || id == (byte) 225 || id == (byte) 226 ||
+                id == (byte) 227 || id == (byte) 228 || id == (byte) 229 || id ==(byte) 230 ||
+                id == (byte) 231 || id == (byte) 232 || id == (byte) 233 || id == (byte) 234) {
+            block_entity.putString("id", "minecraft:shulker_box");
+        } else if (id == 63 || id == 68) {
+            block_entity.putString("id", "minecraft:sign");
+        } else {
+            block_entity.putString("id", getNameSpace(id, data));
+        }
         block_entity.putBoolean("keepPacked", false);
         block_entity.putInt("x", tile_entity.getInt("x"));
         block_entity.putInt("y", tile_entity.getInt("y"));
@@ -732,7 +748,9 @@ public class MinecraftIDConverter {
                 block_entity.putShort("SpawnRange", (short) 4);
 
                 CompoundTag spawnData = new CompoundTag();
-                spawnData.putString("id", "minecraft:pig");
+                CompoundTag entity = new CompoundTag();
+                entity.putString("id", "minecraft:pig");
+                spawnData.put("entity", entity);
 
                 block_entity.put("SpawnData", spawnData);
 
