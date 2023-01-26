@@ -1443,8 +1443,8 @@ public class MinecraftIDConverter {
                 //face
                 switch (data) {
 
-                    case 0, 7, 8, 15 -> block_states.putString("face", "floor");
-                    case 5, 6, 13, 14 -> block_states.putString("face", "ceiling");
+                    case 0, 7, 8, 15 -> block_states.putString("face", "ceiling");
+                    case 5, 6, 13, 14 -> block_states.putString("face", "floor");
                     case 1, 2, 3, 4, 9, 10, 11, 12 -> block_states.putString("face", "wall");
 
                 }
@@ -1512,16 +1512,16 @@ public class MinecraftIDConverter {
 
                 //up
                 if (data == 0 || data == 10) {
-                    block_states.putString("east", "false");
+                    block_states.putString("up", "false");
                 } else {
-                    block_states.putString("east", "true");
+                    block_states.putString("up", "true");
                 }
 
                 //west
                 if (data == 1 || data == 4 || data == 7 || data == 10 || data == 14 || data == 15) {
-                    block_states.putString("east", "true");
+                    block_states.putString("west", "true");
                 } else {
-                    block_states.putString("east", "false");
+                    block_states.putString("west", "false");
                 }
             }
 
@@ -1907,10 +1907,10 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0, 4, 8, 12 -> block_states.putString("facing", "south");
-                    case 1, 5, 9, 13 -> block_states.putString("facing", "north");
-                    case 2, 6, 10, 14 -> block_states.putString("facing", "east");
-                    case 3, 7, 11, 15 -> block_states.putString("facing", "west");
+                    case 0, 4, 8, 12 -> block_states.putString("facing", "north");
+                    case 1, 5, 9, 13 -> block_states.putString("facing", "south");
+                    case 2, 6, 10, 14 -> block_states.putString("facing", "west");
+                    case 3, 7, 11, 15 -> block_states.putString("facing", "east");
 
                 }
 
@@ -2847,7 +2847,7 @@ public class MinecraftIDConverter {
 
             //Oak Fence
             case 85 -> {
-                return "fence";
+                return "oak_fence";
             }
 
             //Pumpkin
