@@ -2,7 +2,6 @@ package me.bteuk.converterplugin;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
-import me.bteuk.converterplugin.utils.Direction;
 import me.bteuk.converterplugin.utils.blocks.stairs.StairData;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -17,7 +16,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -308,16 +306,13 @@ public class Converter implements CommandExecutor {
 
                 //Get the current skull at the location.
                 Block block = world.getBlockAt(l);
-                BlockData bd = world.getBlockData(l);
+                BlockData bd = block.getBlockData();
 
                 //Set skull types and if playerhead set texture.
                 String type = (String) properties.get("type");
 
                 if (bd instanceof Rotatable) {
                     //Skull
-
-                    Rotatable rot = (Rotatable) bd;
-
                     //Set material.
                     switch (type) {
 
@@ -329,40 +324,33 @@ public class Converter implements CommandExecutor {
 
                     }
 
-                    Object oRot = properties.get("rot");
+                    Rotatable rot = (Rotatable) block.getBlockData();
 
-                    if (oRot == null) {
-                        rot.setRotation(BlockFace.SOUTH);
-                    } else {
-                        switch ((byte) oRot) {
+                    switch ((byte) (long) properties.get("rotation")) {
 
-                            case 0 -> rot.setRotation(BlockFace.SOUTH);
-                            case 1 -> rot.setRotation(BlockFace.SOUTH_SOUTH_WEST);
-                            case 2 -> rot.setRotation(BlockFace.SOUTH_WEST);
-                            case 3 -> rot.setRotation(BlockFace.WEST_SOUTH_WEST);
-                            case 4 -> rot.setRotation(BlockFace.WEST);
-                            case 5 -> rot.setRotation(BlockFace.WEST_NORTH_WEST);
-                            case 6 -> rot.setRotation(BlockFace.NORTH_WEST);
-                            case 7 -> rot.setRotation(BlockFace.NORTH_NORTH_WEST);
-                            case 8 -> rot.setRotation(BlockFace.NORTH);
-                            case 9 -> rot.setRotation(BlockFace.NORTH_NORTH_EAST);
-                            case 10 -> rot.setRotation(BlockFace.NORTH_EAST);
-                            case 11 -> rot.setRotation(BlockFace.EAST_NORTH_EAST);
-                            case 12 -> rot.setRotation(BlockFace.EAST);
-                            case 13 -> rot.setRotation(BlockFace.EAST_SOUTH_EAST);
-                            case 14 -> rot.setRotation(BlockFace.SOUTH_EAST);
-                            case 15 -> rot.setRotation(BlockFace.SOUTH_SOUTH_EAST);
+                        case 0 -> rot.setRotation(BlockFace.SOUTH);
+                        case 1 -> rot.setRotation(BlockFace.SOUTH_SOUTH_WEST);
+                        case 2 -> rot.setRotation(BlockFace.SOUTH_WEST);
+                        case 3 -> rot.setRotation(BlockFace.WEST_SOUTH_WEST);
+                        case 4 -> rot.setRotation(BlockFace.WEST);
+                        case 5 -> rot.setRotation(BlockFace.WEST_NORTH_WEST);
+                        case 6 -> rot.setRotation(BlockFace.NORTH_WEST);
+                        case 7 -> rot.setRotation(BlockFace.NORTH_NORTH_WEST);
+                        case 8 -> rot.setRotation(BlockFace.NORTH);
+                        case 9 -> rot.setRotation(BlockFace.NORTH_NORTH_EAST);
+                        case 10 -> rot.setRotation(BlockFace.NORTH_EAST);
+                        case 11 -> rot.setRotation(BlockFace.EAST_NORTH_EAST);
+                        case 12 -> rot.setRotation(BlockFace.EAST);
+                        case 13 -> rot.setRotation(BlockFace.EAST_SOUTH_EAST);
+                        case 14 -> rot.setRotation(BlockFace.SOUTH_EAST);
+                        case 15 -> rot.setRotation(BlockFace.SOUTH_SOUTH_EAST);
 
-                        }
                     }
 
                     block.setBlockData(rot);
 
                 } else if (bd instanceof Directional) {
                     //Wall Skull
-
-                    Directional dir = (Directional) bd;
-
                     //Set material.
                     switch (type) {
 
@@ -373,6 +361,8 @@ public class Converter implements CommandExecutor {
                         case "dragon_head" -> block.setType(Material.DRAGON_WALL_HEAD);
 
                     }
+
+                    Directional dir = (Directional) block.getBlockData();
 
                     switch ((String) properties.get("facing")) {
 
@@ -393,12 +383,15 @@ public class Converter implements CommandExecutor {
                 //If type is a player head, set the texture, ect.
                 if (type.equals("player_head")) {
 
-                    final Skull skull = (Skull) block.getState();
-                    PlayerProfile profile = instance.getServer().createProfile(UUID.fromString((String) properties.get("id")));
-                    profile.setProperty(new ProfileProperty("textures", (String) properties.get("texture")));
-                    skull.setPlayerProfile(profile);
-                    skull.update(); // so that the result can be seen
+                    Skull skull = (Skull) block.getState();
+                    skull.setType(Material.PLAYER_HEAD);
 
+                    PlayerProfile profile = Bukkit.createProfile(UUID.fromString((String) properties.get("id")));
+                    profile.getProperties().add(new ProfileProperty("textures", (String) properties.get("texture")));
+
+                    skull.setPlayerProfile(profile);
+
+                    skull.update(); // so that the result can be seen
 
                 }
             }
