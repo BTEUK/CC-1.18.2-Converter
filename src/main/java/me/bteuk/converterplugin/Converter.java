@@ -384,7 +384,7 @@ public class Converter implements CommandExecutor {
                 if (type.equals("player_head")) {
 
                     Skull skull = (Skull) block.getState();
-                    skull.setType(Material.PLAYER_HEAD);
+                    skull.setType(block.getType());
 
                     PlayerProfile profile = Bukkit.createProfile(UUID.fromString((String) properties.get("id")));
                     profile.getProperties().add(new ProfileProperty("textures", (String) properties.get("texture")));
