@@ -54,6 +54,7 @@ public class RegionConverter extends Thread {
 
     ArrayList<LegacyID> uniqueBlocks = new ArrayList<>();
     ListTag<CompoundTag> tile_entities = new ListTag<>(CompoundTag.class);
+    CompoundTag tEntity;
 
     HashMap<LegacyID, Integer> paletteID = new HashMap<>();
     ListTag<CompoundTag> palette = new ListTag<>(CompoundTag.class);
@@ -94,11 +95,11 @@ public class RegionConverter extends Thread {
 
         byte[] blocks;
 
-        int cX;
-        int cY;
-        int cZ;
-        int x = 0;
-        int z = 0;
+        int cX = 0;
+        int cY = 0;
+        int cZ = 0;
+        int x;
+        int z;
 
         EntryLocation3D e3d;
         CompoundTag block_entity = null;
@@ -286,7 +287,7 @@ public class RegionConverter extends Thread {
 
                                 //Convert block entities
                                 //If the block is a block entity, load it.
-                                if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
+                                if (MinecraftIDConverter.isBlockEntity(blocks[j]) || MinecraftIDConverter.requiredPostProcessing(blocks[j], meta)) {
 
                                     //Convert current block to x,y,z coordinate.
                                     //blockPos = y*256 + z*16 + x = i
@@ -295,77 +296,61 @@ public class RegionConverter extends Thread {
                                     cX = j - (cY * 256) - (cZ * 16);
 
                                     //Find the tile entity from the list.
-                                    for (CompoundTag tile_entity : tile_entities) {
+                                    if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
+                                        for (CompoundTag tile_entity : tile_entities) {
 
-                                        x = tile_entity.getInt("x") >= 0 ? tile_entity.getInt("x") % 16 : 16 + (tile_entity.getInt("x") % 16);
-                                        z = tile_entity.getInt("z") >= 0 ? tile_entity.getInt("z") % 16 : 16 + (tile_entity.getInt("z") % 16);
+                                            x = tile_entity.getInt("x") >= 0 ? tile_entity.getInt("x") % 16 : 16 + (tile_entity.getInt("x") % 16);
+                                            z = tile_entity.getInt("z") >= 0 ? tile_entity.getInt("z") % 16 : 16 + (tile_entity.getInt("z") % 16);
 
-                                        //If the coordinates are equal.
-                                        if ((x == cX) && (z == cZ) && (tile_entity.getInt("y") == (y * 16 + cY))) {
+                                            //If the coordinates are equal.
+                                            if ((x == cX) && (z == cZ) && (tile_entity.getInt("y") == (y * 16 + cY))) {
 
-                                            //Get the block entity
-                                            block_entity = MinecraftIDConverter.getBlockEntity(blocks[j], meta, tile_entity);
+                                                //Get the block entity
+                                                block_entity = MinecraftIDConverter.getBlockEntity(blocks[j], meta, tile_entity);
+                                                tEntity = tile_entity.clone();
 
-                                            //Add the block entity to the list.
-                                            //Only if the block entity needs to be added.
-                                            if (!MinecraftIDConverter.blockEntityNotAdded(blocks[j])) {
-                                                block_entities.add(block_entity);
-                                            }
-                                            break;
-
-                                        }
-                                    }
-                                }
-
-                                //If block requires post-processing add it to the txt file.
-                                if (MinecraftIDConverter.requiredPostProcessing(blocks[j], meta)) {
-
-                                    //Create new json object for this block and add it to the array.
-                                    JSONObject obj = new JSONObject();
-                                    obj.put("block", MinecraftIDConverter.getNameSpace(blocks[j], meta));
-
-                                    //Convert current block to x,y,z coordinate in the chunk.
-                                    //blockPos = y*256 + z*16 + x = i
-                                    cY = j / 256;
-                                    cZ = (j - (cY * 256)) / 16;
-                                    cX = j - (cY * 256) - (cZ * 16);
-
-                                    //Add the coordinates of the block to the object.
-                                    obj.put("x", (entryX * 16) + cX);
-                                    obj.put("y", (y*16) + cY);
-                                    obj.put("z", (entryZ * 16) + cZ);
-
-                                    //Add properties for certain blocks.
-                                    if (MinecraftIDConverter.hasProperties(blocks[j])) {
-                                        //If it's a block entity.
-                                        if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
-                                            //Find the tile entity from the list.
-                                            for (CompoundTag tile_entity : tile_entities) {
-
-                                                x = tile_entity.getInt("x") >= 0 ? tile_entity.getInt("x") % 16 : 16 + (tile_entity.getInt("x") % 16);
-                                                z = tile_entity.getInt("z") >= 0 ? tile_entity.getInt("z") % 16 : 16 + (tile_entity.getInt("z") % 16);
-
-                                                //If the coordinates are equal.
-                                                if ((x == cX) && (z == cZ) && (tile_entity.getInt("y") == (y * 16 + cY))) {
-
-                                                    //System.out.println("Coords: " + tile_entity.getInt("x") + ", " + tile_entity.getInt("y") + ", " + tile_entity.getInt("z"));
-
-                                                    //Add the properties.
-                                                    obj.put("properties", MinecraftIDConverter.getProperties(blocks[j], meta, tile_entity));
-                                                    break;
-
+                                                //Add the block entity to the list.
+                                                //Only if the block entity needs to be added.
+                                                if (!MinecraftIDConverter.blockEntityNotAdded(blocks[j])) {
+                                                    block_entities.add(block_entity);
                                                 }
+                                                break;
+
                                             }
-                                        } else {
-
-                                            //Add the properties
-                                            obj.put("properties", MinecraftIDConverter.getProperties(blocks[j], meta, null));
-
                                         }
                                     }
 
-                                    //Add object to array.
-                                    ja.add(obj);
+                                    //If block requires post-processing add it to the txt file.
+                                    if (MinecraftIDConverter.requiredPostProcessing(blocks[j], meta)) {
+
+                                        //Create new json object for this block and add it to the array.
+                                        JSONObject obj = new JSONObject();
+                                        obj.put("block", MinecraftIDConverter.getNameSpace(blocks[j], meta));
+
+                                        //Add the coordinates of the block to the object.
+                                        obj.put("x", (entryX * 16) + cX);
+                                        obj.put("y", (y * 16) + cY);
+                                        obj.put("z", (entryZ * 16) + cZ);
+
+                                        //Add properties for certain blocks.
+                                        if (MinecraftIDConverter.hasProperties(blocks[j])) {
+                                            //If it's a block entity.
+                                            if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
+
+                                                //Add the properties.
+                                                obj.put("properties", MinecraftIDConverter.getProperties(blocks[j], meta, tEntity));
+
+                                            } else {
+
+                                                //Add the properties
+                                                obj.put("properties", MinecraftIDConverter.getProperties(blocks[j], meta, null));
+
+                                            }
+                                        }
+
+                                        //Add object to array.
+                                        ja.add(obj);
+                                    }
                                 }
                             }
 
