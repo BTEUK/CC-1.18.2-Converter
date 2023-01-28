@@ -10,10 +10,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.Skull;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
-import org.bukkit.block.data.Bisected;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.Directional;
-import org.bukkit.block.data.Rotatable;
+import org.bukkit.block.data.*;
 import org.bukkit.block.data.type.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -344,18 +341,33 @@ public class Converter implements CommandExecutor {
                 Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
                 if (redstoneConnects(world.getBlockAt(lXMax), BlockFace.EAST)) {
                     redstoneWire.setFace(BlockFace.EAST, RedstoneWire.Connection.SIDE);
+                } else {
+                    //Check if it can connect up.
+                    if (redstoneConnectsUp(lXMax, BlockFace.EAST)) {
+                        redstoneWire.setFace(BlockFace.EAST, RedstoneWire.Connection.UP);
+                    }
                 }
 
                 //South (Positive Z)
                 Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
                 if (redstoneConnects(world.getBlockAt(lZMax), BlockFace.SOUTH)) {
                     redstoneWire.setFace(BlockFace.SOUTH, RedstoneWire.Connection.SIDE);
+                } else {
+                    //Check if it can connect up.
+                    if (redstoneConnectsUp(lZMax, BlockFace.SOUTH)) {
+                        redstoneWire.setFace(BlockFace.SOUTH, RedstoneWire.Connection.UP);
+                    }
                 }
 
                 //West (Negative X)
                 Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
                 if (redstoneConnects(world.getBlockAt(lXMin), BlockFace.WEST)) {
                     redstoneWire.setFace(BlockFace.WEST, RedstoneWire.Connection.SIDE);
+                } else {
+                    //Check if it can connect up.
+                    if (redstoneConnectsUp(lXMin, BlockFace.WEST)) {
+                        redstoneWire.setFace(BlockFace.WEST, RedstoneWire.Connection.UP);
+                    }
                 }
 
                 //If only 1 face is set then the opposite side needs to be set to SIDE.
@@ -386,13 +398,53 @@ public class Converter implements CommandExecutor {
                         redstoneWire.setFace(BlockFace.EAST, RedstoneWire.Connection.SIDE);
                     }
                 }
+
+                world.setBlockData(l, redstoneWire);
+
             }
 
             case "minecraft:chorus_plant" -> {
 
-                Block b = world.getBlockAt(l);
-                b.getState().update(true, false);
+                BlockData blockData = world.getBlockData(l);
+                MultipleFacing facing = (MultipleFacing) blockData;
 
+                //Check if all adjacent blocks are chorus plants.
+                //If true they connect.
+                //North (Negative Z)
+                Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
+                if (world.getType(lZMin) == Material.CHORUS_PLANT || world.getType(lZMin) == Material.CHORUS_FLOWER) {
+                    facing.setFace(BlockFace.NORTH, true);
+                }
+
+                //East (Positive X)
+                Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
+                if (world.getType(lXMax) == Material.CHORUS_PLANT || world.getType(lZMin) == Material.CHORUS_FLOWER) {
+                    facing.setFace(BlockFace.EAST, true);
+                }
+
+                //South (Positive Z)
+                Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
+                if (world.getType(lZMax) == Material.CHORUS_PLANT || world.getType(lZMin) == Material.CHORUS_FLOWER) {
+                    facing.setFace(BlockFace.SOUTH, true);
+                }
+
+                //West (Negative X)
+                Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
+                if (world.getType(lXMin) == Material.CHORUS_PLANT || world.getType(lZMin) == Material.CHORUS_FLOWER) {
+                    facing.setFace(BlockFace.WEST, true);
+                }
+
+                //Down
+                Location lYMin = new Location(world, l.getX(), l.getY() - 1, l.getZ());
+                if (world.getType(lYMin) == Material.CHORUS_PLANT || world.getType(lZMin) == Material.CHORUS_FLOWER || world.getType(lZMin) == Material.END_STONE) {
+                    facing.setFace(BlockFace.DOWN, true);
+                }
+
+                //Up
+                Location lYMax = new Location(world, l.getX(), l.getY() + 1, l.getZ());
+                if (world.getType(lYMax) == Material.CHORUS_PLANT || world.getType(lZMin) == Material.CHORUS_FLOWER) {
+                    facing.setFace(BlockFace.UP, true);
+                }
             }
 
             case "minecraft:red_bed" -> {
