@@ -297,13 +297,13 @@ public class RegionConverter extends Thread {
 
                                     //Find the tile entity from the list.
                                     if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
+
                                         for (CompoundTag tile_entity : tile_entities) {
 
-                                            x = tile_entity.getInt("x") >= 0 ? tile_entity.getInt("x") % 16 : 16 + (tile_entity.getInt("x") % 16);
-                                            z = tile_entity.getInt("z") >= 0 ? tile_entity.getInt("z") % 16 : 16 + (tile_entity.getInt("z") % 16);
-
                                             //If the coordinates are equal.
-                                            if ((x == cX) && (z == cZ) && (tile_entity.getInt("y") == (y * 16 + cY))) {
+                                            if ((tile_entity.getInt("x") == (entryX * 16) + cX) &&
+                                                    (tile_entity.getInt("z") == (entryZ * 16) + cZ) &&
+                                                    (tile_entity.getInt("y") == (y * 16 + cY))) {
 
                                                 //Get the block entity
                                                 block_entity = MinecraftIDConverter.getBlockEntity(blocks[j], meta, tile_entity);
