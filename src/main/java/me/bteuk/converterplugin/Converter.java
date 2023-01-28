@@ -449,7 +449,48 @@ public class Converter implements CommandExecutor {
 
             case "minecraft:red_bed" -> {
 
+                //Get properties.
+                JSONObject properties = (JSONObject) object.get("properties");
+
                 //Set colour.
+                Block block = world.getBlockAt(l);
+
+                switch ((String) properties.get("colour")) {
+                    case "white" -> block.setType(Material.WHITE_BED);
+                    case "orange" -> block.setType(Material.ORANGE_BED);
+                    case "magenta" -> block.setType(Material.MAGENTA_BED);
+                    case "light_blue" -> block.setType(Material.LIGHT_BLUE_BED);
+                    case "yellow" -> block.setType(Material.YELLOW_BED);
+                    case "lime" -> block.setType(Material.LIME_BED);
+                    case "pink" -> block.setType(Material.PINK_BED);
+                    case "gray" -> block.setType(Material.GRAY_BED);
+                    case "light_gray" -> block.setType(Material.LIGHT_GRAY_BED);
+                    case "cyan" -> block.setType(Material.CYAN_BED);
+                    case "purple" -> block.setType(Material.PURPLE_BED);
+                    case "blue" -> block.setType(Material.BLUE_BED);
+                    case "brown" -> block.setType(Material.BROWN_BED);
+                    case "green" -> block.setType(Material.GREEN_BED);
+                    case "red" -> block.setType(Material.RED_BED);
+                    case "black" -> block.setType(Material.BLACK_BED);
+                }
+
+                //Set part and facing.
+                Bed bed = (Bed) block.getBlockData();
+
+                if (properties.get("part").equals("head")) {
+                    bed.setPart(Bed.Part.HEAD);
+                } else {
+                    bed.setPart(Bed.Part.FOOT);
+                }
+
+                switch ((String) properties.get("facing")) {
+                    case "north" -> bed.setFacing(BlockFace.NORTH);
+                    case "east" -> bed.setFacing(BlockFace.EAST);
+                    case "south" -> bed.setFacing(BlockFace.SOUTH);
+                    case "west" -> bed.setFacing(BlockFace.WEST);
+                }
+
+                block.setBlockData(bed);
 
             }
 
