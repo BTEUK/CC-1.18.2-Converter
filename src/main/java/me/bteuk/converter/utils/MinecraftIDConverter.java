@@ -434,7 +434,7 @@ public class MinecraftIDConverter {
                 jo.put("rotation", String.valueOf(data));
 
                 //Banner colour
-                jo.put("colour", colourNameSpace(block_entity.getInt("Base")));
+                jo.put("colour", colourNameSpace(15 - block_entity.getInt("Base")));
 
                 //Patterns
                 JSONArray ja = new JSONArray();
@@ -464,7 +464,7 @@ public class MinecraftIDConverter {
                 }
 
                 //Banner colour
-                jo.put("colour", colourNameSpace(block_entity.getInt("Base")));
+                jo.put("colour", colourNameSpace(15 - block_entity.getInt("Base")));
 
                 //Patterns
                 JSONArray ja = new JSONArray();
