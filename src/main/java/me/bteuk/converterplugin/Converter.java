@@ -325,9 +325,67 @@ public class Converter implements CommandExecutor {
 
             case "minecraft:redstone_wire" -> {
 
-                Block b = world.getBlockAt(l);
-                b.getState().update(true, false);
+                BlockData blockData = world.getBlockData(l);
+                RedstoneWire redstoneWire = (RedstoneWire) blockData;
 
+                //Check if adjacent blocks can connect to the redstone.
+                //North (Negative Z)
+                Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
+                if (redstoneConnects(world.getBlockAt(lZMin), BlockFace.NORTH)) {
+                    redstoneWire.setFace(BlockFace.NORTH, RedstoneWire.Connection.SIDE);
+                } else {
+                    //Check if it can connect up.
+                    if (redstoneConnectsUp(lZMin, BlockFace.NORTH)) {
+                        redstoneWire.setFace(BlockFace.NORTH, RedstoneWire.Connection.UP);
+                    }
+                }
+
+                //East (Positive X)
+                Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
+                if (redstoneConnects(world.getBlockAt(lXMax), BlockFace.EAST)) {
+                    redstoneWire.setFace(BlockFace.EAST, RedstoneWire.Connection.SIDE);
+                }
+
+                //South (Positive Z)
+                Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
+                if (redstoneConnects(world.getBlockAt(lZMax), BlockFace.SOUTH)) {
+                    redstoneWire.setFace(BlockFace.SOUTH, RedstoneWire.Connection.SIDE);
+                }
+
+                //West (Negative X)
+                Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
+                if (redstoneConnects(world.getBlockAt(lXMin), BlockFace.WEST)) {
+                    redstoneWire.setFace(BlockFace.WEST, RedstoneWire.Connection.SIDE);
+                }
+
+                //If only 1 face is set then the opposite side needs to be set to SIDE.
+                int sum = 0;
+                if (redstoneWire.getFace(BlockFace.NORTH) != RedstoneWire.Connection.NONE) {
+                    sum++;
+                }
+                if (redstoneWire.getFace(BlockFace.EAST) != RedstoneWire.Connection.NONE) {
+                    sum++;
+                }
+                if (redstoneWire.getFace(BlockFace.SOUTH) != RedstoneWire.Connection.NONE) {
+                    sum++;
+                }
+                if (redstoneWire.getFace(BlockFace.WEST) != RedstoneWire.Connection.NONE) {
+                    sum++;
+                }
+                if (sum == 1) {
+                    if (redstoneWire.getFace(BlockFace.NORTH) != RedstoneWire.Connection.NONE) {
+                        redstoneWire.setFace(BlockFace.SOUTH, RedstoneWire.Connection.SIDE);
+                    }
+                    if (redstoneWire.getFace(BlockFace.EAST) != RedstoneWire.Connection.NONE) {
+                        redstoneWire.setFace(BlockFace.WEST, RedstoneWire.Connection.SIDE);
+                    }
+                    if (redstoneWire.getFace(BlockFace.SOUTH) != RedstoneWire.Connection.NONE) {
+                        redstoneWire.setFace(BlockFace.NORTH, RedstoneWire.Connection.SIDE);
+                    }
+                    if (redstoneWire.getFace(BlockFace.WEST) != RedstoneWire.Connection.NONE) {
+                        redstoneWire.setFace(BlockFace.EAST, RedstoneWire.Connection.SIDE);
+                    }
+                }
             }
 
             case "minecraft:chorus_plant" -> {
@@ -518,7 +576,6 @@ public class Converter implements CommandExecutor {
                     }
 
                     block.setBlockData(dir);
-
 
 
                 } else {
@@ -1409,4 +1466,72 @@ public class Converter implements CommandExecutor {
             banner.update();
         }
     }
+
+    private boolean redstoneConnects(Block block, BlockFace face) {
+
+        switch (block.getType()) {
+
+            case REDSTONE_WIRE, REDSTONE_BLOCK, REDSTONE_TORCH, LEVER, DAYLIGHT_DETECTOR, COMPARATOR,
+                    STONE_BUTTON, OAK_BUTTON, TRAPPED_CHEST, STONE_PRESSURE_PLATE, OAK_PRESSURE_PLATE,
+                    HEAVY_WEIGHTED_PRESSURE_PLATE, LIGHT_WEIGHTED_PRESSURE_PLATE, DETECTOR_RAIL -> {
+                return true;
+            }
+
+            case REPEATER -> {
+                Repeater repeater = (Repeater) block.getBlockData();
+                if ((face == BlockFace.NORTH || face == BlockFace.SOUTH) &&
+                        (repeater.getFacing() == BlockFace.NORTH || repeater.getFacing() == BlockFace.SOUTH)) {
+                    return true;
+                } else if ((face == BlockFace.EAST || face == BlockFace.WEST) &&
+                        (repeater.getFacing() == BlockFace.EAST || repeater.getFacing() == BlockFace.WEST)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            case OBSERVER -> {
+                Observer observer = (Observer) block.getBlockData();
+                return (observer.getFacing() == face);
+            }
+
+            default -> {
+                return false;
+            }
+        }
+    }
+
+    private boolean redstoneConnectsUp(Location l, BlockFace face) {
+
+        //Check if the block above is redstone, else return null.
+        Location lUp = new Location(world, l.getX(), l.getY() + 1, l.getZ());
+        if (world.getType(lUp) != Material.REDSTONE_WIRE) {
+            return false;
+        }
+
+        //Check if the block is a slab or stair, these are special cases.
+        if (world.getBlockData(l) instanceof Stairs) {
+            Stairs stair = (Stairs) world.getBlockData(l);
+            return ((stair.getHalf() == Bisected.Half.TOP) && (((facingNumber(face) + 2 % 4)) == facingNumber(stair.getFacing())));
+        } else if (world.getBlockData(l) instanceof Slab) {
+            Slab slab = (Slab) world.getBlockData(l);
+            return (slab.getType() == Slab.Type.DOUBLE);
+        } else if (!world.getType(l).isOccluding()) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    //Set facing direction to a number for convenience.
+    public int facingNumber(BlockFace f) {
+        switch (f) {
+            case NORTH -> {return 0;}
+            case EAST -> {return 1;}
+            case WEST -> {return 3;}
+            case SOUTH -> {return 2;}
+        }
+        return 0;
+    }
+
 }
