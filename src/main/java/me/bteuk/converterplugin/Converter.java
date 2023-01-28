@@ -250,9 +250,76 @@ public class Converter implements CommandExecutor {
 
             }
 
-            case "minecraft:chest" -> {
+            case "minecraft:chest", "minecraft:trapped_chest" -> {
 
-                //Set connection.
+                BlockData blockData = world.getBlockData(l);
+
+                //Check adjacent blocks.
+                //North (Negative Z)
+                Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
+
+                //East (Positive X)
+                Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
+
+                //South (Positive Z)
+                Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
+
+                //West (Negative X)
+                Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
+
+                //Check if types are the same and they face the same direction.
+                BlockData bZMin = world.getBlockData(lZMin);
+                BlockData bXMax = world.getBlockData(lXMax);
+                BlockData bZMax = world.getBlockData(lZMax);
+                BlockData bXMin = world.getBlockData(lXMin);
+                Chest chest = (Chest) blockData;
+                if (bZMin.getMaterial() == blockData.getMaterial()) {
+                    //Check if directions are the same.
+                    Chest oChest = (Chest) bZMin;
+                    if (chest.getFacing() == oChest.getFacing()) {
+                        //Must be West of East otherwise they can't connect.
+                        if (chest.getFacing() == BlockFace.WEST) {
+                            chest.setType(Chest.Type.RIGHT);
+                        } else if (chest.getFacing() == BlockFace.EAST) {
+                            chest.setType(Chest.Type.LEFT);
+                        }
+                    }
+                } else if (bXMax.getMaterial() == blockData.getMaterial()) {
+                    //Check if directions are the same.
+                    Chest oChest = (Chest) bXMax;
+                    if (chest.getFacing() == oChest.getFacing()) {
+                        //Must be North or South otherwise they can't connect.
+                        if (chest.getFacing() == BlockFace.NORTH) {
+                            chest.setType(Chest.Type.RIGHT);
+                        } else if (chest.getFacing() == BlockFace.SOUTH) {
+                            chest.setType(Chest.Type.LEFT);
+                        }
+                    }
+                } else if (bZMax.getMaterial() == blockData.getMaterial()) {
+                    //Check if directions are the same.
+                    Chest oChest = (Chest) bZMax;
+                    if (chest.getFacing() == oChest.getFacing()) {
+                        //Must be West of East otherwise they can't connect.
+                        if (chest.getFacing() == BlockFace.EAST) {
+                            chest.setType(Chest.Type.RIGHT);
+                        } else if (chest.getFacing() == BlockFace.WEST) {
+                            chest.setType(Chest.Type.LEFT);
+                        }
+                    }
+                } else if (bXMin.getMaterial() == blockData.getMaterial()) {
+                    //Check if directions are the same.
+                    Chest oChest = (Chest) bXMin;
+                    if (chest.getFacing() == oChest.getFacing()) {
+                        //Must be North or South otherwise they can't connect.
+                        if (chest.getFacing() == BlockFace.SOUTH) {
+                            chest.setType(Chest.Type.RIGHT);
+                        } else if (chest.getFacing() == BlockFace.NORTH) {
+                            chest.setType(Chest.Type.LEFT);
+                        }
+                    }
+                }
+
+                world.setBlockData(l, chest);
 
             }
 
