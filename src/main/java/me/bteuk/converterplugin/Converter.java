@@ -324,8 +324,6 @@ public class Converter implements CommandExecutor {
                 //Set banner base colour.
                 Block block = world.getBlockAt(l);
 
-                Directional dir = (Directional) block.getBlockData();
-
                 switch ((String) properties.get("colour")) {
                     case "white" -> block.setType(Material.WHITE_WALL_BANNER);
                     case "orange" -> block.setType(Material.ORANGE_WALL_BANNER);
@@ -345,8 +343,16 @@ public class Converter implements CommandExecutor {
                     case "black" -> block.setType(Material.BLACK_WALL_BANNER);
                 }
 
+                //Set facing direction.
                 Directional direction = (Directional) block.getBlockData();
-                direction.setFacing(dir.getFacing());
+
+                switch ((String) properties.get("facing")) {
+                    case "north" -> direction.setFacing(BlockFace.NORTH);
+                    case "east" -> direction.setFacing(BlockFace.EAST);
+                    case "south" -> direction.setFacing(BlockFace.SOUTH);
+                    case "west" -> direction.setFacing(BlockFace.WEST);
+                }
+
                 block.setBlockData(direction);
 
                 //Set patterns
