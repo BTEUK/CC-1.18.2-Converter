@@ -25,7 +25,6 @@ public class MinecraftIDConverter {
         140 (Flower pot content)
         144 (Mob head types and player head texture)
         25 (Note block content)
-        93, 94 (Redstone repeater licked and powered status)
         132 (Tripwire connections)
         106 (Vine on the top side)
 
@@ -684,7 +683,7 @@ public class MinecraftIDConverter {
             case 53, 67, 108, 109, 114, (byte) 128, (byte) 134, (byte) 135, (byte) 136, (byte) 156, (byte) 163,
                     (byte) 164, (byte) 180, (byte) 203, 85, 113, (byte) 188, (byte) 189, (byte) 190, (byte) 191,
                     (byte) 192, (byte) 139, 101, 102, (byte) 160, 54, (byte) 146, 55, (byte) 199, 26,
-                    (byte) 176, (byte) 177, 104, 105, (byte) 140, (byte) 144, 25, 93, 94, (byte) 132, 106 -> {
+                    (byte) 176, (byte) 177, 104, 105, (byte) 140, (byte) 144, 25, (byte) 132, 106 -> {
                 return true;
             }
         }
