@@ -442,7 +442,7 @@ public class MinecraftIDConverter {
                 if (patterns != null) {
                     for (CompoundTag pattern : patterns) {
                         JSONObject p = new JSONObject();
-                        p.put("colour", colourNameSpace(pattern.getInt("Color")));
+                        p.put("colour", colourNameSpace(15 - pattern.getInt("Color")));
                         p.put("pattern", pattern.getString("Pattern"));
                         ja.add(p);
                     }
@@ -472,7 +472,7 @@ public class MinecraftIDConverter {
                 if (patterns != null) {
                     for (CompoundTag pattern : patterns) {
                         JSONObject p = new JSONObject();
-                        p.put("colour", colourNameSpace(pattern.getInt("Color")));
+                        p.put("colour", colourNameSpace(15 - pattern.getInt("Color")));
                         p.put("pattern", pattern.getString("Pattern"));
                         ja.add(p);
                     }
