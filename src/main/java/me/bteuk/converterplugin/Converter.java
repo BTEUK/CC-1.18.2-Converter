@@ -310,12 +310,15 @@ public class Converter implements CommandExecutor {
 
                 //Set skull types and if playerhead set texture.
                 String type = (String) properties.get("type");
+                String facing = (String) properties.get("facing");
 
-                if (bd instanceof Rotatable) {
+                if (facing.equals("floor")) {
+
                     //Skull
                     //Set material.
                     switch (type) {
 
+                        case "skeleton_skull" -> block.setType(Material.SKELETON_SKULL);
                         case "wither_skeleton_skull" -> block.setType(Material.WITHER_SKELETON_SKULL);
                         case "zombie_head" -> block.setType(Material.ZOMBIE_HEAD);
                         case "player_head" -> block.setType(Material.PLAYER_HEAD);
@@ -349,11 +352,13 @@ public class Converter implements CommandExecutor {
 
                     block.setBlockData(rot);
 
-                } else if (bd instanceof Directional) {
+                } else if (facing.equals("north") || facing.equals("west") || facing.equals("south") || facing.equals("east")) {
+
                     //Wall Skull
                     //Set material.
                     switch (type) {
 
+                        case "skeleton_skull" -> block.setType(Material.SKELETON_WALL_SKULL);
                         case "wither_skeleton_skull" -> block.setType(Material.WITHER_SKELETON_WALL_SKULL);
                         case "zombie_head" -> block.setType(Material.ZOMBIE_WALL_HEAD);
                         case "player_head" -> block.setType(Material.PLAYER_WALL_HEAD);
@@ -374,6 +379,8 @@ public class Converter implements CommandExecutor {
                     }
 
                     block.setBlockData(dir);
+
+
 
                 } else {
                     instance.getLogger().info("Not a skull at " + l.getX() + ", " + l.getY() + ", " + l.getZ());
