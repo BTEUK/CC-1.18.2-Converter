@@ -2,7 +2,6 @@ package me.bteuk.converterplugin;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
-import me.bteuk.converterplugin.utils.Direction;
 import me.bteuk.converterplugin.utils.blocks.stairs.StairData;
 import org.bukkit.*;
 import org.bukkit.block.Banner;
@@ -20,7 +19,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.inventory.meta.SkullMeta;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -30,7 +28,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.util.UUID;
 
@@ -360,17 +357,39 @@ public class Converter implements CommandExecutor {
 
             }
 
-            case "minecraft:melon_stem", "minecraft:pumpkin_stem" -> {
-
-                Block b = world.getBlockAt(l);
-                b.getState().update(true, false);
-
-            }
-
             case "minecraft:flower_pot" -> {
 
                 //Set flower pot type.
+                Block block = world.getBlockAt(l);
 
+                //Set flower pot type.
+                JSONObject properties = (JSONObject) object.get("properties");
+                switch ((String) properties.get("type")) {
+
+                    case "potted_dandelion" -> block.setType(Material.POTTED_DANDELION);
+                    case "potted_poppy" -> block.setType(Material.POTTED_POPPY);
+                    case "potted_blue_orchid" -> block.setType(Material.POTTED_BLUE_ORCHID);
+                    case "potted_allium" -> block.setType(Material.POTTED_ALLIUM);
+                    case "potted_azure_bluet" -> block.setType(Material.POTTED_AZURE_BLUET);
+                    case "potted_red_tulip" -> block.setType(Material.POTTED_RED_TULIP);
+                    case "potted_orange_tulip" -> block.setType(Material.POTTED_ORANGE_TULIP);
+                    case "potted_white_tulip" -> block.setType(Material.POTTED_WHITE_TULIP);
+                    case "potted_pink_tulip" -> block.setType(Material.POTTED_PINK_TULIP);
+                    case "potted_oxeye_daisy" -> block.setType(Material.POTTED_OXEYE_DAISY);
+                    case "potted_oak_sapling" -> block.setType(Material.POTTED_OAK_SAPLING);
+                    case "potted_spruce_sapling" -> block.setType(Material.POTTED_SPRUCE_SAPLING);
+                    case "potted_birch_sapling" -> block.setType(Material.POTTED_BIRCH_SAPLING);
+                    case "potted_jungle_sapling" -> block.setType(Material.POTTED_JUNGLE_SAPLING);
+                    case "potted_acacia_sapling" -> block.setType(Material.POTTED_ACACIA_SAPLING);
+                    case "potted_dark_oak_sapling" -> block.setType(Material.POTTED_DARK_OAK_SAPLING);
+                    case "potted_red_mushroom" -> block.setType(Material.POTTED_RED_MUSHROOM);
+                    case "potted_brown_mushroom" -> block.setType(Material.POTTED_BROWN_MUSHROOM);
+                    case "potted_fern" -> block.setType(Material.POTTED_FERN);
+                    case "potted_dead_bush" -> block.setType(Material.POTTED_DEAD_BUSH);
+                    case "potted_cactus" -> block.setType(Material.POTTED_CACTUS);
+                    default -> block.setType(Material.FLOWER_POT);
+
+                }
             }
 
             case "minecraft:skeleton_skull" -> {
