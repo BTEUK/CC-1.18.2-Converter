@@ -22,7 +22,6 @@ public class MinecraftIDConverter {
         199 (Chorus plant connections)
         26 (Bed colour)
         176, 177 (Banner colour and pattern)
-        104, 105 (Melon/Pumpking stem connection)
         140 (Flower pot content)
         144 (Mob head types and player head texture)
         25 (Note block content)
@@ -340,7 +339,6 @@ public class MinecraftIDConverter {
         53, 67, 108, 109, 114, 128, 134, 135, 136, 156, 163, 156, 163, 164, 180, 203 (Stairs shape)
         26 (Bed colour)
         176, 177 (Banner colour and pattern)
-        104, 105 (Melon/Pumpking stem connection)
         140 (Flower pot content)
         144 (Mob head types and player head texture)
         25 (Note block content)
@@ -350,7 +348,7 @@ public class MinecraftIDConverter {
         switch (id) {
 
             case 53, 67, 108, 109, 114, (byte) 128, (byte) 134, (byte) 135, (byte) 136, (byte) 156, (byte) 163,
-                    (byte) 164, (byte) 180, (byte) 203, 26, (byte) 176, (byte) 177, 104, 105, (byte) 140, (byte) 144, 25 -> {
+                    (byte) 164, (byte) 180, (byte) 203, 26, (byte) 176, (byte) 177, (byte) 140, (byte) 144, 25 -> {
                 return true;
             }
 
@@ -370,7 +368,6 @@ public class MinecraftIDConverter {
         53, 67, 108, 109, 114, 128, 134, 135, 136, 156, 163, 156, 163, 164, 180, 203 (Stairs shape)
         26 (Bed colour)
         176, 177 (Banner colour and pattern)
-        104, 105 (Melon/Pumpking stem connection)
         140 (Flower pot content)
         144 (Mob head types and player head texture)
         25 (Note block content)
@@ -480,9 +477,6 @@ public class MinecraftIDConverter {
 
                 jo.put("patterns", ja);
             }
-
-            //Melon/Pumpkin Stems
-            case 104, 105 -> jo.put("age", data);
 
             //Flower Pot
             case (byte) 140 -> {
