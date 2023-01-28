@@ -698,13 +698,6 @@ public class Converter implements CommandExecutor {
 
             }
 
-            case "minecraft:repeater" -> {
-
-                Block b = world.getBlockAt(l);
-                b.getState().update(true, false);
-
-            }
-
             case "minecraft:tripwire" -> {
 
                 Block b = world.getBlockAt(l);
