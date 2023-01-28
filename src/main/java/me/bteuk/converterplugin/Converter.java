@@ -714,8 +714,16 @@ public class Converter implements CommandExecutor {
 
             case "minecraft:vine" -> {
 
-                //Check if block above, if true, make it a vine.
+                //Get block above.
+                Location lUp = new Location(world, l.getX(), l.getY() +1, l.getZ());
+                if (canConnectAbove(world.getBlockData(lUp))) {
 
+                    //Check if block above, if true, make it a vine.
+                    MultipleFacing facing = (MultipleFacing) world.getBlockData(l);
+                    facing.setFace(BlockFace.UP, true);
+                    world.setBlockData(l, facing);
+
+                }
             }
 
 
