@@ -276,9 +276,9 @@ public class Converter implements CommandExecutor {
                     if (chest.getFacing() == oChest.getFacing()) {
                         //Must be West of East otherwise they can't connect.
                         if (chest.getFacing() == BlockFace.WEST) {
-                            chest.setType(Chest.Type.RIGHT);
-                        } else if (chest.getFacing() == BlockFace.EAST) {
                             chest.setType(Chest.Type.LEFT);
+                        } else if (chest.getFacing() == BlockFace.EAST) {
+                            chest.setType(Chest.Type.RIGHT);
                         }
                     }
                 } else if (bXMax.getMaterial() == blockData.getMaterial()) {
@@ -287,9 +287,9 @@ public class Converter implements CommandExecutor {
                     if (chest.getFacing() == oChest.getFacing()) {
                         //Must be North or South otherwise they can't connect.
                         if (chest.getFacing() == BlockFace.NORTH) {
-                            chest.setType(Chest.Type.RIGHT);
-                        } else if (chest.getFacing() == BlockFace.SOUTH) {
                             chest.setType(Chest.Type.LEFT);
+                        } else if (chest.getFacing() == BlockFace.SOUTH) {
+                            chest.setType(Chest.Type.RIGHT);
                         }
                     }
                 } else if (bZMax.getMaterial() == blockData.getMaterial()) {
@@ -298,9 +298,9 @@ public class Converter implements CommandExecutor {
                     if (chest.getFacing() == oChest.getFacing()) {
                         //Must be West of East otherwise they can't connect.
                         if (chest.getFacing() == BlockFace.EAST) {
-                            chest.setType(Chest.Type.RIGHT);
-                        } else if (chest.getFacing() == BlockFace.WEST) {
                             chest.setType(Chest.Type.LEFT);
+                        } else if (chest.getFacing() == BlockFace.WEST) {
+                            chest.setType(Chest.Type.RIGHT);
                         }
                     }
                 } else if (bXMin.getMaterial() == blockData.getMaterial()) {
@@ -309,9 +309,9 @@ public class Converter implements CommandExecutor {
                     if (chest.getFacing() == oChest.getFacing()) {
                         //Must be North or South otherwise they can't connect.
                         if (chest.getFacing() == BlockFace.SOUTH) {
-                            chest.setType(Chest.Type.RIGHT);
-                        } else if (chest.getFacing() == BlockFace.NORTH) {
                             chest.setType(Chest.Type.LEFT);
+                        } else if (chest.getFacing() == BlockFace.NORTH) {
+                            chest.setType(Chest.Type.RIGHT);
                         }
                     }
                 }
