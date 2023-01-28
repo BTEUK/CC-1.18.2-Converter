@@ -2,11 +2,15 @@ package me.bteuk.converterplugin;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
+import me.bteuk.converterplugin.utils.Direction;
 import me.bteuk.converterplugin.utils.blocks.stairs.StairData;
 import org.bukkit.*;
+import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Skull;
+import org.bukkit.block.banner.Pattern;
+import org.bukkit.block.banner.PatternType;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
@@ -277,13 +281,76 @@ public class Converter implements CommandExecutor {
 
             case "minecraft:white_banner" -> {
 
-                //Set colour and pattern.
+                //Get properties.
+                JSONObject properties = (JSONObject) object.get("properties");
+
+                //Set banner base colour.
+                Block block = world.getBlockAt(l);
+
+                switch ((String) properties.get("colour")) {
+                    case "white" -> block.setType(Material.WHITE_BANNER);
+                    case "orange" -> block.setType(Material.ORANGE_BANNER);
+                    case "magenta" -> block.setType(Material.MAGENTA_BANNER);
+                    case "light_blue" -> block.setType(Material.LIGHT_BLUE_BANNER);
+                    case "yellow" -> block.setType(Material.YELLOW_BANNER);
+                    case "lime" -> block.setType(Material.LIME_BANNER);
+                    case "pink" -> block.setType(Material.PINK_BANNER);
+                    case "gray" -> block.setType(Material.GRAY_BANNER);
+                    case "light_gray" -> block.setType(Material.LIGHT_GRAY_BANNER);
+                    case "cyan" -> block.setType(Material.CYAN_BANNER);
+                    case "purple" -> block.setType(Material.PURPLE_BANNER);
+                    case "blue" -> block.setType(Material.BLUE_BANNER);
+                    case "brown" -> block.setType(Material.BROWN_BANNER);
+                    case "green" -> block.setType(Material.GREEN_BANNER);
+                    case "red" -> block.setType(Material.RED_BANNER);
+                    case "black" -> block.setType(Material.BLACK_BANNER);
+                }
+
+                //Set rotation.
+                Rotatable rot = (Rotatable) block.getBlockData();
+                rot = setRotation(rot, Byte.parseByte((String) properties.get("rotation")));
+                block.setBlockData(rot);
+
+                //Set patterns
+                setBannerPatterns(block, (JSONArray) properties.get("patterns"));
 
             }
 
             case "minecraft:white_wall_banner" -> {
 
-                //Set colour and pattern.
+                //Get properties.
+                JSONObject properties = (JSONObject) object.get("properties");
+
+                //Set banner base colour.
+                Block block = world.getBlockAt(l);
+
+                Directional dir = (Directional) block.getBlockData();
+
+                switch ((String) properties.get("colour")) {
+                    case "white" -> block.setType(Material.WHITE_WALL_BANNER);
+                    case "orange" -> block.setType(Material.ORANGE_WALL_BANNER);
+                    case "magenta" -> block.setType(Material.MAGENTA_WALL_BANNER);
+                    case "light_blue" -> block.setType(Material.LIGHT_BLUE_WALL_BANNER);
+                    case "yellow" -> block.setType(Material.YELLOW_WALL_BANNER);
+                    case "lime" -> block.setType(Material.LIME_WALL_BANNER);
+                    case "pink" -> block.setType(Material.PINK_WALL_BANNER);
+                    case "gray" -> block.setType(Material.GRAY_WALL_BANNER);
+                    case "light_gray" -> block.setType(Material.LIGHT_GRAY_WALL_BANNER);
+                    case "cyan" -> block.setType(Material.CYAN_WALL_BANNER);
+                    case "purple" -> block.setType(Material.PURPLE_WALL_BANNER);
+                    case "blue" -> block.setType(Material.BLUE_WALL_BANNER);
+                    case "brown" -> block.setType(Material.BROWN_WALL_BANNER);
+                    case "green" -> block.setType(Material.GREEN_WALL_BANNER);
+                    case "red" -> block.setType(Material.RED_WALL_BANNER);
+                    case "black" -> block.setType(Material.BLACK_WALL_BANNER);
+                }
+
+                Directional direction = (Directional) block.getBlockData();
+                direction.setFacing(dir.getFacing());
+                block.setBlockData(direction);
+
+                //Set patterns
+                setBannerPatterns(block, (JSONArray) properties.get("patterns"));
 
             }
 
@@ -328,27 +395,7 @@ public class Converter implements CommandExecutor {
                     }
 
                     Rotatable rot = (Rotatable) block.getBlockData();
-
-                    switch ((byte) (long) properties.get("rotation")) {
-
-                        case 0 -> rot.setRotation(BlockFace.SOUTH);
-                        case 1 -> rot.setRotation(BlockFace.SOUTH_SOUTH_WEST);
-                        case 2 -> rot.setRotation(BlockFace.SOUTH_WEST);
-                        case 3 -> rot.setRotation(BlockFace.WEST_SOUTH_WEST);
-                        case 4 -> rot.setRotation(BlockFace.WEST);
-                        case 5 -> rot.setRotation(BlockFace.WEST_NORTH_WEST);
-                        case 6 -> rot.setRotation(BlockFace.NORTH_WEST);
-                        case 7 -> rot.setRotation(BlockFace.NORTH_NORTH_WEST);
-                        case 8 -> rot.setRotation(BlockFace.NORTH);
-                        case 9 -> rot.setRotation(BlockFace.NORTH_NORTH_EAST);
-                        case 10 -> rot.setRotation(BlockFace.NORTH_EAST);
-                        case 11 -> rot.setRotation(BlockFace.EAST_NORTH_EAST);
-                        case 12 -> rot.setRotation(BlockFace.EAST);
-                        case 13 -> rot.setRotation(BlockFace.EAST_SOUTH_EAST);
-                        case 14 -> rot.setRotation(BlockFace.SOUTH_EAST);
-                        case 15 -> rot.setRotation(BlockFace.SOUTH_SOUTH_EAST);
-
-                    }
+                    rot = setRotation(rot, (byte) (long) properties.get("rotation"));
 
                     block.setBlockData(rot);
 
@@ -990,5 +1037,284 @@ public class Converter implements CommandExecutor {
         }
 
         return wall;
+    }
+
+    private PatternType getPatternType(String p) {
+
+        switch (p) {
+
+            case "bs" -> {
+                return PatternType.STRIPE_BOTTOM;
+            }
+
+            case "ts" -> {
+                return PatternType.STRIPE_TOP;
+            }
+
+            case "ls" -> {
+                return PatternType.STRIPE_LEFT;
+            }
+
+            case "rs" -> {
+                return PatternType.STRIPE_RIGHT;
+            }
+
+            case "cs" -> {
+                return PatternType.STRIPE_CENTER;
+            }
+
+            case "ms" -> {
+                return PatternType.STRIPE_MIDDLE;
+            }
+
+            case "drs" -> {
+                return PatternType.STRIPE_DOWNRIGHT;
+            }
+
+            case "dls" -> {
+                return PatternType.STRIPE_DOWNLEFT;
+            }
+
+            case "ss" -> {
+                return PatternType.STRIPE_SMALL;
+            }
+
+            case "cr" -> {
+                return PatternType.CROSS;
+            }
+
+            case "sc" -> {
+                return PatternType.STRAIGHT_CROSS;
+            }
+
+            case "ld" -> {
+                return PatternType.DIAGONAL_LEFT;
+            }
+
+            case "rud" -> {
+                return PatternType.DIAGONAL_RIGHT_MIRROR;
+            }
+
+            case "lud" -> {
+                return PatternType.DIAGONAL_LEFT_MIRROR;
+            }
+
+            case "rd" -> {
+                return PatternType.DIAGONAL_RIGHT;
+            }
+
+            case "vh" -> {
+                return PatternType.HALF_VERTICAL;
+            }
+
+            case "vhr" -> {
+                return PatternType.HALF_VERTICAL_MIRROR;
+            }
+
+            case "hh" -> {
+                return PatternType.HALF_HORIZONTAL;
+            }
+
+            case "hhb" -> {
+                return PatternType.HALF_HORIZONTAL_MIRROR;
+            }
+
+            case "bl" -> {
+                return PatternType.SQUARE_BOTTOM_LEFT;
+            }
+
+            case "br" -> {
+                return PatternType.SQUARE_BOTTOM_RIGHT;
+            }
+
+            case "tl" -> {
+                return PatternType.SQUARE_TOP_LEFT;
+            }
+
+            case "tr" -> {
+                return PatternType.SQUARE_TOP_RIGHT;
+            }
+
+            case "bt" -> {
+                return PatternType.TRIANGLE_BOTTOM;
+            }
+
+            case "tt" -> {
+                return PatternType.TRIANGLE_TOP;
+            }
+
+            case "bts" -> {
+                return PatternType.TRIANGLES_BOTTOM;
+            }
+
+            case "tts" -> {
+                return PatternType.TRIANGLES_TOP;
+            }
+
+            case "mc" -> {
+                return PatternType.CIRCLE_MIDDLE;
+            }
+
+            case "mr" -> {
+                return PatternType.RHOMBUS_MIDDLE;
+            }
+            case "bo" -> {
+                return PatternType.BORDER;
+            }
+
+            case "cbo" -> {
+                return PatternType.CURLY_BORDER;
+            }
+
+            case "bri" -> {
+                return PatternType.BRICKS;
+            }
+
+            case "gra" -> {
+                return PatternType.GRADIENT;
+            }
+
+            case "gru" -> {
+                return PatternType.GRADIENT_UP;
+            }
+
+            case "cre" -> {
+                return PatternType.CREEPER;
+            }
+
+            case "sku" -> {
+                return PatternType.SKULL;
+            }
+
+            case "flo" -> {
+                return PatternType.FLOWER;
+            }
+
+            case "moj" -> {
+                return PatternType.MOJANG;
+            }
+
+            case "glb" -> {
+                return PatternType.GLOBE;
+            }
+
+            case "pig" -> {
+                return PatternType.PIGLIN;
+            }
+
+            default -> {
+                return PatternType.BASE;
+            }
+        }
+    }
+
+    private DyeColor getDyeColour(String c) {
+
+        switch (c) {
+
+            case "orange" -> {
+                return DyeColor.ORANGE;
+            }
+
+            case "magenta" -> {
+                return DyeColor.MAGENTA;
+            }
+
+            case "light_blue" -> {
+                return DyeColor.LIGHT_BLUE;
+            }
+
+            case "yellow" -> {
+                return DyeColor.YELLOW;
+            }
+
+            case "lime" -> {
+                return DyeColor.LIME;
+            }
+
+            case "pink" -> {
+                return DyeColor.PINK;
+            }
+
+            case "gray" -> {
+                return DyeColor.GRAY;
+            }
+
+            case "light_gray" -> {
+                return DyeColor.LIGHT_GRAY;
+            }
+
+            case "cyan" -> {
+                return DyeColor.CYAN;
+            }
+
+            case "purple" -> {
+                return DyeColor.PURPLE;
+            }
+
+            case "blue" -> {
+                return DyeColor.BLUE;
+            }
+
+            case "brown" -> {
+                return DyeColor.BROWN;
+            }
+
+            case "green" -> {
+                return DyeColor.GREEN;
+            }
+
+            case "red" -> {
+                return DyeColor.RED;
+            }
+
+            case "black" -> {
+                return DyeColor.BLACK;
+            }
+
+            default -> {
+                return DyeColor.WHITE;
+            }
+        }
+    }
+
+    private Rotatable setRotation(Rotatable rot, byte rotation) {
+        switch (rotation) {
+
+            case 0 -> rot.setRotation(BlockFace.SOUTH);
+            case 1 -> rot.setRotation(BlockFace.SOUTH_SOUTH_WEST);
+            case 2 -> rot.setRotation(BlockFace.SOUTH_WEST);
+            case 3 -> rot.setRotation(BlockFace.WEST_SOUTH_WEST);
+            case 4 -> rot.setRotation(BlockFace.WEST);
+            case 5 -> rot.setRotation(BlockFace.WEST_NORTH_WEST);
+            case 6 -> rot.setRotation(BlockFace.NORTH_WEST);
+            case 7 -> rot.setRotation(BlockFace.NORTH_NORTH_WEST);
+            case 8 -> rot.setRotation(BlockFace.NORTH);
+            case 9 -> rot.setRotation(BlockFace.NORTH_NORTH_EAST);
+            case 10 -> rot.setRotation(BlockFace.NORTH_EAST);
+            case 11 -> rot.setRotation(BlockFace.EAST_NORTH_EAST);
+            case 12 -> rot.setRotation(BlockFace.EAST);
+            case 13 -> rot.setRotation(BlockFace.EAST_SOUTH_EAST);
+            case 14 -> rot.setRotation(BlockFace.SOUTH_EAST);
+            case 15 -> rot.setRotation(BlockFace.SOUTH_SOUTH_EAST);
+
+        }
+
+        return rot;
+    }
+
+    private void setBannerPatterns(Block block, JSONArray patterns) {
+        if (!patterns.isEmpty()) {
+            Banner banner = (Banner) block.getState();
+            patterns.forEach((p) -> {
+
+                JSONObject pattern = (JSONObject) p;
+
+                banner.addPattern(new Pattern(getDyeColour((String) pattern.get("colour")),
+                        getPatternType((String) pattern.get("pattern"))));
+
+            });
+            banner.update();
+        }
     }
 }
