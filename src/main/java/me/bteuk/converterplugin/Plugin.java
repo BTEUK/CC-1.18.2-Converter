@@ -10,7 +10,8 @@ public class Plugin extends JavaPlugin {
 
         saveDefaultConfig();
 
-        this.getCommand("convert").setExecutor(new Converter(this));
+        //Register event.
+        new ChunkLoadEvent(this);
 
     }
 }

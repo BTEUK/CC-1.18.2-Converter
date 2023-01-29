@@ -12,103 +12,35 @@ import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.block.data.*;
 import org.bukkit.block.data.type.*;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.file.Path;
 import java.util.UUID;
 
-public class Converter implements CommandExecutor {
+public class Converter {
 
-    private Plugin instance;
-    private World world;
+    private final Plugin instance;
+    private final World world;
 
-    public Converter(Plugin instance) {
+    public Converter(Plugin instance, World world) {
         this.instance = instance;
+        this.world = world;
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String s, String[] args) {
+    public void convert(JSONArray jsonArray) {
 
-        //Check if the sender is the console.
-        if (!(sender instanceof ConsoleCommandSender)) {
-            sender.sendMessage(ChatColor.RED + "This command can only be sent from the console.");
-        }
+        //Iterate through array.
+        for (Object object : jsonArray) {
 
-        int max = Integer.MAX_VALUE;
+            JSONObject jObject = (JSONObject) object;
 
-        //If args length is 0 just start converting.
-        if (args.length > 0) {
-            try {
-                max = Integer.parseInt(args[0]);
-            } catch (NumberFormatException e) {
-                sender.sendMessage("The parameter must be an integer!");
-            }
-        }
+            //Get the location of the block.
+            Location l = new Location(world, (int) (long) jObject.get("x"), (int) (long) jObject.get("y"), (int) (long) jObject.get("z"));
 
-        //Get world.
-        String worldName = instance.getConfig().getString("world");
-
-        if (worldName == null) {
-            sender.sendMessage("Set the world in config.");
-            return true;
-        }
-
-        world = Bukkit.getWorld(instance.getConfig().getString("world"));
-
-        if (world == null) {
-            sender.sendMessage("The world " + worldName + " does not exist.");
-            return true;
-        }
-
-        //Get datafolder.
-        Path folder = Path.of(instance.getDataFolder().getAbsolutePath()).resolve("post-processing");
-        String[] files = new File(folder.toString()).list();
-
-        JSONParser parser = new JSONParser();
-
-        for (String file : files) {
-
-            try (Reader reader = new FileReader(folder + "/" + file)) {
-
-                //Get the array of json objects.
-                JSONArray jsonArray = (JSONArray) parser.parse(reader);
-
-                //Iterate through array.
-                for (Object object : jsonArray) {
-
-                    JSONObject jObject = (JSONObject) object;
-
-                    //Get the location of the block.
-                    Location l = new Location(world, (int) (long) jObject.get("x"), (int) (long) jObject.get("y"), (int) (long) jObject.get("z"));
-
-                    //Set the block to its correct state.
-                    setBlockData(jObject, l);
-
-                }
-
-                //Delete file when done.
-                File fFile = new File(folder + "/" + file);
-                fFile.delete();
-
-            } catch (IOException | ParseException e) {
-                e.printStackTrace();
-            }
-
+            //Set the block to its correct state.
+            setBlockData(jObject, l);
 
         }
-
-        return true;
     }
 
     //Set the blockData of the block.
@@ -742,7 +674,7 @@ public class Converter implements CommandExecutor {
             case "minecraft:vine" -> {
 
                 //Get block above.
-                Location lUp = new Location(world, l.getX(), l.getY() +1, l.getZ());
+                Location lUp = new Location(world, l.getX(), l.getY() + 1, l.getZ());
                 if (canConnectAbove(world.getBlockData(lUp))) {
 
                     //Check if block above, if true, make it a vine.
@@ -1654,10 +1586,18 @@ public class Converter implements CommandExecutor {
     //Set facing direction to a number for convenience.
     private int facingNumber(BlockFace f) {
         switch (f) {
-            case NORTH -> {return 0;}
-            case EAST -> {return 1;}
-            case WEST -> {return 3;}
-            case SOUTH -> {return 2;}
+            case NORTH -> {
+                return 0;
+            }
+            case EAST -> {
+                return 1;
+            }
+            case WEST -> {
+                return 3;
+            }
+            case SOUTH -> {
+                return 2;
+            }
         }
         return 0;
     }
@@ -1727,7 +1667,7 @@ public class Converter implements CommandExecutor {
                     GRAY_GLAZED_TERRACOTTA, LIGHT_GRAY_GLAZED_TERRACOTTA, CYAN_GLAZED_TERRACOTTA, PURPLE_GLAZED_TERRACOTTA, BLUE_GLAZED_TERRACOTTA,
                     BROWN_GLAZED_TERRACOTTA, GREEN_GLAZED_TERRACOTTA, RED_GLAZED_TERRACOTTA, BLACK_GLAZED_TERRACOTTA, WHITE_CONCRETE, ORANGE_CONCRETE,
                     MAGENTA_CONCRETE, LIGHT_BLUE_CONCRETE, YELLOW_CONCRETE, LIME_CONCRETE, PINK_CONCRETE, GRAY_CONCRETE, LIGHT_GRAY_CONCRETE, CYAN_CONCRETE,
-                    PURPLE_CONCRETE, BLUE_CONCRETE, BROWN_CONCRETE, GREEN_CONCRETE, RED_CONCRETE, BLACK_CONCRETE-> {
+                    PURPLE_CONCRETE, BLUE_CONCRETE, BROWN_CONCRETE, GREEN_CONCRETE, RED_CONCRETE, BLACK_CONCRETE -> {
                 return Instrument.BASS_DRUM;
             }
 
@@ -1748,7 +1688,7 @@ public class Converter implements CommandExecutor {
 
             //Guitar
             case WHITE_WOOL, ORANGE_WOOL, MAGENTA_WOOL, LIGHT_BLUE_WOOL, YELLOW_WOOL, LIME_WOOL, PINK_WOOL, GRAY_WOOL,
-                    LIGHT_GRAY_WOOL, CYAN_WOOL, PURPLE_WOOL, BLUE_WOOL, BROWN_WOOL, GREEN_WOOL, RED_WOOL, BLACK_WOOL-> {
+                    LIGHT_GRAY_WOOL, CYAN_WOOL, PURPLE_WOOL, BLUE_WOOL, BROWN_WOOL, GREEN_WOOL, RED_WOOL, BLACK_WOOL -> {
                 return Instrument.GUITAR;
             }
 
