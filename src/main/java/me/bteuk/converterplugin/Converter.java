@@ -22,12 +22,22 @@ public class Converter {
     private final Plugin instance;
     private final World world;
 
+    private boolean isRunning;
+
     public Converter(Plugin instance, World world) {
         this.instance = instance;
         this.world = world;
+
+        isRunning = false;
+    }
+
+    public boolean isRunning() {
+        return isRunning;
     }
 
     public void convert(JSONArray jsonArray) {
+
+        isRunning = true;
 
         //Iterate through array.
         for (Object object : jsonArray) {
@@ -41,6 +51,8 @@ public class Converter {
             setBlockData(jObject, l);
 
         }
+
+        isRunning = false;
     }
 
     //Set the blockData of the block.
