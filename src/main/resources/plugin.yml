@@ -7,6 +7,3 @@ commands:
   convert:
     usage: /<command>
     description: Converts all or some of the json files into the game.
-  placeblock:
-    usage: /<command>
-    description: Test command

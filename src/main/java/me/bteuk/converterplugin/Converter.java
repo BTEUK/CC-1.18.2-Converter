@@ -616,7 +616,6 @@ public class Converter implements CommandExecutor {
 
                 //Get the current skull at the location.
                 Block block = world.getBlockAt(l);
-                BlockData bd = block.getBlockData();
 
                 //Set skull types and if playerhead set texture.
                 String type = (String) properties.get("type");
@@ -694,15 +693,47 @@ public class Converter implements CommandExecutor {
 
             case "minecraft:note_block" -> {
 
-                //Set note of note block.
+                JSONObject properties = (JSONObject) object.get("properties");
+
+                NoteBlock noteBlock = (NoteBlock) world.getBlockData(l);
+
+                //Set the note from config.
+                noteBlock.setNote(new Note((int) (long) properties.get("note")));
+
+                //Skip setting the instrument, since the next time it is activated it'll automatically update.
+
+                world.setBlockData(l, noteBlock);
 
             }
 
             case "minecraft:tripwire" -> {
 
-                Block b = world.getBlockAt(l);
-                b.getState().update(true, false);
+                Tripwire tripwire = (Tripwire) world.getBlockData(l);
 
+                //Check if adjacent blocks are also tripwire, if true, connect them.
+                //North (Negative Z)
+                Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
+                if (world.getBlockData(lZMin) instanceof Tripwire) {
+                    tripwire.setFace(BlockFace.NORTH, true);
+                }
+
+                //East (Positive X)
+                Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
+                if (world.getBlockData(lXMax) instanceof Tripwire) {
+                    tripwire.setFace(BlockFace.EAST, true);
+                }
+
+                //South (Positive Z)
+                Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
+                if (world.getBlockData(lZMax) instanceof Tripwire) {
+                    tripwire.setFace(BlockFace.SOUTH, true);
+                }
+
+                //West (Negative X)
+                Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
+                if (world.getBlockData(lXMin) instanceof Tripwire) {
+                    tripwire.setFace(BlockFace.WEST, true);
+                }
             }
 
             case "minecraft:vine" -> {
