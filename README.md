@@ -1,6 +1,8 @@
 # CC-1.18.2-Converter
 Converts Cubic Chunks Minecraft 1.12.2 worlds to Minecraft 1.18.2\
+\
 **Note** This will not convert everything, it is intended for conversion of BTE worlds, thus being tailored for creative building. Therefore any items stored in inventories and all entities will not be converted, it is likely that redstone circuits will also break.\
+\
 To use the converter follow these steps:
 - Download the Converter and Converter plugin of the same version in the releases section in this repository.
 - Run the Converter jar using the command line, this is done using the following command: `java -jar CC-1.18.2-Converter.jar <path to input world> <path to output folder> <minY> <maxY> [number of threads]` minY and maxY must be the minimum and maximum height of the post-conversion world, these values must be within the limits of Minecraft [-2032,2016]. The number of threads you use will greatly effect the speed of the conversion, so use as many as your system can.
