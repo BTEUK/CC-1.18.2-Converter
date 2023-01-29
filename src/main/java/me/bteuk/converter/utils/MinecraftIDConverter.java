@@ -1389,8 +1389,8 @@ public class MinecraftIDConverter {
                 }
             }
 
-            //Hay Bale and Purpur Pillar
-            case (byte) 170, (byte) 202 -> {
+            //Hay Bale, Purpur Pillar and Logs
+            case (byte) 170, (byte) 202, 17, (byte) 162 -> {
 
                 switch (data) {
 
@@ -1462,10 +1462,10 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0, 1, 6, 8, 9, 14 -> block_states.putString("facing", "east");
-                    case 3, 5, 7, 11, 13, 15 -> block_states.putString("facing", "south");
-                    case 2, 10 -> block_states.putString("facing", "west");
-                    case 4, 12 -> block_states.putString("facing", "north");
+                    case 0, 1, 6, 8, 9, 14 -> block_states.putString("facing", "west");
+                    case 3, 5, 7, 11, 13, 15 -> block_states.putString("facing", "north");
+                    case 2, 10 -> block_states.putString("facing", "east");
+                    case 4, 12 -> block_states.putString("facing", "south");
 
                 }
 
@@ -1478,16 +1478,6 @@ public class MinecraftIDConverter {
 
             }
 
-            //Logs
-            case 17, (byte) 162 -> {
-                switch (data) {
-
-                    case 5, 6, 7, 8 -> block_states.putString("axis", "x");
-                    case 9, 10, 11, 12 -> block_states.putString("axis", "z");
-                    default -> block_states.putString("axis", "y");
-
-                }
-            }
 
             //Mushroom Blocks
             case 99, 100 -> {
@@ -3401,7 +3391,7 @@ public class MinecraftIDConverter {
                         return "chiseled_quartz_block";
                     }
 
-                    case 2 -> {
+                    case 2,3,4 -> {
                         return "quartz_pillar";
                     }
                 }
