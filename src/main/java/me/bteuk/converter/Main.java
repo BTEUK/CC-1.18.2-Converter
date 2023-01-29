@@ -5,8 +5,8 @@ import java.util.Date;
 public class Main {
 
     //Y / 16 is the cube height
-    public static final int MIN_Y_CUBE = -8;
-    public static final int MAX_Y_CUBE = 85;
+    public static int MIN_Y_CUBE = -8;
+    public static int MAX_Y_CUBE = 32;
 
     //Default biome namespace
     public static final String DEFAULT_BIOME = "minecraft:forest";
@@ -29,22 +29,35 @@ public class Main {
         Date date = new Date();
         Long start_time = date.getTime();
 
-        if (args.length < 2) {
-            System.out.println("You must provide arguments for the input and output folders.");
+        if (args.length < 4) {
+            System.out.println("You must provide arguments for the input and output folders as well as the min and max height.");
             System.out.println("Additionally the number of threads can be specified.");
-            System.out.println("java -jar CC-1.18.2-Converter.jar <path to input> <path to output> [threads]");
+            System.out.println("java -jar CC-1.18.2-Converter.jar <path to input> <path to output> <minY> <maxY> [threads]");
             return;
         }
 
         int max_threads = 1;
 
-        if (args.length == 3) {
+        try {
+
+            MIN_Y_CUBE = Integer.parseInt(args[2]) / 16;
+            MAX_Y_CUBE = Integer.parseInt(args[3]) / 16;
+
+        } catch (NumberFormatException e) {
+            System.out.println("java -jar CC-1.18.2-Converter.jar <path to input> <path to output> <minY> <maxY> [threads]");
+            return;
+        }
+
+        if (args.length == 5) {
             try {
-                max_threads = Integer.parseInt(args[2]);
+                max_threads = Integer.parseInt(args[4]);
             } catch (NumberFormatException e) {
                 max_threads = 1;
             }
         }
+
+        System.out.println("Starting converter with Min-Cube: " + MIN_Y_CUBE + " and Max-Cube: " + MAX_Y_CUBE);
+        System.out.println("Number of threads: " + max_threads);
 
         new WorldIterator(args[0], args[1], max_threads);
 
