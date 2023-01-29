@@ -24,8 +24,6 @@ public class WorldIterator {
     Path input;
     Path output;
 
-    int max_queue;
-
     /*
 
     Iterates through all .2dr (512x512 files)
@@ -47,6 +45,7 @@ public class WorldIterator {
         try {
             Files.createDirectories(output.resolve("post-processing"));
             Files.createDirectories(output.resolve("region"));
+            Files.createDirectories(output.resolve("entities"));
         } catch (IOException e) {
             e.printStackTrace();
         }

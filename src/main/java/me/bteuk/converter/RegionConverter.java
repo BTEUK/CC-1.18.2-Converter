@@ -20,6 +20,7 @@ import me.bteuk.converter.cc.Utils;
 import me.bteuk.converter.utils.LegacyID;
 import me.bteuk.converter.utils.MinecraftIDConverter;
 import net.querz.nbt.tag.CompoundTag;
+import net.querz.nbt.tag.DoubleTag;
 import net.querz.nbt.tag.ListTag;
 import net.querz.nbt.tag.StringTag;
 import org.json.simple.JSONArray;
@@ -56,16 +57,27 @@ public class RegionConverter extends Thread {
     ListTag<CompoundTag> tile_entities = new ListTag<>(CompoundTag.class);
     CompoundTag tEntity;
 
+    RegionKey regionKey;
+    ListTag<CompoundTag> entities;
+
     HashMap<LegacyID, Integer> paletteID = new HashMap<>();
     ListTag<CompoundTag> palette = new ListTag<>(CompoundTag.class);
 
     int entryX;
     int entryZ;
 
-    public RegionConverter(BlockingQueue<String> queue, ThreadManager mng) {
+    UUID uuid;
 
+    JSONArray jaEntities;
+
+    public RegionConverter(UUID uuid, BlockingQueue<String> queue, ThreadManager mng) {
+
+        this.uuid = uuid;
         this.queue = queue;
         this.mng = mng;
+
+        //Create json array to store entities.
+        jaEntities = new JSONArray();
 
     }
 
@@ -78,6 +90,12 @@ public class RegionConverter extends Thread {
 
                 if (take.equals("end")) {
                     mng.activeThreads.decrementAndGet();
+
+                    //Write entities file.
+                    FileWriter ppFile = new FileWriter(mng.itr.output.resolve("entities") + "/" + uuid + ".json");
+                    ppFile.write(jaEntities.toJSONString());
+                    ppFile.flush();
+                    ppFile.close();
                     break;
                 }
 
@@ -85,6 +103,8 @@ public class RegionConverter extends Thread {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -95,14 +115,12 @@ public class RegionConverter extends Thread {
 
         byte[] blocks;
 
-        int cX = 0;
-        int cY = 0;
-        int cZ = 0;
-        int x;
-        int z;
+        int cX;
+        int cY;
+        int cZ;
 
         EntryLocation3D e3d;
-        CompoundTag block_entity = null;
+        CompoundTag block_entity;
 
         //Create new json array to store blocks for post-processing in.
         JSONArray ja = new JSONArray();
@@ -270,8 +288,32 @@ public class RegionConverter extends Thread {
                             //Clear uniqueBlocks.
                             uniqueBlocks.clear();
 
+                            //Load entities if unique.
+                            if (!e3d.getRegionKey().equals(regionKey)) {
+                                //Load entities.
+                                entities = (ListTag<CompoundTag>) cubeLevel.getListTag("Entities");
+                                regionKey = e3d.getRegionKey();
+
+                                //Add them to the json file.
+                                for (CompoundTag entity : entities) {
+
+                                    JSONObject jo = new JSONObject();
+                                    jo.put("id", entity.getString("id"));
+
+                                    ListTag<DoubleTag> pos = (ListTag<DoubleTag>) entity.getListTag("Pos");
+
+                                    jo.put("x", pos.get(0).asDouble());
+                                    jo.put("y", pos.get(1).asDouble());
+                                    jo.put("z", pos.get(2).asDouble());
+
+                                    jaEntities.add(jo);
+
+                                }
+                            }
+
                             //Load tile entities.
                             tile_entities = (ListTag<CompoundTag>) cubeLevel.getListTag("TileEntities");
+
 
                             for (int j = 0; j < 4096; j++) {
 

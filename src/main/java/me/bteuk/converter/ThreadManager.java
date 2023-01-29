@@ -14,13 +14,11 @@ import net.querz.nbt.io.NBTInputStream;
 import net.querz.nbt.io.NBTOutputStream;
 import net.querz.nbt.io.NamedTag;
 import net.querz.nbt.tag.*;
-import org.checkerframework.checker.units.qual.A;
 
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -75,7 +73,7 @@ public class ThreadManager {
 
         //Create the threads.
         for (int i = 0; i < threadCount; i++) {
-            threads.add(new RegionConverter(queue, this));
+            threads.add(new RegionConverter(UUID.randomUUID(), queue, this));
         }
 
     }

@@ -29,7 +29,24 @@ public class Main {
         Date date = new Date();
         Long start_time = date.getTime();
 
-        new WorldIterator(args[0], args[1], 2);
+        if (args.length < 2) {
+            System.out.println("You must provide arguments for the input and output folders.");
+            System.out.println("Additionally the number of threads can be specified.");
+            System.out.println("java -jar CC-1.18.2-Converter.jar <path to input> <path to output> [threads]");
+            return;
+        }
+
+        int max_threads = 1;
+
+        if (args.length == 3) {
+            try {
+                max_threads = Integer.parseInt(args[2]);
+            } catch (NumberFormatException e) {
+                max_threads = 1;
+            }
+        }
+
+        new WorldIterator(args[0], args[1], max_threads);
 
         date = new Date();
         Long end_time = date.getTime();
