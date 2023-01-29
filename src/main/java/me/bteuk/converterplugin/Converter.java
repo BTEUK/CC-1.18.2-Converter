@@ -795,7 +795,10 @@ public class Converter {
                     LIGHT_GRAY_CONCRETE_POWDER, CYAN_CONCRETE_POWDER, PURPLE_CONCRETE_POWDER, BLUE_CONCRETE_POWDER,
                     BROWN_CONCRETE_POWDER, GREEN_CONCRETE_POWDER, RED_CONCRETE_POWDER, BLACK_CONCRETE_POWDER,
                     REDSTONE_BLOCK, SLIME_BLOCK, PISTON, STICKY_PISTON, OBSERVER, DISPENSER, DROPPER,
-                    TNT, REDSTONE_LAMP, NOTE_BLOCK -> {
+                    TNT, REDSTONE_LAMP, NOTE_BLOCK,
+                    WHITE_STAINED_GLASS, ORANGE_STAINED_GLASS, MAGENTA_STAINED_GLASS, LIGHT_BLUE_STAINED_GLASS, YELLOW_STAINED_GLASS, LIME_STAINED_GLASS, PINK_STAINED_GLASS,
+                    GRAY_STAINED_GLASS, LIGHT_GRAY_STAINED_GLASS, CYAN_STAINED_GLASS, PURPLE_STAINED_GLASS, BLUE_STAINED_GLASS, BROWN_STAINED_GLASS, GREEN_STAINED_GLASS,
+                    RED_STAINED_GLASS, BLACK_STAINED_GLASS-> {
                 return true;
             }
         }
@@ -807,7 +810,7 @@ public class Converter {
 
             switch (face) {
                 case NORTH -> {
-                    if (stair.getFacing() == face) {
+                    if (stair.getFacing() == BlockFace.SOUTH) {
                         return true;
                     } else if (stair.getFacing() == BlockFace.WEST && stair.getShape() == Stairs.Shape.INNER_LEFT) {
                         return true;
@@ -818,7 +821,7 @@ public class Converter {
                     }
                 }
                 case WEST -> {
-                    if (stair.getFacing() == face) {
+                    if (stair.getFacing() == BlockFace.EAST) {
                         return true;
                     } else if (stair.getFacing() == BlockFace.SOUTH && stair.getShape() == Stairs.Shape.INNER_LEFT) {
                         return true;
@@ -829,7 +832,7 @@ public class Converter {
                     }
                 }
                 case SOUTH -> {
-                    if (stair.getFacing() == face) {
+                    if (stair.getFacing() == BlockFace.NORTH) {
                         return true;
                     } else if (stair.getFacing() == BlockFace.EAST && stair.getShape() == Stairs.Shape.INNER_LEFT) {
                         return true;
@@ -840,7 +843,7 @@ public class Converter {
                     }
                 }
                 case EAST -> {
-                    if (stair.getFacing() == face) {
+                    if (stair.getFacing() == BlockFace.WEST) {
                         return true;
                     } else if (stair.getFacing() == BlockFace.NORTH && stair.getShape() == Stairs.Shape.INNER_LEFT) {
                         return true;
@@ -992,6 +995,9 @@ public class Converter {
                     BROWN_CONCRETE_POWDER, GREEN_CONCRETE_POWDER, RED_CONCRETE_POWDER, BLACK_CONCRETE_POWDER,
                     REDSTONE_BLOCK, SLIME_BLOCK, PISTON, STICKY_PISTON, OBSERVER, DISPENSER, DROPPER,
                     TNT, REDSTONE_LAMP, NOTE_BLOCK,
+                    WHITE_STAINED_GLASS, ORANGE_STAINED_GLASS, MAGENTA_STAINED_GLASS, LIGHT_BLUE_STAINED_GLASS, YELLOW_STAINED_GLASS, LIME_STAINED_GLASS, PINK_STAINED_GLASS,
+                    GRAY_STAINED_GLASS, LIGHT_GRAY_STAINED_GLASS, CYAN_STAINED_GLASS, PURPLE_STAINED_GLASS, BLUE_STAINED_GLASS, BROWN_STAINED_GLASS, GREEN_STAINED_GLASS,
+                    RED_STAINED_GLASS, BLACK_STAINED_GLASS,
 
                     OAK_LEAVES, SPRUCE_LEAVES, BIRCH_LEAVES, JUNGLE_LEAVES, ACACIA_LEAVES, DARK_OAK_LEAVES,
                     FARMLAND, DIRT_PATH, CARVED_PUMPKIN, JACK_O_LANTERN, MELON, ENCHANTING_TABLE, END_PORTAL_FRAME,
