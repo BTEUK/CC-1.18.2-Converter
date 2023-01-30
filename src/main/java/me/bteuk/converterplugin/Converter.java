@@ -704,9 +704,51 @@ public class Converter {
                 }
             }
 
+            case "minecraft:iron_door", "minecraft:oak_door", "minecraft:spruce_door", "minecraft:birch_door", "minecraft:jungle_door", "minecraft_acacia_door", "minecraft_dark_oak_door" -> {
 
+                //Get door instance.
+                BlockData blockData = world.getBlockData(l);
+
+                if (!(blockData instanceof Door)) {
+                    instance.getLogger().info("Not a door at " + l.getX() + ", " + l.getY() + ", " + l.getZ());
+                    return;
+                }
+
+                Door door = (Door) blockData;
+
+                //Get half.
+                if (door.getHalf() == Bisected.Half.TOP) {
+
+                    Location lBelow = new Location(world, l.getX(), l.getY() - 1, l.getZ());
+
+                    //Check if block below is a door of the same material, if true get it's properties.
+                    if (world.getBlockAt(lBelow) instanceof Door && world.getType(lBelow) == door.getMaterial()) {
+
+                        Door bDoor = (Door) world.getBlockData(lBelow);
+
+                        //Get facing direction from below door and open/closed status.
+                        door.setFacing(bDoor.getFacing());
+                        door.setOpen(bDoor.isOpen());
+
+                    }
+
+                } else {
+
+                    Location lAbove = new Location(world, l.getX(), l.getY() + 1, l.getZ());
+
+                    //Check if block below is a door of the same material, if true get it's properties.
+                    if (world.getBlockAt(lAbove) instanceof Door && world.getType(lAbove) == door.getMaterial()) {
+
+                        Door aDoor = (Door) world.getBlockData(lAbove);
+
+                        //Get hinge and powered status.
+                        door.setHinge(aDoor.getHinge());
+                        door.setPowered(aDoor.isPowered());
+
+                    }
+                }
+            }
         }
-
     }
 
     private void setTopFlower(Material mat, Location l) {
