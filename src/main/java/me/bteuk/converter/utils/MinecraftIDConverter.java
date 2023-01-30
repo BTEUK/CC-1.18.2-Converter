@@ -1189,7 +1189,7 @@ public class MinecraftIDConverter {
                 //hinge
                 switch (data) {
 
-                    case 9, 11, 13, 15 -> block_states.putString("hinge", "left");
+                    case 8, 10, 12, 14 -> block_states.putString("hinge", "left");
                     default -> block_states.putString("hinge", "right");
 
                 }
