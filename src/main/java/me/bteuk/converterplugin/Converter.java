@@ -625,7 +625,14 @@ public class Converter {
                     Skull skull = (Skull) block.getState();
                     skull.setType(block.getType());
 
-                    PlayerProfile profile = Bukkit.createProfile(UUID.fromString((String) properties.get("id")));
+                    String id = (String) properties.get("id");
+                    UUID uuid;
+                    if (id == null) {
+                        uuid = UUID.randomUUID();
+                    } else {
+                        uuid = UUID.fromString(id);
+                    }
+                    PlayerProfile profile = Bukkit.createProfile(uuid);
                     profile.getProperties().add(new ProfileProperty("textures", (String) properties.get("texture")));
 
                     skull.setPlayerProfile(profile);
