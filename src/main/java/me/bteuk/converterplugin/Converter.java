@@ -722,7 +722,7 @@ public class Converter {
                     Location lBelow = new Location(world, l.getX(), l.getY() - 1, l.getZ());
 
                     //Check if block below is a door of the same material, if true get it's properties.
-                    if (world.getBlockAt(lBelow) instanceof Door && world.getType(lBelow) == door.getMaterial()) {
+                    if (world.getBlockData(lBelow) instanceof Door && world.getType(lBelow) == door.getMaterial()) {
 
                         Door bDoor = (Door) world.getBlockData(lBelow);
 
@@ -737,7 +737,7 @@ public class Converter {
                     Location lAbove = new Location(world, l.getX(), l.getY() + 1, l.getZ());
 
                     //Check if block below is a door of the same material, if true get it's properties.
-                    if (world.getBlockAt(lAbove) instanceof Door && world.getType(lAbove) == door.getMaterial()) {
+                    if (world.getBlockData(lAbove) instanceof Door && world.getType(lAbove) == door.getMaterial()) {
 
                         Door aDoor = (Door) world.getBlockData(lAbove);
 
