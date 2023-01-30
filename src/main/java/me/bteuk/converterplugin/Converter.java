@@ -730,6 +730,8 @@ public class Converter {
                         door.setFacing(bDoor.getFacing());
                         door.setOpen(bDoor.isOpen());
 
+                        world.setBlockData(l, door);
+
                     }
 
                 } else {
@@ -744,6 +746,8 @@ public class Converter {
                         //Get hinge and powered status.
                         door.setHinge(aDoor.getHinge());
                         door.setPowered(aDoor.isPowered());
+
+                        world.setBlockData(l, door);
 
                     }
                 }
