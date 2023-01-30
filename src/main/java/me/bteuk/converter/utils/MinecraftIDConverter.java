@@ -683,7 +683,8 @@ public class MinecraftIDConverter {
             case 53, 67, 108, 109, 114, (byte) 128, (byte) 134, (byte) 135, (byte) 136, (byte) 156, (byte) 163,
                     (byte) 164, (byte) 180, (byte) 203, 85, 113, (byte) 188, (byte) 189, (byte) 190, (byte) 191,
                     (byte) 192, (byte) 139, 101, 102, (byte) 160, 54, (byte) 146, 55, (byte) 199, 26,
-                    (byte) 176, (byte) 177, 104, 105, (byte) 140, (byte) 144, 25, (byte) 132, 106 -> {
+                    (byte) 176, (byte) 177, 104, 105, (byte) 140, (byte) 144, 25, (byte) 132, 106,
+                    64, 71, (byte) 193, (byte) 194, (byte) 195, (byte) 196, (byte) 197 -> {
                 return true;
             }
         }
@@ -1163,43 +1164,49 @@ public class MinecraftIDConverter {
             //Doors
             case 64, 71, (byte) 193, (byte) 194, (byte) 195, (byte) 196, (byte) 197 -> {
 
-                //facing
-                switch (data) {
+                //Bottom half
+                if (data < 8) {
 
-                    case 0, 4, 8, 12 -> block_states.putString("facing", "east");
-                    case 1, 5, 9, 13 -> block_states.putString("facing", "south");
-                    case 2, 6, 10, 14 -> block_states.putString("facing", "west");
-                    case 3, 7, 11, 15 -> block_states.putString("facing", "north");
+                    block_states.putString("half", "lower");
+
+                } else {
+
+                    //Top half
+                    block_states.putString("half", "upper");
 
                 }
 
-                //half
+                //facing
                 switch (data) {
 
-                    case 0, 1, 2, 3, 4, 5, 6, 7 -> block_states.putString("half", "lower");
-                    case 8, 9, 10, 11, 12, 13, 14, 15 -> block_states.putString("half", "upper");
+                    case 1, 5 -> block_states.putString("facing", "south");
+                    case 2, 6 -> block_states.putString("facing", "west");
+                    case 3, 7 -> block_states.putString("facing", "north");
+                    default -> block_states.putString("facing", "east");
 
                 }
 
                 //hinge
                 switch (data) {
 
-                    case 9, 11, 13, 15 -> block_states.putString("hinge", "right");
-                    default -> block_states.putString("hinge", "left");
+                    case 9, 11, 13, 15 -> block_states.putString("hinge", "left");
+                    default -> block_states.putString("hinge", "right");
 
                 }
 
                 //open
                 switch (data) {
 
-                    case 4, 5, 6, 7 -> block_states.putString("open", "true");
+                    case 4, 5, 6, 7, 12, 13, 14, 15 -> block_states.putString("open", "true");
                     default -> block_states.putString("open", "false");
 
                 }
 
-                //powered
-                block_states.putString("powered", "false");
-
+                //Powered
+                switch (data) {
+                    case 10, 11, 14, 15 -> block_states.putString("powered", "true");
+                    default -> block_states.putString("powered", "false");
+                }
             }
 
             //End Portal Frame
