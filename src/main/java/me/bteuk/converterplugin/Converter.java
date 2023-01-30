@@ -622,23 +622,28 @@ public class Converter {
                 //If type is a player head, set the texture, ect.
                 if (type.equals("player_head")) {
 
-                    Skull skull = (Skull) block.getState();
-                    skull.setType(block.getType());
+                    //If texture is null, skip.
+                    if (properties.get("texture") != null) {
 
-                    String id = (String) properties.get("id");
-                    UUID uuid;
-                    if (id == null) {
-                        uuid = UUID.randomUUID();
-                    } else {
-                        uuid = UUID.fromString(id);
+                        Skull skull = (Skull) block.getState();
+                        skull.setType(block.getType());
+
+                        String id = (String) properties.get("id");
+
+                        UUID uuid;
+                        if (id == null) {
+                            uuid = UUID.randomUUID();
+                        } else {
+                            uuid = UUID.fromString(id);
+                        }
+                        PlayerProfile profile = Bukkit.createProfile(uuid);
+                        profile.getProperties().add(new ProfileProperty("textures", (String) properties.get("texture")));
+
+                        skull.setPlayerProfile(profile);
+
+                        skull.update(); // so that the result can be seen
+
                     }
-                    PlayerProfile profile = Bukkit.createProfile(uuid);
-                    profile.getProperties().add(new ProfileProperty("textures", (String) properties.get("texture")));
-
-                    skull.setPlayerProfile(profile);
-
-                    skull.update(); // so that the result can be seen
-
                 }
             }
 
