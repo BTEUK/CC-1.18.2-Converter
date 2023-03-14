@@ -1745,10 +1745,10 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0, 4, 8, 12 -> block_states.putString("facing", "north");
-                    case 1, 5, 9, 13 -> block_states.putString("facing", "east");
-                    case 2, 6, 10, 14 -> block_states.putString("facing", "south");
-                    case 3, 7, 11, 15 -> block_states.putString("facing", "west");
+                    case 0, 4, 8, 12 -> block_states.putString("facing", "south");
+                    case 1, 5, 9, 13 -> block_states.putString("facing", "west");
+                    case 2, 6, 10, 14 -> block_states.putString("facing", "north");
+                    case 3, 7, 11, 15 -> block_states.putString("facing", "east");
 
                 }
             }
