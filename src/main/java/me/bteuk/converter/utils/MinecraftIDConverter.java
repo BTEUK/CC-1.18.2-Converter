@@ -1469,10 +1469,10 @@ public class MinecraftIDConverter {
                 //facing
                 switch (data) {
 
-                    case 0, 1, 6, 8, 9, 14 -> block_states.putString("facing", "west");
-                    case 3, 5, 7, 11, 13, 15 -> block_states.putString("facing", "north");
-                    case 2, 10 -> block_states.putString("facing", "east");
-                    case 4, 12 -> block_states.putString("facing", "south");
+                    case 1, 9 -> block_states.putString("facing", "east");
+                    case 2, 10, 0, 8, 6, 14 -> block_states.putString("facing", "west");
+                    case 3, 11 -> block_states.putString("facing", "south");
+                    case 4, 12, 7, 5, 13 -> block_states.putString("facing", "north");
 
                 }
 
@@ -3802,7 +3802,7 @@ public class MinecraftIDConverter {
             //Red Sandstone Slab
             case (byte) 181, (byte) 182 -> {
 
-                if (id == (byte) 182 && data == 8) {
+                if (id == (byte) 181 && data >= 8) {
                     return "smooth_red_sandstone";
                 } else {
                     return "red_sandstone_slab";
@@ -3874,14 +3874,14 @@ public class MinecraftIDConverter {
                 return "jungle_door";
             }
 
-            //Dark Oak Door
+            //Acacia Door
             case (byte) 196 -> {
-                return "dark_oak_door";
+                return "acacia_door";
             }
 
-            //Acacia Door
+            //Dark Oak Door
             case (byte) 197 -> {
-                return "acacia_door";
+                return "dark_oak_door";
             }
 
             //End Rod
