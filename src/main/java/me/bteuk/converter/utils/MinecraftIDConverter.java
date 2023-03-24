@@ -282,7 +282,7 @@ public class MinecraftIDConverter {
                     (byte) 191, (byte) 192, 60, (byte) 198, 120, 64, 71, (byte) 193, (byte) 194, (byte) 195,
                     (byte) 196, (byte) 197, 23, (byte) 158, (byte) 178, (byte) 151, (byte) 137, (byte) 210,
                     (byte) 211, 127, (byte) 199, (byte) 200, (byte) 130, 54, (byte) 146, 118, 92, 81, 77,
-                    (byte) 143, 117, (byte) 216, 26, (byte) 177, (byte) 144, (byte) 176, (byte) 145 -> {
+                    (byte) 143, 117, (byte) 216, 26, (byte) 177, (byte) 144, (byte) 176, (byte) 145, 8, 9 -> {
                 return true;
             }
 
