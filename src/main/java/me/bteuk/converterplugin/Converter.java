@@ -709,7 +709,7 @@ public class Converter {
                 }
             }
 
-            case "minecraft:iron_door", "minecraft:oak_door", "minecraft:spruce_door", "minecraft:birch_door", "minecraft:jungle_door", "minecraft_acacia_door", "minecraft_dark_oak_door" -> {
+            case "minecraft:iron_door", "minecraft:oak_door", "minecraft:spruce_door", "minecraft:birch_door", "minecraft:jungle_door", "minecraft:acacia_door", "minecraft:dark_oak_door" -> {
 
                 //Get door instance.
                 BlockData blockData = world.getBlockData(l);
