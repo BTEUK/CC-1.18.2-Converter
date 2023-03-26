@@ -6,7 +6,7 @@
 
     <groupId>me.bteuk</groupId>
     <artifactId>CC-1.18.2-Converter</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
