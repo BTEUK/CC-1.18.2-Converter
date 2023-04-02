@@ -702,9 +702,12 @@ public class Converter {
                 if (canConnectAbove(world.getBlockData(lUp))) {
 
                     //Check if block above, if true, make it a vine.
-                    MultipleFacing facing = (MultipleFacing) world.getBlockData(l);
-                    facing.setFace(BlockFace.UP, true);
-                    world.setBlockData(l, facing);
+                    BlockData bd = world.getBlockData(l);
+                    if (bd instanceof MultipleFacing) {
+                        MultipleFacing facing = (MultipleFacing) bd;
+                        facing.setFace(BlockFace.UP, true);
+                        world.setBlockData(l, facing);
+                    }
 
                 }
             }
