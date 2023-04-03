@@ -419,23 +419,26 @@ public class Converter {
                 }
 
                 //Set part and facing.
-                Bed bed = (Bed) block.getBlockData();
+                BlockData bd = block.getBlockData();
 
-                if (properties.get("part").equals("head")) {
-                    bed.setPart(Bed.Part.HEAD);
-                } else {
-                    bed.setPart(Bed.Part.FOOT);
+                if (bd instanceof Bed) {
+                    Bed bed = (Bed) block.getBlockData();
+
+                    if (properties.get("part").equals("head")) {
+                        bed.setPart(Bed.Part.HEAD);
+                    } else {
+                        bed.setPart(Bed.Part.FOOT);
+                    }
+
+                    switch ((String) properties.get("facing")) {
+                        case "north" -> bed.setFacing(BlockFace.NORTH);
+                        case "east" -> bed.setFacing(BlockFace.EAST);
+                        case "south" -> bed.setFacing(BlockFace.SOUTH);
+                        case "west" -> bed.setFacing(BlockFace.WEST);
+                    }
+
+                    block.setBlockData(bed);
                 }
-
-                switch ((String) properties.get("facing")) {
-                    case "north" -> bed.setFacing(BlockFace.NORTH);
-                    case "east" -> bed.setFacing(BlockFace.EAST);
-                    case "south" -> bed.setFacing(BlockFace.SOUTH);
-                    case "west" -> bed.setFacing(BlockFace.WEST);
-                }
-
-                block.setBlockData(bed);
-
             }
 
             case "minecraft:white_banner" -> {
@@ -483,40 +486,46 @@ public class Converter {
                 //Set banner base colour.
                 Block block = world.getBlockAt(l);
 
-                switch ((String) properties.get("colour")) {
-                    case "white" -> block.setType(Material.WHITE_WALL_BANNER);
-                    case "orange" -> block.setType(Material.ORANGE_WALL_BANNER);
-                    case "magenta" -> block.setType(Material.MAGENTA_WALL_BANNER);
-                    case "light_blue" -> block.setType(Material.LIGHT_BLUE_WALL_BANNER);
-                    case "yellow" -> block.setType(Material.YELLOW_WALL_BANNER);
-                    case "lime" -> block.setType(Material.LIME_WALL_BANNER);
-                    case "pink" -> block.setType(Material.PINK_WALL_BANNER);
-                    case "gray" -> block.setType(Material.GRAY_WALL_BANNER);
-                    case "light_gray" -> block.setType(Material.LIGHT_GRAY_WALL_BANNER);
-                    case "cyan" -> block.setType(Material.CYAN_WALL_BANNER);
-                    case "purple" -> block.setType(Material.PURPLE_WALL_BANNER);
-                    case "blue" -> block.setType(Material.BLUE_WALL_BANNER);
-                    case "brown" -> block.setType(Material.BROWN_WALL_BANNER);
-                    case "green" -> block.setType(Material.GREEN_WALL_BANNER);
-                    case "red" -> block.setType(Material.RED_WALL_BANNER);
-                    case "black" -> block.setType(Material.BLACK_WALL_BANNER);
+                if (block.getType() == Material.WHITE_WALL_BANNER) {
+
+                    switch ((String) properties.get("colour")) {
+                        case "white" -> block.setType(Material.WHITE_WALL_BANNER);
+                        case "orange" -> block.setType(Material.ORANGE_WALL_BANNER);
+                        case "magenta" -> block.setType(Material.MAGENTA_WALL_BANNER);
+                        case "light_blue" -> block.setType(Material.LIGHT_BLUE_WALL_BANNER);
+                        case "yellow" -> block.setType(Material.YELLOW_WALL_BANNER);
+                        case "lime" -> block.setType(Material.LIME_WALL_BANNER);
+                        case "pink" -> block.setType(Material.PINK_WALL_BANNER);
+                        case "gray" -> block.setType(Material.GRAY_WALL_BANNER);
+                        case "light_gray" -> block.setType(Material.LIGHT_GRAY_WALL_BANNER);
+                        case "cyan" -> block.setType(Material.CYAN_WALL_BANNER);
+                        case "purple" -> block.setType(Material.PURPLE_WALL_BANNER);
+                        case "blue" -> block.setType(Material.BLUE_WALL_BANNER);
+                        case "brown" -> block.setType(Material.BROWN_WALL_BANNER);
+                        case "green" -> block.setType(Material.GREEN_WALL_BANNER);
+                        case "red" -> block.setType(Material.RED_WALL_BANNER);
+                        case "black" -> block.setType(Material.BLACK_WALL_BANNER);
+                    }
+
+                    //Set facing direction.
+                    BlockData bd = block.getBlockData();
+
+                    if (bd instanceof Directional) {
+                        Directional direction = (Directional) block.getBlockData();
+
+                        switch ((String) properties.get("facing")) {
+                            case "north" -> direction.setFacing(BlockFace.NORTH);
+                            case "east" -> direction.setFacing(BlockFace.EAST);
+                            case "south" -> direction.setFacing(BlockFace.SOUTH);
+                            case "west" -> direction.setFacing(BlockFace.WEST);
+                        }
+
+                        block.setBlockData(direction);
+                    }
+
+                    //Set patterns
+                    setBannerPatterns(block, (JSONArray) properties.get("patterns"));
                 }
-
-                //Set facing direction.
-                Directional direction = (Directional) block.getBlockData();
-
-                switch ((String) properties.get("facing")) {
-                    case "north" -> direction.setFacing(BlockFace.NORTH);
-                    case "east" -> direction.setFacing(BlockFace.EAST);
-                    case "south" -> direction.setFacing(BlockFace.SOUTH);
-                    case "west" -> direction.setFacing(BlockFace.WEST);
-                }
-
-                block.setBlockData(direction);
-
-                //Set patterns
-                setBannerPatterns(block, (JSONArray) properties.get("patterns"));
-
             }
 
             case "minecraft:flower_pot" -> {
