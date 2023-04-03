@@ -188,8 +188,16 @@ public class RegionConverter extends Thread {
                                 //Index equals biome size before adding the new biome.
                                 biomePaletteID.put(oldBiomes[ind], biomePalette.size());
                                 biomePalette.add(new StringTag(biomeName));
+                            } else if (!biomePaletteID.containsKey(oldBiomes[ind])) {
+                                int index = 0;
+                                for (StringTag biome : biomePalette) {
+                                    if (biome.getValue().equals(biomeName)) {
+                                        //Index equals biome size before adding the new biome.
+                                        biomePaletteID.put(oldBiomes[ind], index);
+                                    }
+                                    index++;
+                                }
                             }
-
                         }
                     }
 
