@@ -87,13 +87,25 @@ public class WorldIterator {
                     t.cancel();
                     return;
                 }
-                System.out.println("Queue: " + (manager.queue.size()-maxThreads) + "/" + max_queue);
+                int progress = max_queue - (manager.queue.size() - maxThreads);
+                int percentComplete = (int) (((double) progress / (double) max_queue) * 100);
+                String progressBar = "[";
+
+                for (int i = 0; i < 100; i += 5) {
+                    if (i < percentComplete) {
+                        progressBar += "=";
+                    } else {
+                        progressBar += " ";
+                    }
+                }
+
+                progressBar += "] " + percentComplete + "%";
+                System.out.print("\r" + progressBar + ("   Queue: " + (manager.queue.size()-maxThreads) + "/" + max_queue + " "));
             }
         }, 10000, 10000);
 
         //Start processing the queue.
         manager.process();
-
         while (manager.activeThreads.get() > 0) {
 
         }
