@@ -4,8 +4,6 @@ The CC-1.18.2-Converter is a Java-based tool designed to convert Minecraft world
 
 ## Tested versions
 
-Tested on:
-
 [![521](https://img.shields.io/badge/Paper-1.19.4%20%23521-green)](https://api.papermc.io/v2/projects/paper/versions/1.19.4/builds/521/downloads/paper-1.19.4-521.jar)
 [![388](https://img.shields.io/badge/Paper-1.18.2%20%23388-green)](https://api.papermc.io/v2/projects/paper/versions/1.18.2/builds/388/downloads/paper-1.18.2-388.jar)
 
