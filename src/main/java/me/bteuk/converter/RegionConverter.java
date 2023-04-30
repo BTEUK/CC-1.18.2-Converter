@@ -384,7 +384,7 @@ public class RegionConverter extends Thread {
 
                                     //Add the coordinates of the block to the object.
                                     obj.put("x", (entryX * 16) + cX);
-                                    obj.put("y", (y * 16) + cY);
+                                    obj.put("y", ((y * 16) + Main.OFFSET + cY));
                                     obj.put("z", (entryZ * 16) + cZ);
 
                                     //Add properties for certain blocks.
@@ -493,8 +493,7 @@ public class RegionConverter extends Thread {
                         //Construct section.
                         CompoundTag section = new CompoundTag();
 
-                        section.putByte("Y", (byte) y);
-
+                        section.putByte("Y", (byte) (y+(Main.OFFSET/16)));
                         //Create block_states compound tag.
                         CompoundTag block_states = new CompoundTag();
                         block_states.put("palette", palette);
@@ -538,7 +537,7 @@ public class RegionConverter extends Thread {
                     //Set position of chunk.
                     chunk.putInt("xPos", columnLevel.getInt("x"));
                     chunk.putInt("zPos", columnLevel.getInt("z"));
-                    chunk.putInt("yPos", Main.MIN_Y_CUBE);
+                    chunk.putInt("yPos", (Main.MIN_Y_CUBE + (Main.OFFSET / 16)));
 
                     //Set last update.
                     chunk.putLong("LastUpdate", 0);
