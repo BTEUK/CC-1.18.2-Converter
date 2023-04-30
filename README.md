@@ -44,53 +44,6 @@ ___
 
 \
 And that's it! You have successfully used the program to convert your Minecraft world from version 1.18.2.
-## Instructions for Using the Program
-- Make sure that your offsets are in values of 16.
-- Determine the number of logical processors available in your system. You can find this information in Task Manager under the Performance tab. The program will not allow you to exceed the available amount of logical processors.
-- Ensure that the minimum Y Value is set to the minimum Y Value of your 1.18.2 world. By default, this is -64, but with the datapack, it can be up to -2032.
-- Ensure that the maximum Y Value is set to the maximum Y Value of your 1.18.2 world. By default, this is 320, but with the datapack, it can be up to 2016.
-- It is recommended to turn off block updates as they can break the converter. You can do this by setting the randomTickSpeed to 0 or by downloading WorldGuard. The reason this happens is because, for example, if a chunk loads and there is a floating vine, it could break. If the converter then tries to convert that vine and it's no longer there, it'll throw an exception.## Instructions for Using the Program
-- Make sure that your offsets are in values of 16.
-- Determine the number of logical processors available in your system. You can find this information in Task Manager under the Performance tab. The program will not allow you to exceed the available amount of logical processors.
-- Ensure that the minimum Y Value is set to the minimum Y Value of your 1.18.2 world. By default, this is -64, but with the datapack, it can be up to -2032.
-- Ensure that the maximum Y Value is set to the maximum Y Value of your 1.18.2 world. By default, this is 320, but with the datapack, it can be up to 2016.
-- It is recommended to turn off block updates as they can break the converter. You can do this by setting the randomTickSpeed to 0 or by downloading WorldGuard. The reason this happens is because, for example, if a chunk loads and there is a floating vine, it could break. If the converter then tries to convert that vine and it's no longer there, it'll throw an exception.
-
-
-### Program Steps
-##### __CLI portion__:
-1. Download the program's Jar file.
-2. Open the command line interface (CLI) or terminal on your computer.
-3. Navigate to the directory where the Jar file is located.
-4. Execute the following command in the CLI or terminal:
-
-    java -jar CC-1.18.2-Converter.jar <path to input> <path to output> <minY> <maxY> <offset> [threads]
-
-    - Replace the <path to input> with the path to your input world file folder.
-    - Replace the <path to output> with the path to the folder where you want to save the converted world.
-    - Replace <minY> with the minimum Y value of the 1.18.2 world.
-    - Replace <maxY> with the maximum Y value of the 1.8.2 world.
-    - Replace <offset> with the desired offset in blocks/meters.
-    - Add an optional [threads] parameter to specify the number of threads to use. By default, the program will use one thread.
-5. Press the Enter key to run the command.
-6. The program will begin running and convert your world. The progress will be displayed in the CLI or terminal.
-7. Once the conversion is complete, the converted world will be saved in the output folder you specified. The program will display the total time taken to complete the conversion.
-
-##### __Paper portion__:
-1. Download [PaperMC](https://papermc.io/) 1.18.2
-2. Download [Terra+-](https://github.com/BTE-Germany/TerraPlusMinus) and put it into the plugins folder on PaperMC
-3. Enable the extended height datapack for Terra+-
-4. Open the zip of the Datapack and set the min_y value to what you want it to be (i.e. -2032)
-5. Head over to the Terra+- config in /plugins/TerraPlusMinus/config.yml and set the offset to the same value as what you set in Part 4
-6. Run the server to start world loading and ensure all is working
-7. Download the converter plugin and move it into your /plugins/ folder
-8. Run the server then stop it after it loads fully
-9. Move the *post-processing* folder from your converted world folder to /plugins/Convereter
-10. Set the world in the config in that folder to the same name of the world on the server
-11. Head over to the world folder (i.e. /world/) and put the *region* and *entities* folders from the converted world folder in there
-12. Start the server. Whenever you teleport to those regions, the converted region will automatically be loaded in
-
-And that's it! You have successfully used the program to convert your Minecraft world from version 1.18.2.
 
 
 ## Authors
