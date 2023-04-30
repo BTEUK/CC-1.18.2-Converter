@@ -58,7 +58,7 @@ public class Main {
             return;
         }
 
-        if (args.length == 5) {
+        if (args.length == 6) {
             try {
                 max_threads = Integer.parseInt(args[5]);
                 if (max_threads > available_processors) {
