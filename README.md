@@ -1,13 +1,6 @@
 # CC-1.18.2 Converter
 
 The CC-1.18.2-Converter is a Java-based tool designed to convert Minecraft worlds from version 1.12.2 to version 1.18.2, specifically for use with creative building in BTE worlds. It allows users to convert the world with specific height settings and utilize a paper 1.18.2 server with the Converter plugin for further conversion of special blocks. The program uses a command-line interface and allows for customization of the number of threads used in the conversion process. The resulting output includes converted regions, post-processing, and entity locations if needed.
-## Instructions for Using the Program
-- Make sure that your offsets are in values of 16.
-- Determine the number of logical processors available in your system. You can find this information in Task Manager under the Performance tab. The program will not allow you to exceed the available amount of logical processors.
-- Ensure that the minimum Y Value is set to the minimum Y Value of your 1.18.2 world. By default, this is -64, but with the datapack, it can be up to -2032.
-- Ensure that the maximum Y Value is set to the maximum Y Value of your 1.18.2 world. By default, this is 320, but with the datapack, it can be up to 2016.
-- It is recommended to turn off block updates as they can break the converter. You can do this by setting the randomTickSpeed to 0 or by downloading WorldGuard. The reason this happens is because, for example, if a chunk loads and there is a floating vine, it could break. If the converter then tries to convert that vine and it's no longer there, it'll throw an exception.
-
 
 ## Tested versions
 
@@ -16,6 +9,13 @@ Tested on:
 [![521](https://img.shields.io/badge/Paper-1.19.4%20%23521-green)](https://api.papermc.io/v2/projects/paper/versions/1.19.4/builds/521/downloads/paper-1.19.4-521.jar)
 [![388](https://img.shields.io/badge/Paper-1.18.2%20%23388-green)](https://api.papermc.io/v2/projects/paper/versions/1.18.2/builds/388/downloads/paper-1.18.2-388.jar)
 
+
+## Instructions for Using the Program
+- Make sure that your offsets are in values of 16.
+- Determine the number of logical processors available in your system. You can find this information in Task Manager under the Performance tab. The program will not allow you to exceed the available amount of logical processors.
+- Ensure that the minimum Y Value is set to the minimum Y Value of your 1.18.2 world. By default, this is -64, but with the datapack, it can be up to -2032.
+- Ensure that the maximum Y Value is set to the maximum Y Value of your 1.18.2 world. By default, this is 320, but with the datapack, it can be up to 2016.
+- It is recommended to turn off block updates as they can break the converter. You can do this by setting the randomTickSpeed to 0 or by downloading WorldGuard. The reason this happens is because, for example, if a chunk loads and there is a floating vine, it could break. If the converter then tries to convert that vine and it's no longer there, it'll throw an exception.
 
 ### Program Steps
 ##### __CLI portion__:
