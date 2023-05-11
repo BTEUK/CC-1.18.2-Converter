@@ -1,6 +1,6 @@
 # CC-1.18.2 Converter
 
-The CC-1.18.2-Converter is a Java-based tool designed to convert Minecraft worlds from version 1.12.2 to version 1.18.2, specifically for use with creative building in BTE worlds. It allows users to convert the world with specific height settings and utilize a paper 1.18.2 server with the Converter plugin for further conversion of special blocks. The program uses a command-line interface and allows for customization of the number of threads used in the conversion process. The resulting output includes converted regions, post-processing, and entity locations if needed.
+The CC-1.18.2-Converter is a Java-based tool designed to convert Minecraft worlds from version 1.12.2 to version 1.18.2, specifically for use with creative building in BTE worlds. It allows users to convert the world with specific height settings and utilize a paper 1.18.2 server with the Converter plugin for further conversion of special blocks. The program uses a command-line interface and allows for customization of the number of threads used in the conversion process. The resulting output includes converted regions, post-processing, and entity locations if needed. Entities will not be converted, their locations will only be stored in .json files which can by found in the /entities/ output directory.
 
 ## Tested versions
 
@@ -13,7 +13,7 @@ The CC-1.18.2-Converter is a Java-based tool designed to convert Minecraft world
 - Determine the number of logical processors available in your system. You can find this information in Task Manager under the Performance tab. The program will not allow you to exceed the available amount of logical processors.
 - Ensure that the minimum Y Value is set to the minimum Y Value of your 1.18.2 world. By default, this is -64, but with the datapack, it can be up to -2032.
 - Ensure that the maximum Y Value is set to the maximum Y Value of your 1.18.2 world. By default, this is 320, but with the datapack, it can be up to 2016.
-- It is recommended to turn off block updates as they can break the converter. You can do this by setting the randomTickSpeed to 0 or by downloading WorldGuard. The reason this happens is because, for example, if a chunk loads and there is a floating vine, it could break. If the converter then tries to convert that vine and it's no longer there, it'll throw an exception.
+- It is recommended to turn off block updates as they can break the converter. You can do this by setting the randomTickSpeed to 0 ````/gamerule randomtickspeed 0```` and by downloading [WorldGuard](https://dev.bukkit.org/projects/worldguard/files). The reason this happens is because, for example, if a chunk loads and there is a floating vine, it could break. If the converter then tries to convert that vine and it's no longer there, it'll throw an exception.
 
 ### Program Steps
 ##### __CLI portion__:
@@ -43,9 +43,9 @@ ___
 6. Run the server to start world loading and ensure all is working
 7. Download the converter plugin and move it into your /plugins/ folder
 8. Run the server then stop it after it loads fully
-9. Move the *post-processing* folder from your converted world folder to /plugins/Convereter
+9. Move the *post-processing* folder from your converted world folder to /plugins/Converter
 10. Set the world in the config in that folder to the same name of the world on the server
-11. Head over to the world folder (i.e. /world/) and put the *region* and *entities* folders from the converted world folder in there
+11. Head over to the world folder (i.e. /world/) and put the *region* folder from the converted world folder in there
 12. Start the server. Whenever you teleport to those regions, the converted region will automatically be loaded in\
 
 \
