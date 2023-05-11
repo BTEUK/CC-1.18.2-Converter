@@ -3,6 +3,7 @@ package me.bteuk.converterplugin;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import me.bteuk.converterplugin.utils.blocks.stairs.StairData;
+import me.bteuk.converterplugin.utils.exceptions.BlockNotFoundException;
 import org.bukkit.*;
 import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
@@ -42,23 +43,29 @@ public class Converter {
     public boolean convert(JSONArray jsonArray) {
 
         //Iterate through array.
-        for (Object object : jsonArray) {
+        //Catch any exceptions that may occur.
+        try {
+            for (Object object : jsonArray) {
 
-            JSONObject jObject = (JSONObject) object;
+                JSONObject jObject = (JSONObject) object;
 
-            //Get the location of the block.
-            Location l = new Location(world, (int) (long) jObject.get("x"), (int) (long) jObject.get("y"), (int) (long) jObject.get("z"));
+                //Get the location of the block.
+                Location l = new Location(world, (int) (long) jObject.get("x"), (int) (long) jObject.get("y"), (int) (long) jObject.get("z"));
 
-            //Set the block to its correct state.
-            setBlockData(jObject, l);
+                //Set the block to its correct state.
+                setBlockData(jObject, l);
 
+            }
+        } catch (BlockNotFoundException e) {
+            e.printStackTrace();
+            return false;
         }
 
         return true;
     }
 
     //Set the blockData of the block.
-    private void setBlockData(JSONObject object, Location l) {
+    private void setBlockData(JSONObject object, Location l) throws BlockNotFoundException {
 
         switch ((String) object.get("block")) {
 
@@ -89,8 +96,7 @@ public class Converter {
 
                 BlockData bd = world.getBlockData(l);
                 if (!(bd instanceof Stairs)) {
-                    instance.getLogger().info("Not a stair at " + l.getX() + ", " + l.getY() + ", " + l.getZ());
-                    return;
+                    throw new BlockNotFoundException("Found " + bd.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                 }
 
                 Stairs stair = getStair(l);
@@ -106,10 +112,9 @@ public class Converter {
 
                 //Check if the fence can connect to adjacent blocks.
                 BlockData block = world.getBlockData(l);
-                if (!(block instanceof Fence)) {
-                    instance.getLogger().info("Not a fence at " + l.getX() + ", " + l.getY() + ", " + l.getZ());
+                if (!(block instanceof Fence fence)) {
+                    throw new BlockNotFoundException("Found " + block.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                 }
-                Fence fence = (Fence) block;
 
                 //North (Negative Z)
                 Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
@@ -147,10 +152,9 @@ public class Converter {
 
                 //Check if the fence can connect to adjacent blocks.
                 BlockData block = world.getBlockData(l);
-                if (!(block instanceof GlassPane)) {
-                    instance.getLogger().info("Not a glass pane at " + l.getX() + ", " + l.getY() + ", " + l.getZ());
+                if (!(block instanceof GlassPane fence)) {
+                    throw new BlockNotFoundException("Found " + block.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                 }
-                GlassPane fence = (GlassPane) block;
 
                 //North (Negative Z)
                 Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
@@ -185,8 +189,7 @@ public class Converter {
                 //Check if the fence can connect to adjacent blocks.
                 BlockData block = world.getBlockData(l);
                 if (!(block instanceof Wall)) {
-                    instance.getLogger().info("Not a wall at " + l.getX() + ", " + l.getY() + ", " + l.getZ());
-                    return;
+                    throw new BlockNotFoundException("Found " + block.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                 }
 
                 world.setBlockData(l, getWall(l));
@@ -215,7 +218,11 @@ public class Converter {
                 BlockData bXMax = world.getBlockData(lXMax);
                 BlockData bZMax = world.getBlockData(lZMax);
                 BlockData bXMin = world.getBlockData(lXMin);
-                Chest chest = (Chest) blockData;
+
+                if (!(blockData instanceof Chest chest)) {
+                    throw new BlockNotFoundException("Found " + blockData.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
+                }
+
                 if (bZMin.getMaterial() == blockData.getMaterial()) {
                     //Check if directions are the same.
                     Chest oChest = (Chest) bZMin;
@@ -269,7 +276,9 @@ public class Converter {
             case "minecraft:redstone_wire" -> {
 
                 BlockData blockData = world.getBlockData(l);
-                RedstoneWire redstoneWire = (RedstoneWire) blockData;
+                if (!(blockData instanceof RedstoneWire redstoneWire)) {
+                    throw new BlockNotFoundException("Found " + blockData.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
+                }
 
                 //Check if adjacent blocks can connect to the redstone.
                 //North (Negative Z)
@@ -352,7 +361,9 @@ public class Converter {
             case "minecraft:chorus_plant" -> {
 
                 BlockData blockData = world.getBlockData(l);
-                MultipleFacing facing = (MultipleFacing) blockData;
+                if (!(blockData instanceof MultipleFacing facing)) {
+                    throw new BlockNotFoundException("Found " + blockData.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
+                }
 
                 //Check if all adjacent blocks are chorus plants.
                 //If true they connect.
@@ -423,24 +434,25 @@ public class Converter {
                 //Set part and facing.
                 BlockData bd = block.getBlockData();
 
-                if (bd instanceof Bed) {
-                    Bed bed = (Bed) block.getBlockData();
-
-                    if (properties.get("part").equals("head")) {
-                        bed.setPart(Bed.Part.HEAD);
-                    } else {
-                        bed.setPart(Bed.Part.FOOT);
-                    }
-
-                    switch ((String) properties.get("facing")) {
-                        case "north" -> bed.setFacing(BlockFace.NORTH);
-                        case "east" -> bed.setFacing(BlockFace.EAST);
-                        case "south" -> bed.setFacing(BlockFace.SOUTH);
-                        case "west" -> bed.setFacing(BlockFace.WEST);
-                    }
-
-                    block.setBlockData(bed);
+                if (!(bd instanceof Bed bed)) {
+                    throw new BlockNotFoundException("Found " + bd.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                 }
+
+                if (properties.get("part").equals("head")) {
+                    bed.setPart(Bed.Part.HEAD);
+                } else {
+                    bed.setPart(Bed.Part.FOOT);
+                }
+
+                switch ((String) properties.get("facing")) {
+                    case "north" -> bed.setFacing(BlockFace.NORTH);
+                    case "east" -> bed.setFacing(BlockFace.EAST);
+                    case "south" -> bed.setFacing(BlockFace.SOUTH);
+                    case "west" -> bed.setFacing(BlockFace.WEST);
+                }
+
+                block.setBlockData(bed);
+
             }
 
             case "minecraft:white_banner" -> {
@@ -471,8 +483,11 @@ public class Converter {
                 }
 
                 //Set rotation.
-                Rotatable rot = (Rotatable) block.getBlockData();
-                rot = setRotation(rot, Byte.parseByte((String) properties.get("rotation")));
+                if (!(block instanceof Rotatable rot)) {
+                    throw new BlockNotFoundException("Found " + block.getType().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
+                }
+
+                setRotation(rot, Byte.parseByte((String) properties.get("rotation")));
                 block.setBlockData(rot);
 
                 //Set patterns
@@ -512,18 +527,18 @@ public class Converter {
                     //Set facing direction.
                     BlockData bd = block.getBlockData();
 
-                    if (bd instanceof Directional) {
-                        Directional direction = (Directional) block.getBlockData();
-
-                        switch ((String) properties.get("facing")) {
-                            case "north" -> direction.setFacing(BlockFace.NORTH);
-                            case "east" -> direction.setFacing(BlockFace.EAST);
-                            case "south" -> direction.setFacing(BlockFace.SOUTH);
-                            case "west" -> direction.setFacing(BlockFace.WEST);
-                        }
-
-                        block.setBlockData(direction);
+                    if (!(bd instanceof Directional direction)) {
+                        throw new BlockNotFoundException("Found " + bd.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                     }
+
+                    switch ((String) properties.get("facing")) {
+                        case "north" -> direction.setFacing(BlockFace.NORTH);
+                        case "east" -> direction.setFacing(BlockFace.EAST);
+                        case "south" -> direction.setFacing(BlockFace.SOUTH);
+                        case "west" -> direction.setFacing(BlockFace.WEST);
+                    }
+
+                    block.setBlockData(direction);
 
                     //Set patterns
                     setBannerPatterns(block, (JSONArray) properties.get("patterns"));
@@ -591,8 +606,11 @@ public class Converter {
 
                     }
 
-                    Rotatable rot = (Rotatable) block.getBlockData();
-                    rot = setRotation(rot, (byte) (long) properties.get("rotation"));
+                    if (!(block instanceof Rotatable rot)) {
+                        throw new BlockNotFoundException("Found " + block.getType().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
+                    }
+
+                    setRotation(rot, (byte) (long) properties.get("rotation"));
 
                     block.setBlockData(rot);
 
@@ -611,7 +629,9 @@ public class Converter {
 
                     }
 
-                    Directional dir = (Directional) block.getBlockData();
+                    if (!(block instanceof Directional dir)) {
+                        throw new BlockNotFoundException("Found " + block.getType().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
+                    }
 
                     switch ((String) properties.get("facing")) {
 
@@ -636,7 +656,10 @@ public class Converter {
                     //If texture is null, skip.
                     if (properties.get("texture") != null) {
 
-                        Skull skull = (Skull) block.getState();
+                        if (!(block.getState() instanceof Skull skull)) {
+                            throw new BlockNotFoundException("Found " + block.getType().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
+                        }
+
                         skull.setType(block.getType());
 
                         String id = (String) properties.get("id");
@@ -662,7 +685,11 @@ public class Converter {
 
                 JSONObject properties = (JSONObject) object.get("properties");
 
-                NoteBlock noteBlock = (NoteBlock) world.getBlockData(l);
+                BlockData blockData = world.getBlockData(l);
+
+                if (!(blockData instanceof NoteBlock noteBlock)) {
+                    throw new BlockNotFoundException("Found " + blockData.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
+                }
 
                 //Set the note from config.
                 noteBlock.setNote(new Note((int) (long) properties.get("note")));
@@ -678,7 +705,11 @@ public class Converter {
 
             case "minecraft:tripwire" -> {
 
-                Tripwire tripwire = (Tripwire) world.getBlockData(l);
+                BlockData blockData = world.getBlockData(l);
+
+                if (!(blockData instanceof Tripwire tripwire)) {
+                    throw new BlockNotFoundException("Found " + blockData.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
+                }
 
                 //Check if adjacent blocks are also tripwire, if true, connect them.
                 //North (Negative Z)
@@ -713,12 +744,14 @@ public class Converter {
                 if (canConnectAbove(world.getBlockData(lUp))) {
 
                     //Check if block above, if true, make it a vine.
-                    BlockData bd = world.getBlockData(l);
-                    if (bd instanceof MultipleFacing) {
-                        MultipleFacing facing = (MultipleFacing) bd;
-                        facing.setFace(BlockFace.UP, true);
-                        world.setBlockData(l, facing);
+                    BlockData blockData = world.getBlockData(l);
+
+                    if (!(blockData instanceof MultipleFacing facing)) {
+                        throw new BlockNotFoundException("Found " + blockData.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                     }
+
+                    facing.setFace(BlockFace.UP, true);
+                    world.setBlockData(l, facing);
 
                 }
             }
@@ -728,12 +761,9 @@ public class Converter {
                 //Get door instance.
                 BlockData blockData = world.getBlockData(l);
 
-                if (!(blockData instanceof Door)) {
-                    instance.getLogger().info("Not a door at " + l.getX() + ", " + l.getY() + ", " + l.getZ());
-                    return;
+                if (!(blockData instanceof Door door)) {
+                    throw new BlockNotFoundException("Found " + blockData.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                 }
-
-                Door door = (Door) blockData;
 
                 //Get half.
                 if (door.getHalf() == Bisected.Half.TOP) {
@@ -741,9 +771,7 @@ public class Converter {
                     Location lBelow = new Location(world, l.getX(), l.getY() - 1, l.getZ());
 
                     //Check if block below is a door of the same material, if true get it's properties.
-                    if (world.getBlockData(lBelow) instanceof Door && world.getType(lBelow) == door.getMaterial()) {
-
-                        Door bDoor = (Door) world.getBlockData(lBelow);
+                    if (world.getBlockData(lBelow) instanceof Door bDoor && world.getType(lBelow) == door.getMaterial()) {
 
                         //Get facing direction from below door and open/closed status.
                         door.setFacing(bDoor.getFacing());
@@ -758,9 +786,7 @@ public class Converter {
                     Location lAbove = new Location(world, l.getX(), l.getY() + 1, l.getZ());
 
                     //Check if block below is a door of the same material, if true get it's properties.
-                    if (world.getBlockData(lAbove) instanceof Door && world.getType(lAbove) == door.getMaterial()) {
-
-                        Door aDoor = (Door) world.getBlockData(lAbove);
+                    if (world.getBlockData(lAbove) instanceof Door aDoor && world.getType(lAbove) == door.getMaterial()) {
 
                         //Get hinge and powered status.
                         door.setHinge(aDoor.getHinge());
@@ -798,7 +824,7 @@ public class Converter {
     }
 
     //Set the connections for walls with low or high.
-    private Wall setConnections(Location l, BlockData block, Wall wall, Wall.Height height) {
+    private void setConnections(Location l, BlockData block, Wall wall, Wall.Height height) {
         //North (Negative Z)
         Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
         if (canConnect(block.getMaterial(), lZMin, BlockFace.NORTH)) {
@@ -823,7 +849,6 @@ public class Converter {
             wall.setHeight(BlockFace.WEST, height);
         }
 
-        return wall;
     }
 
     private boolean canConnect(Material mat, Location l, BlockFace face) {
@@ -870,7 +895,7 @@ public class Converter {
                     TNT, REDSTONE_LAMP, NOTE_BLOCK,
                     WHITE_STAINED_GLASS, ORANGE_STAINED_GLASS, MAGENTA_STAINED_GLASS, LIGHT_BLUE_STAINED_GLASS, YELLOW_STAINED_GLASS, LIME_STAINED_GLASS, PINK_STAINED_GLASS,
                     GRAY_STAINED_GLASS, LIGHT_GRAY_STAINED_GLASS, CYAN_STAINED_GLASS, PURPLE_STAINED_GLASS, BLUE_STAINED_GLASS, BROWN_STAINED_GLASS, GREEN_STAINED_GLASS,
-                    RED_STAINED_GLASS, BLACK_STAINED_GLASS-> {
+                    RED_STAINED_GLASS, BLACK_STAINED_GLASS -> {
                 return true;
             }
         }
@@ -886,51 +911,34 @@ public class Converter {
                         return true;
                     } else if (stair.getFacing() == BlockFace.WEST && stair.getShape() == Stairs.Shape.INNER_LEFT) {
                         return true;
-                    } else if (stair.getFacing() == BlockFace.EAST && stair.getShape() == Stairs.Shape.INNER_RIGHT) {
-                        return true;
-                    } else {
-                        return false;
-                    }
+                    } else return (stair.getFacing() == BlockFace.EAST && stair.getShape() == Stairs.Shape.INNER_RIGHT);
                 }
                 case WEST -> {
                     if (stair.getFacing() == BlockFace.EAST) {
                         return true;
                     } else if (stair.getFacing() == BlockFace.SOUTH && stair.getShape() == Stairs.Shape.INNER_LEFT) {
                         return true;
-                    } else if (stair.getFacing() == BlockFace.NORTH && stair.getShape() == Stairs.Shape.INNER_RIGHT) {
-                        return true;
-                    } else {
-                        return false;
-                    }
+                    } else return (stair.getFacing() == BlockFace.NORTH && stair.getShape() == Stairs.Shape.INNER_RIGHT);
                 }
                 case SOUTH -> {
                     if (stair.getFacing() == BlockFace.NORTH) {
                         return true;
                     } else if (stair.getFacing() == BlockFace.EAST && stair.getShape() == Stairs.Shape.INNER_LEFT) {
                         return true;
-                    } else if (stair.getFacing() == BlockFace.WEST && stair.getShape() == Stairs.Shape.INNER_RIGHT) {
-                        return true;
-                    } else {
-                        return false;
-                    }
+                    } else return (stair.getFacing() == BlockFace.WEST && stair.getShape() == Stairs.Shape.INNER_RIGHT);
                 }
                 case EAST -> {
                     if (stair.getFacing() == BlockFace.WEST) {
                         return true;
                     } else if (stair.getFacing() == BlockFace.NORTH && stair.getShape() == Stairs.Shape.INNER_LEFT) {
                         return true;
-                    } else if (stair.getFacing() == BlockFace.SOUTH && stair.getShape() == Stairs.Shape.INNER_RIGHT) {
-                        return true;
-                    } else {
-                        return false;
-                    }
+                    } else return (stair.getFacing() == BlockFace.SOUTH && stair.getShape() == Stairs.Shape.INNER_RIGHT);
                 }
             }
         }
 
         //Slab Case
-        if (bd instanceof Slab) {
-            Slab slab = (Slab) bd;
+        if (bd instanceof Slab slab) {
             return (slab.getType() == Slab.Type.DOUBLE);
         }
 
@@ -938,22 +946,14 @@ public class Converter {
         if (bd.getMaterial() == Material.NETHER_BRICK_FENCE) {
             return (bd.getMaterial() == mat);
         } else if (bd.getMaterial() == Material.OAK_FENCE || bd.getMaterial() == Material.SPRUCE_FENCE || bd.getMaterial() == Material.BIRCH_FENCE || bd.getMaterial() == Material.JUNGLE_FENCE || bd.getMaterial() == Material.ACACIA_FENCE || bd.getMaterial() == Material.DARK_OAK_FENCE) {
-            if (mat == Material.OAK_FENCE || mat == Material.SPRUCE_FENCE || mat == Material.BIRCH_FENCE || mat == Material.JUNGLE_FENCE || mat == Material.ACACIA_FENCE || mat == Material.DARK_OAK_FENCE) {
-                return true;
-            } else {
-                return false;
-            }
+            return (mat == Material.OAK_FENCE || mat == Material.SPRUCE_FENCE || mat == Material.BIRCH_FENCE || mat == Material.JUNGLE_FENCE || mat == Material.ACACIA_FENCE || mat == Material.DARK_OAK_FENCE);
         } else if (bd.getMaterial() == Material.GLASS_PANE || bd.getMaterial() == Material.IRON_BARS || bd.getMaterial() == Material.COBBLESTONE_WALL || bd.getMaterial() == Material.MOSSY_COBBLESTONE_WALL || (bd instanceof GlassPane)) {
-            if (mat == Material.GLASS_PANE || mat == Material.IRON_BARS || mat == Material.COBBLESTONE_WALL || mat == Material.MOSSY_COBBLESTONE_WALL ||
+            return (mat == Material.GLASS_PANE || mat == Material.IRON_BARS || mat == Material.COBBLESTONE_WALL || mat == Material.MOSSY_COBBLESTONE_WALL ||
                     mat == Material.WHITE_STAINED_GLASS_PANE || mat == Material.ORANGE_STAINED_GLASS_PANE || mat == Material.MAGENTA_STAINED_GLASS_PANE ||
                     mat == Material.LIGHT_BLUE_STAINED_GLASS_PANE || mat == Material.YELLOW_STAINED_GLASS_PANE || mat == Material.LIME_STAINED_GLASS_PANE ||
                     mat == Material.PINK_STAINED_GLASS_PANE || mat == Material.GRAY_STAINED_GLASS_PANE || mat == Material.LIGHT_GRAY_STAINED_GLASS_PANE ||
                     mat == Material.CYAN_STAINED_GLASS_PANE || mat == Material.PURPLE_STAINED_GLASS_PANE || mat == Material.BLUE_STAINED_GLASS_PANE ||
-                    mat == Material.BROWN_STAINED_GLASS_PANE || mat == Material.GREEN_STAINED_GLASS_PANE || mat == Material.RED_STAINED_GLASS_PANE || mat == Material.BLACK_STAINED_GLASS_PANE) {
-                return true;
-            } else {
-                return false;
-            }
+                    mat == Material.BROWN_STAINED_GLASS_PANE || mat == Material.GREEN_STAINED_GLASS_PANE || mat == Material.RED_STAINED_GLASS_PANE || mat == Material.BLACK_STAINED_GLASS_PANE);
         }
 
         //Snow
@@ -963,14 +963,12 @@ public class Converter {
         }
 
         //Trapdoors
-        if (bd instanceof TrapDoor) {
-            TrapDoor trapDoor = (TrapDoor) bd;
+        if (bd instanceof TrapDoor trapDoor) {
             return (trapDoor.getFacing() == face && trapDoor.isOpen());
         }
 
         //Fence gates
-        if (bd instanceof Gate) {
-            Gate gate = (Gate) bd;
+        if (bd instanceof Gate gate) {
             if (isFence(mat)) {
                 if (face == BlockFace.NORTH || face == BlockFace.SOUTH) {
                     return (gate.getFacing() == BlockFace.WEST || gate.getFacing() == BlockFace.EAST);
@@ -982,8 +980,7 @@ public class Converter {
         }
 
         //Doors
-        if (bd instanceof Door) {
-            Door door = (Door) bd;
+        if (bd instanceof Door door) {
             if (door.getFacing() == face && !door.isOpen()) {
                 return true;
             }
@@ -1085,21 +1082,18 @@ public class Converter {
         }
 
         //Stair case
-        if (bd instanceof Stairs) {
+        if (bd instanceof Stairs stair) {
 
-            Stairs stair = (Stairs) bd;
             return (stair.getHalf() == Bisected.Half.BOTTOM);
         }
 
         //Slab Case
-        if (bd instanceof Slab) {
-            Slab slab = (Slab) bd;
+        if (bd instanceof Slab slab) {
             return (slab.getType() == Slab.Type.DOUBLE || slab.getType() == Slab.Type.BOTTOM);
         }
 
         //Trapdoors
-        if (bd instanceof TrapDoor) {
-            TrapDoor trapDoor = (TrapDoor) bd;
+        if (bd instanceof TrapDoor trapDoor) {
             return (trapDoor.getHalf() == Bisected.Half.BOTTOM && !trapDoor.isOpen());
         }
 
@@ -1154,32 +1148,28 @@ public class Converter {
 
         //Get 4 adjacent stairs, if they are stairs.
         Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
-        if (world.getBlockData(lXMin) instanceof Stairs) {
-            Stairs xMin = (Stairs) world.getBlockData(lXMin);
+        if (world.getBlockData(lXMin) instanceof Stairs xMin) {
             if (mainStair.half == xMin.getHalf()) {
                 //Add it to the array at index 0.
                 stairs[0] = new StairData(xMin, lXMin, mainStair);
             }
         }
         Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
-        if (world.getBlockData(lXMax) instanceof Stairs) {
-            Stairs xMax = (Stairs) world.getBlockData(lXMax);
+        if (world.getBlockData(lXMax) instanceof Stairs xMax) {
             if (mainStair.half == xMax.getHalf()) {
                 //Add it to the array at index 1.
                 stairs[1] = new StairData(xMax, lXMax, mainStair);
             }
         }
         Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
-        if (world.getBlockData(lZMin) instanceof Stairs) {
-            Stairs zMin = (Stairs) world.getBlockData(lZMin);
+        if (world.getBlockData(lZMin) instanceof Stairs zMin) {
             if (mainStair.half == zMin.getHalf()) {
                 //Add it to the array at index 2.
                 stairs[2] = new StairData(zMin, lZMin, mainStair);
             }
         }
         Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
-        if (world.getBlockData(lZMax) instanceof Stairs) {
-            Stairs zMax = (Stairs) world.getBlockData(lZMax);
+        if (world.getBlockData(lZMax) instanceof Stairs zMax) {
             if (mainStair.half == zMax.getHalf()) {
                 //Add it to the array at index 3.
                 stairs[3] = new StairData(zMax, lZMax, mainStair);
@@ -1200,7 +1190,7 @@ public class Converter {
 
         //First check which directions are connected for the wall.
         //Only then check which should be tall/low.
-        wall = setConnections(l, block, wall, Wall.Height.LOW);
+        setConnections(l, block, wall, Wall.Height.LOW);
 
         //Get the blocks above
         //If the block above is a fence or wall more checks are needed.
@@ -1269,7 +1259,7 @@ public class Converter {
 
 
                 //Set all heights to tall.
-                wall = setConnections(l, block, wall, Wall.Height.TALL);
+                setConnections(l, block, wall, Wall.Height.TALL);
 
             }
         }
@@ -1308,10 +1298,7 @@ public class Converter {
                         SKELETON_SKULL, WITHER_SKELETON_SKULL, PLAYER_HEAD, ZOMBIE_HEAD, CREEPER_HEAD, DRAGON_HEAD,
                         WHITE_BANNER, ORANGE_BANNER, MAGENTA_BANNER, LIGHT_BLUE_BANNER, YELLOW_BANNER, LIME_BANNER,
                         PINK_BANNER, GRAY_BANNER, LIGHT_GRAY_BANNER, CYAN_BANNER, PURPLE_BANNER, BLUE_BANNER,
-                        BROWN_BANNER, GREEN_BANNER, RED_BANNER, BLACK_BANNER -> {
-
-                    wall.setUp(true);
-                }
+                        BROWN_BANNER, GREEN_BANNER, RED_BANNER, BLACK_BANNER -> wall.setUp(true);
 
                 case END_ROD, HOPPER -> {
                     Directional direction = (Directional) bAbove;
@@ -1577,7 +1564,7 @@ public class Converter {
         }
     }
 
-    private Rotatable setRotation(Rotatable rot, byte rotation) {
+    private void setRotation(Rotatable rot, byte rotation) {
         switch (rotation) {
 
             case 0 -> rot.setRotation(BlockFace.SOUTH);
@@ -1599,20 +1586,19 @@ public class Converter {
 
         }
 
-        return rot;
     }
 
     private void setBannerPatterns(Block block, JSONArray patterns) {
         if (!patterns.isEmpty()) {
             Banner banner = (Banner) block.getState();
-            patterns.forEach((p) -> {
 
-                JSONObject pattern = (JSONObject) p;
+            for (Object o : patterns) {
+                JSONObject pattern = (JSONObject) o;
 
                 banner.addPattern(new Pattern(getDyeColour((String) pattern.get("colour")),
                         getPatternType((String) pattern.get("pattern"))));
+            }
 
-            });
             banner.update();
         }
     }
@@ -1632,12 +1618,8 @@ public class Converter {
                 if ((face == BlockFace.NORTH || face == BlockFace.SOUTH) &&
                         (repeater.getFacing() == BlockFace.NORTH || repeater.getFacing() == BlockFace.SOUTH)) {
                     return true;
-                } else if ((face == BlockFace.EAST || face == BlockFace.WEST) &&
-                        (repeater.getFacing() == BlockFace.EAST || repeater.getFacing() == BlockFace.WEST)) {
-                    return true;
-                } else {
-                    return false;
-                }
+                } else return ((face == BlockFace.EAST || face == BlockFace.WEST) &&
+                        (repeater.getFacing() == BlockFace.EAST || repeater.getFacing() == BlockFace.WEST));
             }
 
             case OBSERVER -> {
@@ -1660,17 +1642,11 @@ public class Converter {
         }
 
         //Check if the block is a slab or stair, these are special cases.
-        if (world.getBlockData(l) instanceof Stairs) {
-            Stairs stair = (Stairs) world.getBlockData(l);
+        if (world.getBlockData(l) instanceof Stairs stair) {
             return ((stair.getHalf() == Bisected.Half.TOP) && (((facingNumber(face) + 2 % 4)) == facingNumber(stair.getFacing())));
-        } else if (world.getBlockData(l) instanceof Slab) {
-            Slab slab = (Slab) world.getBlockData(l);
+        } else if (world.getBlockData(l) instanceof Slab slab) {
             return (slab.getType() == Slab.Type.DOUBLE);
-        } else if (!world.getType(l).isOccluding()) {
-            return false;
-        } else {
-            return true;
-        }
+        } else return (world.getType(l).isOccluding());
     }
 
     //Set facing direction to a number for convenience.
