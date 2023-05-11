@@ -25,6 +25,12 @@ public class Plugin extends JavaPlugin {
         //Get world.
         String worldName = getConfig().getString("world");
 
+        //If worldName is null stop plugin from enabling.
+        if (worldName == null) {
+            this.getLogger().severe("World name has not been set in the config, disabling the plugin!");
+            return;
+        }
+
         World world = Bukkit.getWorld(worldName);
 
         Converter converter = new Converter(this, world);
@@ -36,7 +42,6 @@ public class Plugin extends JavaPlugin {
         //Get json parser.
         JSONParser parser = new JSONParser();
         getLogger().info("Converter activated.");
-
 
         Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
 
@@ -53,9 +58,14 @@ public class Plugin extends JavaPlugin {
 
             if (!converter.isRunning() && !converterQueue.isEmpty()) {
 
+                //Set converter to running, this prevent multiple conversion running at once.
+                converter.setRunning(true);
+
+                //Get the first region in the set.
                 Object[] files = converterQueue.toArray();
                 File newFile = (File) files[0];
-                converterQueue.remove(newFile);
+
+                boolean success = false;
 
                 try (Reader reader = new FileReader(newFile)) {
 
@@ -64,16 +74,31 @@ public class Plugin extends JavaPlugin {
                     //Get the array of json objects.
                     JSONArray jsonArray = (JSONArray) parser.parse(reader);
 
-                    //Delete file once it's loaded. So other chunks don't reuse it before the converter is done.
-                    newFile.delete();
-
-                    converter.convert(jsonArray);
+                    success = converter.convert(jsonArray);
 
                     getLogger().info("Converted file " + newFile);
 
                 } catch(IOException | ParseException ex) {
                     ex.printStackTrace();
                 }
+
+                //If the converter has converted the region successfully, remove the file from the queue and set isRunning to false to unlock the converter.
+                //Additionally delete the file, so it can't be converted multiple times.
+                if (success) {
+                    if (newFile.delete()) {
+                        this.getLogger().info("Deleted " + newFile.getName());
+                    } else {
+                        this.getLogger().info("Failed to delete " + newFile.getName());
+                    }
+                } else {
+
+                    this.getLogger().severe(newFile.getName() + " was not converted successfully, check the logs above this to see potential causes.");
+
+                }
+
+                converterQueue.remove(newFile);
+                converter.setRunning(false);
+
             }
         }, 0L, 80L);
 

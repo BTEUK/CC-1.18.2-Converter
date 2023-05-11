@@ -35,9 +35,11 @@ public class Converter {
         return isRunning;
     }
 
-    public void convert(JSONArray jsonArray) {
+    public void setRunning(boolean value) {
+        isRunning = value;
+    }
 
-        isRunning = true;
+    public boolean convert(JSONArray jsonArray) {
 
         //Iterate through array.
         for (Object object : jsonArray) {
@@ -52,7 +54,7 @@ public class Converter {
 
         }
 
-        isRunning = false;
+        return true;
     }
 
     //Set the blockData of the block.
