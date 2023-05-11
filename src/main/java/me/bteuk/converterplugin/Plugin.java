@@ -94,7 +94,7 @@ public class Plugin extends JavaPlugin {
         tasks.add(Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
 
             //If there are no files in the post-processing folder, disable the tasks.
-            if (isFolderEmpty(folder)) {
+            if (isFolderEmpty(folder) && converterQueue.isEmpty()) {
 
                 getLogger().info("The post-processing folder has been cleared, disabling converter!");
 
