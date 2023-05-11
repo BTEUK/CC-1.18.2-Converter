@@ -56,7 +56,7 @@ public class Converter {
                 setBlockData(jObject, l);
 
             }
-        } catch (BlockNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
