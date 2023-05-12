@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public class Plugin extends JavaPlugin {
@@ -88,7 +89,7 @@ public class Plugin extends JavaPlugin {
                     }
                 }
 
-            }, 0, interval));
+            }, 1200L, interval));
         }
 
         tasks.add(Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
@@ -180,8 +181,9 @@ public class Plugin extends JavaPlugin {
 
     private File getRandomRegion(Path path) throws IOException, FolderEmptyException {
         Stream<Path> entries = Files.list(path);
-        if (entries.findFirst().isPresent()) {
-            return entries.findFirst().get().toFile();
+        Optional<Path> first = entries.findFirst();
+        if (first.isPresent()) {
+            return first.get().toFile();
         } else {
             throw new FolderEmptyException("The directory " + path.getFileName() + " is empty.");
         }

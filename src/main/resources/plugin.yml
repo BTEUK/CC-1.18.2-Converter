@@ -2,8 +2,3 @@ name: Converter
 version: '${project.version}'
 main: me.bteuk.converterplugin.Plugin
 api-version: 1.18
-
-commands:
-  convert:
-    usage: /<command>
-    description: Converts all or some of the json files into the game.
