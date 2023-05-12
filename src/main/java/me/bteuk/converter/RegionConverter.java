@@ -301,27 +301,23 @@ public class RegionConverter extends Thread {
                         //Clear uniqueBlocks.
                         uniqueBlocks.clear();
 
-                        //Load entities if unique.
-                        if (!e3d.getRegionKey().equals(regionKey)) {
-                            //Load entities.
-                            entities = (ListTag<CompoundTag>) cubeLevel.getListTag("Entities");
-                            regionKey = e3d.getRegionKey();
+                        //Load entities.
+                        entities = (ListTag<CompoundTag>) cubeLevel.getListTag("Entities");
+                        regionKey = e3d.getRegionKey();
 
-                            //Add them to the json file.
-                            for (CompoundTag entity : entities) {
+                        //Add them to the json file.
+                        for (CompoundTag entity : entities) {
 
-                                JSONObject jo = new JSONObject();
-                                jo.put("id", entity.getString("id"));
+                            JSONObject jo = new JSONObject();
+                            jo.put("id", entity.getString("id"));
 
-                                ListTag<DoubleTag> pos = (ListTag<DoubleTag>) entity.getListTag("Pos");
+                            ListTag<DoubleTag> pos = (ListTag<DoubleTag>) entity.getListTag("Pos");
 
-                                jo.put("x", pos.get(0).asDouble());
-                                jo.put("y", pos.get(1).asDouble());
-                                jo.put("z", pos.get(2).asDouble());
+                            jo.put("x", pos.get(0).asDouble());
+                            jo.put("y", pos.get(1).asDouble());
+                            jo.put("z", pos.get(2).asDouble());
 
-                                jaEntities.add(jo);
-
-                            }
+                            jaEntities.add(jo);
                         }
 
                         //Load tile entities.
@@ -493,7 +489,7 @@ public class RegionConverter extends Thread {
                         //Construct section.
                         CompoundTag section = new CompoundTag();
 
-                        section.putByte("Y", (byte) (y+(Main.OFFSET/16)));
+                        section.putByte("Y", (byte) (y + (Main.OFFSET / 16)));
                         //Create block_states compound tag.
                         CompoundTag block_states = new CompoundTag();
                         block_states.put("palette", palette);
