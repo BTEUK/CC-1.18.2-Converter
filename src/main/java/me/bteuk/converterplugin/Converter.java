@@ -483,7 +483,7 @@ public class Converter {
                 }
 
                 //Set rotation.
-                if (!(block instanceof Rotatable rot)) {
+                if (!(block.getBlockData() instanceof Rotatable rot)) {
                     throw new BlockNotFoundException("Found " + block.getType().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                 }
 
@@ -606,7 +606,7 @@ public class Converter {
 
                     }
 
-                    if (!(block instanceof Rotatable rot)) {
+                    if (!(block.getBlockData() instanceof Rotatable rot)) {
                         throw new BlockNotFoundException("Found " + block.getType().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                     }
 
@@ -629,7 +629,7 @@ public class Converter {
 
                     }
 
-                    if (!(block instanceof Directional dir)) {
+                    if (!(block.getBlockData() instanceof Directional dir)) {
                         throw new BlockNotFoundException("Found " + block.getType().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                     }
 
