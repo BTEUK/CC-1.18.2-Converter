@@ -747,7 +747,9 @@ public class Converter {
                     BlockData blockData = world.getBlockData(l);
 
                     if (!(blockData instanceof MultipleFacing facing)) {
-                        throw new BlockNotFoundException("Found " + blockData.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
+                        //Don't throw the exception, just skip it.
+                        (new BlockNotFoundException("Found " + blockData.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ())).printStackTrace();
+                        return;
                     }
 
                     facing.setFace(BlockFace.UP, true);

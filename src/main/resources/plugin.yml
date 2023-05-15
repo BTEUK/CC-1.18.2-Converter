@@ -2,3 +2,9 @@ name: Converter
 version: '${project.version}'
 main: me.bteuk.converterplugin.Plugin
 api-version: 1.18
+
+commands:
+  worldanalyser:
+    aliases: [wa]
+    usage: /<command>
+    description: World analyser functions

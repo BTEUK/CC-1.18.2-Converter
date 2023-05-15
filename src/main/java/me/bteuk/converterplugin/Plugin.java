@@ -27,6 +27,15 @@ public class Plugin extends JavaPlugin {
     @Override
     public void onEnable() {
 
+        saveDefaultConfig();
+
+        //Enable world analyser functions if enabled in config.
+        if (getConfig().getBoolean("world_analyser")) {
+
+            new WorldAnalyser(this);
+
+        }
+
         //Get datafolder.
         Path folder = Path.of(getDataFolder().getAbsolutePath()).resolve("post-processing");
 
@@ -35,8 +44,6 @@ public class Plugin extends JavaPlugin {
             getLogger().info("The post-processing folder is empty, the plugin is no longer necessary, disabling the plugin!");
             return;
         }
-
-        saveDefaultConfig();
 
         //Get world.
         String worldName = getConfig().getString("world");

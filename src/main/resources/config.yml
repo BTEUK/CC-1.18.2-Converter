@@ -10,3 +10,6 @@ world: earth
 automated_conversion:
   enabled: false
   speed: "NORMAL"
+
+#World analyser functions.
+world_analyser: true
