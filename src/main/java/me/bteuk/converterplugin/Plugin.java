@@ -29,13 +29,6 @@ public class Plugin extends JavaPlugin {
 
         saveDefaultConfig();
 
-        //Enable world analyser functions if enabled in config.
-        if (getConfig().getBoolean("world_analyser")) {
-
-            new WorldAnalyser(this);
-
-        }
-
         //Get datafolder.
         Path folder = Path.of(getDataFolder().getAbsolutePath()).resolve("post-processing");
 
@@ -55,6 +48,13 @@ public class Plugin extends JavaPlugin {
         }
 
         World world = Bukkit.getWorld(worldName);
+
+        //Enable world analyser functions if enabled in config.
+        if (getConfig().getBoolean("world_analyser")) {
+
+            new WorldAnalyser(this, world, folder);
+
+        }
 
         Converter converter = new Converter(this, world);
         LinkedHashSet<File> converterQueue = new LinkedHashSet<>();
