@@ -1,14 +1,5 @@
 package me.bteuk.converter;
 
-/*
-
-This class aims to manage the threads running the converter.
-
-This will also store all the default information that needs to be retrieved by all the threads.
-For example standard data for chunks.
-
- */
-
 import cubicchunks.regionlib.impl.EntryLocation2D;
 import net.querz.nbt.io.NBTInputStream;
 import net.querz.nbt.io.NBTOutputStream;
@@ -24,6 +15,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+/**
+ *
+ * This class aims to manage the threads running the converter.
+ * This will also store all the default information that needs to be retrieved by all the threads.
+ * For example standard data for chunks.
+ *
+ */
 
 public class ThreadManager {
 
@@ -41,6 +40,17 @@ public class ThreadManager {
 
     ListTag<ListTag<ShortTag>> post_processing = new ListTag<>(ListTag.class);
     CompoundTag structures = new CompoundTag();
+
+    /**
+     * The constructor of the thread manager class.
+     * This class managed the threads of the converter.
+     *
+     * @param itr
+     * the worlditerator instance, this class should always be instantiated from there
+     *
+     * @param threadCount
+     * the number of threads to use
+     */
 
     public ThreadManager(WorldIterator itr, int threadCount) {
 

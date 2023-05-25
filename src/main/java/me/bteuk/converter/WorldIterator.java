@@ -24,9 +24,18 @@ public class WorldIterator {
     Path input;
     Path output;
 
-    /*
+    /**
 
     Iterates through all .2dr (512x512 files)
+
+     @param inputPath
+     the path to the directory where the world is stored
+
+     @param outputPath
+     the path to the directory where the output files should be stored
+
+     @param maxThreads
+     the maximum number of threads the converter can use, it will always use the maximum allowed
 
      */
 
