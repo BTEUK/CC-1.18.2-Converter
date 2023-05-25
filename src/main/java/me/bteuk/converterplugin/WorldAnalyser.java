@@ -137,10 +137,16 @@ public class WorldAnalyser implements CommandExecutor {
         }
 
         //Print the list in chat.
-        for (Map.Entry<String, Double> entry : regions.entrySet()) {
+        if (regions.isEmpty()) {
 
-            sender.sendMessage("Region: " + entry.getKey() + " - Size: " + String.format("%.2f", entry.getValue()) + "MB");
+            sender.sendMessage("No regions exist in this area!");
 
+        } else {
+            for (Map.Entry<String, Double> entry : regions.entrySet()) {
+
+                sender.sendMessage("Region: " + entry.getKey() + " - Size: " + String.format("%.2f", entry.getValue()) + "MB");
+
+            }
         }
 
 
