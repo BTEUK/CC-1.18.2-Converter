@@ -44,21 +44,19 @@ public class Converter {
 
         //Iterate through array.
         //Catch any exceptions that may occur.
-        try {
-            for (Object object : jsonArray) {
+        for (Object object : jsonArray) {
 
-                JSONObject jObject = (JSONObject) object;
+            JSONObject jObject = (JSONObject) object;
 
-                //Get the location of the block.
-                Location l = new Location(world, (int) (long) jObject.get("x"), (int) (long) jObject.get("y"), (int) (long) jObject.get("z"));
+            //Get the location of the block.
+            Location l = new Location(world, (int) (long) jObject.get("x"), (int) (long) jObject.get("y"), (int) (long) jObject.get("z"));
 
-                //Set the block to its correct state.
+            //Set the block to its correct state.
+            try {
                 setBlockData(jObject, l);
-
+            } catch (BlockNotFoundException e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
         }
 
         return true;
@@ -746,10 +744,9 @@ public class Converter {
                     //Check if block above, if true, make it a vine.
                     BlockData blockData = world.getBlockData(l);
 
-                    if (!(blockData instanceof MultipleFacing facing)) {
+                    if (!(blockData instanceof MultipleFacing facing) || !(blockData.getMaterial() == Material.VINE)) {
                         //Don't throw the exception, just skip it.
-                        (new BlockNotFoundException("Found " + blockData.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ())).printStackTrace();
-                        return;
+                        throw new BlockNotFoundException("Found " + blockData.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                     }
 
                     facing.setFace(BlockFace.UP, true);
@@ -920,7 +917,8 @@ public class Converter {
                         return true;
                     } else if (stair.getFacing() == BlockFace.SOUTH && stair.getShape() == Stairs.Shape.INNER_LEFT) {
                         return true;
-                    } else return (stair.getFacing() == BlockFace.NORTH && stair.getShape() == Stairs.Shape.INNER_RIGHT);
+                    } else
+                        return (stair.getFacing() == BlockFace.NORTH && stair.getShape() == Stairs.Shape.INNER_RIGHT);
                 }
                 case SOUTH -> {
                     if (stair.getFacing() == BlockFace.NORTH) {
@@ -934,7 +932,8 @@ public class Converter {
                         return true;
                     } else if (stair.getFacing() == BlockFace.NORTH && stair.getShape() == Stairs.Shape.INNER_LEFT) {
                         return true;
-                    } else return (stair.getFacing() == BlockFace.SOUTH && stair.getShape() == Stairs.Shape.INNER_RIGHT);
+                    } else
+                        return (stair.getFacing() == BlockFace.SOUTH && stair.getShape() == Stairs.Shape.INNER_RIGHT);
                 }
             }
         }
