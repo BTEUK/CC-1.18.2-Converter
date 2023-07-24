@@ -3099,9 +3099,9 @@ public class MinecraftIDConverter {
                 return "stone_brick_stairs";
             }
 
-            //Myceleum
+            //Mycelium
             case 110 -> {
-                return "myceleum";
+                return "mycelium";
             }
 
             //Lily Pad
