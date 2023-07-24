@@ -27,7 +27,7 @@ The CC-1.18.2-Converter is a Java-based tool designed to convert Minecraft world
     - Replace the <path to input> with the path to your input world file folder.
     - Replace the <path to output> with the path to the folder where you want to save the converted world.
     - Replace <minY> with the minimum Y value of the 1.18.2 world.
-    - Replace <maxY> with the maximum Y value of the 1.8.2 world.
+    - Replace <maxY> with the maximum Y value of the 1.18.2 world.
     - Replace <offset> with the desired offset in blocks/meters.
     - Add an optional [threads] parameter to specify the number of threads to use. By default, the program will use one thread.
 5. Press the Enter key to run the command.
