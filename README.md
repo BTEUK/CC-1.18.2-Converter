@@ -36,21 +36,32 @@ The CC-1.18.2-Converter is a Java-based tool designed to convert Minecraft world
 ___
 ##### __Paper portion__:
 1. Download [PaperMC](https://papermc.io/) 1.18.2
-2. Download [Terra+-](https://github.com/BTE-Germany/TerraPlusMinus) and put it into the plugins folder on PaperMC
-3. Enable the extended height datapack for Terra+-
-4. Open the zip of the Datapack and set the min_y value to what you want it to be (i.e. -2032)
-5. Head over to the Terra+- config in /plugins/TerraPlusMinus/config.yml and set the offset to the same value as what you set in Part 4
+2. Download [Terra+-](https://github.com/BTE-Germany/TerraPlusMinus) and put it into the plugins folder on PaperMC, make sure to follow the installation guide.
+3. Enable the extended height datapack for Terra+- in the config.
+4. [Configure the Datapack](#Datapack_Configuration:) as to keep it compatible with settings used in the CLI portion.
+5. Head over to the Terra+- config in /plugins/TerraPlusMinus/config.yml and set the offset to what you set in the CLI portion.
 6. Run the server to start world loading and ensure all is working
 7. Download the converter plugin and move it into your /plugins/ folder
 8. Run the server then stop it after it loads fully
 9. Move the *post-processing* folder from your converted world folder to /plugins/Converter
 10. Set the world in the config in that folder to the same name of the world on the server
 11. Head over to the world folder (i.e. /world/) and put the *region* folder from the converted world folder in there
-12. Start the server. Whenever you teleport to those regions, the converted region will automatically be loaded in\
+12. Start the server. Whenever you teleport to those regions, the converted region will automatically be loaded in.
 
-\
 And that's it! You have successfully used the program to convert your Minecraft world from version 1.18.2.
 
+---
+### __Datapack Configuration:__
+1. To generate the Datapack you need to enabled/disable the server once or twice.
+2. Find the datapack in the `world/datapacks` directory.
+3. Unzip the datapack.
+4. Edit the `pack.mcmeta` and alter the [pack format](https://minecraft.fandom.com/wiki/Data_pack#Pack_format) to the version of your server.
+5. Navigate to `overworld.json` in `data/minecraft/dimension_type/`.
+6. Set `min_y` to the values used in the CLI portion.
+7. Set `logical_height` and `height` to `max_y - min_y`.
+> Example: if max_y = 1960 and min_y = -64 then logical_height/height = 1960 - -64 = 2024
+8. Zip the datapack and make sure it has the same structure as the original zip file.
+9. Add it back to the datapack folder.
 
 ## Authors
 
