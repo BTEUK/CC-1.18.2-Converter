@@ -38,7 +38,7 @@ ___
 1. Download [PaperMC](https://papermc.io/) 1.18.2
 2. Download [Terra+-](https://github.com/BTE-Germany/TerraPlusMinus) and put it into the plugins folder on PaperMC, make sure to follow the installation guide.
 3. Enable the extended height datapack for Terra+- in the config.
-4. [Configure the Datapack](#__datapack-configuration:__) as to keep it compatible with settings used in the CLI portion.
+4. [Configure the Datapack](#datapack-configuration) as to keep it compatible with settings used in the CLI portion.
 5. Head over to the Terra+- config in /plugins/TerraPlusMinus/config.yml and set the offset to what you set in the CLI portion.
 6. Run the server to start world loading and ensure all is working
 7. Download the converter plugin and move it into your /plugins/ folder
