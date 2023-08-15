@@ -1859,7 +1859,7 @@ public class MinecraftIDConverter {
             }
 
             //Snow
-            case 78 -> block_states.putString("layer", String.valueOf((data + 1)));
+            case 78 -> block_states.putString("layers", String.valueOf((data + 1)));
 
             //Stairs
             case 53, 67, 108, 109, 114, (byte) 128, (byte) 134, (byte) 135, (byte) 136,
