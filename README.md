@@ -59,7 +59,7 @@ And that's it! You have successfully used the program to convert your Minecraft 
 5. Navigate to `overworld.json` in `data/minecraft/dimension_type/`.
 6. Set `min_y` to the values used in the CLI portion.
 7. Set `logical_height` and `height` to `max_y - min_y`.
-> Example: if `max_y = 1960` and `min_y = -64` then `logical_height/height = 1960 - -64 = 2024`
+> Example: if `max_y = 1952` and `min_y = -64` then `logical_height/height = 1952 - -64 = 2016`
 8. Zip the datapack and make sure it has the same structure as the original zip file.
 9. Add it back to the datapack folder.
 
