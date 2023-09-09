@@ -78,7 +78,7 @@ public class Plugin extends JavaPlugin {
             }
 
             //Create task.
-            tasks.add(Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
+            tasks.add(Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
 
                 //Check if the server is empty.
                 if (Bukkit.getOnlinePlayers().isEmpty()) {
@@ -96,10 +96,10 @@ public class Plugin extends JavaPlugin {
                     }
                 }
 
-            }, 1200L, interval));
+            }, 1200L, interval).getTaskId());
         }
 
-        tasks.add(Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {
+        tasks.add(Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> {
 
             //If there are no files in the post-processing folder, disable the tasks.
             if (isFolderEmpty(folder) && converterQueue.isEmpty()) {
@@ -169,7 +169,7 @@ public class Plugin extends JavaPlugin {
                 converter.setRunning(false);
 
             }
-        }, 0L, 80L));
+        }, 0L, 80L).getTaskId());
 
     }
 
@@ -178,7 +178,9 @@ public class Plugin extends JavaPlugin {
             try (Stream<Path> entries = Files.list(path)) {
                 return entries.findFirst().isEmpty();
             } catch (IOException e) {
-                e.printStackTrace();
+                getLogger().warning("An error occurred reading " + path);
+                getLogger().warning("The directory will be considered empty!");
+                getLogger().warning("Exception: " + e.getMessage());
                 return true;
             }
         } else {
@@ -187,12 +189,13 @@ public class Plugin extends JavaPlugin {
     }
 
     private File getRandomRegion(Path path) throws IOException, FolderEmptyException {
-        Stream<Path> entries = Files.list(path);
-        Optional<Path> first = entries.findFirst();
-        if (first.isPresent()) {
-            return first.get().toFile();
-        } else {
-            throw new FolderEmptyException("The directory " + path.getFileName() + " is empty.");
+        try (Stream<Path> entries = Files.list(path)) {
+            Optional<Path> first = entries.findFirst();
+            if (first.isPresent()) {
+                return first.get().toFile();
+            } else {
+                throw new FolderEmptyException("The directory " + path.getFileName() + " is empty.");
+            }
         }
     }
 

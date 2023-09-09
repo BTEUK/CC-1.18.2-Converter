@@ -2,8 +2,10 @@ package me.bteuk.converterplugin;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
+import io.papermc.lib.PaperLib;
 import me.bteuk.converterplugin.utils.blocks.stairs.StairData;
 import me.bteuk.converterplugin.utils.exceptions.BlockNotFoundException;
+import me.bteuk.converterplugin.utils.exceptions.NotInChunkException;
 import org.bukkit.*;
 import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
@@ -17,6 +19,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class Converter {
 
@@ -51,19 +54,44 @@ public class Converter {
             //Get the location of the block.
             Location l = new Location(world, (int) (long) jObject.get("x"), (int) (long) jObject.get("y"), (int) (long) jObject.get("z"));
 
-            //Set the block to its correct state.
-            try {
-                setBlockData(jObject, l);
-            } catch (BlockNotFoundException e) {
-                e.printStackTrace();
-            }
+            CompletableFuture<Chunk> completableChunk = PaperLib.getChunkAtAsync(l);
+            completableChunk.whenComplete((chunk, throwable) -> {
+
+                //Set the block to its correct state.
+                try {
+                    //Get the block.
+                    Block block = getBlockAt(l, chunk);
+
+                    setBlockData(jObject, block);
+                } catch (BlockNotFoundException | NotInChunkException e) {
+                    instance.getLogger().warning(e.getMessage());
+                }
+            });
         }
 
         return true;
     }
 
+    /**
+     * Get the block at a location that is contained by the given chunk.
+     *
+     * @param l     the location of the block you want to return
+     * @param chunk the chunk which should contain the block
+     * @return the {@link Block} at the location
+     * @throws NotInChunkException if the location is not in the chunk
+     */
+    private Block getBlockAt(Location l, Chunk chunk) throws NotInChunkException {
+        if (l.getBlockX() / 16 == chunk.getX() && l.getBlockZ() / 16 == chunk.getZ()) {
+            return chunk.getBlock(l.getBlockX() % 16, l.getBlockY(), l.getBlockZ() % 16);
+        } else {
+            throw new NotInChunkException("Location " + l.getBlockX() + "," + l.getBlockZ() + " are not in chunk " + chunk.getX() + "," + chunk.getZ());
+        }
+    }
+
     //Set the blockData of the block.
-    private void setBlockData(JSONObject object, Location l) throws BlockNotFoundException {
+    private void setBlockData(JSONObject object, Block block) throws BlockNotFoundException, NotInChunkException {
+
+        Location l = block.getLocation();
 
         switch ((String) object.get("block")) {
 
@@ -74,17 +102,17 @@ public class Converter {
                 BlockData bYMin = world.getBlockData(lYMin);
 
                 if (bYMin.getMaterial() == Material.SUNFLOWER) {
-                    setTopFlower(Material.SUNFLOWER, l);
+                    setTopFlower(Material.SUNFLOWER, block);
                 } else if (bYMin.getMaterial() == Material.LILAC) {
-                    setTopFlower(Material.LILAC, l);
+                    setTopFlower(Material.LILAC, block);
                 } else if (bYMin.getMaterial() == Material.ROSE_BUSH) {
-                    setTopFlower(Material.ROSE_BUSH, l);
+                    setTopFlower(Material.ROSE_BUSH, block);
                 } else if (bYMin.getMaterial() == Material.PEONY) {
-                    setTopFlower(Material.PEONY, l);
+                    setTopFlower(Material.PEONY, block);
                 } else if (bYMin.getMaterial() == Material.TALL_GRASS) {
-                    setTopFlower(Material.TALL_GRASS, l);
+                    setTopFlower(Material.TALL_GRASS, block);
                 } else if (bYMin.getMaterial() == Material.LARGE_FERN) {
-                    setTopFlower(Material.LARGE_FERN, l);
+                    setTopFlower(Material.LARGE_FERN, block);
                 }
             }
 
@@ -92,7 +120,7 @@ public class Converter {
                     "minecraft:sandstone_stairs", "minecraft:spruce_stairs", "minecraft:birch_stairs", "minecraft:jungle_stairs", "minecraft:quartz_stairs", "minecraft:acacia_stairs",
                     "minecraft:dark_oak_stairs", "minecraft:red_sandstone_stairs", "minecraft:purpur_stairs" -> {
 
-                BlockData bd = world.getBlockData(l);
+                BlockData bd = block.getBlockData();
                 if (!(bd instanceof Stairs)) {
                     throw new BlockNotFoundException("Found " + bd.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                 }
@@ -100,7 +128,7 @@ public class Converter {
                 Stairs stair = getStair(l);
 
                 //Update the block.
-                world.setBlockData(l, stair);
+                block.setBlockData(stair);
 
             }
 
@@ -109,36 +137,36 @@ public class Converter {
                     "minecraft:nether_brick_fence", "minecraft:glass_pane", "minecraft:iron_bars" -> {
 
                 //Check if the fence can connect to adjacent blocks.
-                BlockData block = world.getBlockData(l);
-                if (!(block instanceof Fence fence)) {
-                    throw new BlockNotFoundException("Found " + block.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
+                BlockData bd = block.getBlockData();
+                if (!(bd instanceof Fence fence)) {
+                    throw new BlockNotFoundException("Found " + bd.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                 }
 
                 //North (Negative Z)
                 Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
-                if (canConnect(block.getMaterial(), lZMin, BlockFace.NORTH)) {
+                if (canConnect(bd.getMaterial(), lZMin, BlockFace.NORTH)) {
                     fence.setFace(BlockFace.NORTH, true);
                 }
 
                 //East (Positive X)
                 Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
-                if (canConnect(block.getMaterial(), lXMax, BlockFace.EAST)) {
+                if (canConnect(bd.getMaterial(), lXMax, BlockFace.EAST)) {
                     fence.setFace(BlockFace.EAST, true);
                 }
 
                 //South (Positive Z)
                 Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
-                if (canConnect(block.getMaterial(), lZMax, BlockFace.SOUTH)) {
+                if (canConnect(bd.getMaterial(), lZMax, BlockFace.SOUTH)) {
                     fence.setFace(BlockFace.SOUTH, true);
                 }
 
                 //West (Negative X)
                 Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
-                if (canConnect(block.getMaterial(), lXMin, BlockFace.WEST)) {
+                if (canConnect(bd.getMaterial(), lXMin, BlockFace.WEST)) {
                     fence.setFace(BlockFace.WEST, true);
                 }
 
-                world.setBlockData(l, fence);
+                block.setBlockData(fence);
             }
 
             //Stained glass (for some reason it's a different data type from normal glass panes, even though the data is the exact same)
@@ -149,48 +177,48 @@ public class Converter {
                     "minecraft:magenta_stained_glass_pane", "minecraft:light_blue_stained_glass_pane", "minecraft:light_gray_stained_glass_pane" -> {
 
                 //Check if the fence can connect to adjacent blocks.
-                BlockData block = world.getBlockData(l);
-                if (!(block instanceof GlassPane fence)) {
-                    throw new BlockNotFoundException("Found " + block.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
+                BlockData bd = block.getBlockData();
+                if (!(bd instanceof GlassPane fence)) {
+                    throw new BlockNotFoundException("Found " + bd.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                 }
 
                 //North (Negative Z)
                 Location lZMin = new Location(world, l.getX(), l.getY(), l.getZ() - 1);
-                if (canConnect(block.getMaterial(), lZMin, BlockFace.NORTH)) {
+                if (canConnect(bd.getMaterial(), lZMin, BlockFace.NORTH)) {
                     fence.setFace(BlockFace.NORTH, true);
                 }
 
                 //East (Positive X)
                 Location lXMax = new Location(world, l.getX() + 1, l.getY(), l.getZ());
-                if (canConnect(block.getMaterial(), lXMax, BlockFace.EAST)) {
+                if (canConnect(bd.getMaterial(), lXMax, BlockFace.EAST)) {
                     fence.setFace(BlockFace.EAST, true);
                 }
 
                 //South (Positive Z)
                 Location lZMax = new Location(world, l.getX(), l.getY(), l.getZ() + 1);
-                if (canConnect(block.getMaterial(), lZMax, BlockFace.SOUTH)) {
+                if (canConnect(bd.getMaterial(), lZMax, BlockFace.SOUTH)) {
                     fence.setFace(BlockFace.SOUTH, true);
                 }
 
                 //West (Negative X)
                 Location lXMin = new Location(world, l.getX() - 1, l.getY(), l.getZ());
-                if (canConnect(block.getMaterial(), lXMin, BlockFace.WEST)) {
+                if (canConnect(bd.getMaterial(), lXMin, BlockFace.WEST)) {
                     fence.setFace(BlockFace.WEST, true);
                 }
 
-                world.setBlockData(l, fence);
+                block.setBlockData(fence);
 
             }
 
             case "minecraft:cobblestone_wall", "minecraft:mossy_cobblestone_wall" -> {
 
                 //Check if the fence can connect to adjacent blocks.
-                BlockData block = world.getBlockData(l);
+                BlockData bd = world.getBlockData(l);
                 if (!(block instanceof Wall)) {
-                    throw new BlockNotFoundException("Found " + block.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
+                    throw new BlockNotFoundException("Found " + bd.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                 }
 
-                world.setBlockData(l, getWall(l));
+                block.setBlockData(getWall(l));
 
             }
 
@@ -267,7 +295,7 @@ public class Converter {
                     }
                 }
 
-                world.setBlockData(l, chest);
+                block.setBlockData(chest);
 
             }
 
@@ -352,7 +380,7 @@ public class Converter {
                     }
                 }
 
-                world.setBlockData(l, redstoneWire);
+                block.setBlockData(redstoneWire);
 
             }
 
@@ -408,8 +436,6 @@ public class Converter {
                 JSONObject properties = (JSONObject) object.get("properties");
 
                 //Set colour.
-                Block block = world.getBlockAt(l);
-
                 switch ((String) properties.get("colour")) {
                     case "white" -> block.setType(Material.WHITE_BED);
                     case "orange" -> block.setType(Material.ORANGE_BED);
@@ -459,8 +485,6 @@ public class Converter {
                 JSONObject properties = (JSONObject) object.get("properties");
 
                 //Set banner base colour.
-                Block block = world.getBlockAt(l);
-
                 switch ((String) properties.get("colour")) {
                     case "white" -> block.setType(Material.WHITE_BANNER);
                     case "orange" -> block.setType(Material.ORANGE_BANNER);
@@ -499,8 +523,6 @@ public class Converter {
                 JSONObject properties = (JSONObject) object.get("properties");
 
                 //Set banner base colour.
-                Block block = world.getBlockAt(l);
-
                 if (block.getType() == Material.WHITE_WALL_BANNER) {
 
                     switch ((String) properties.get("colour")) {
@@ -546,9 +568,6 @@ public class Converter {
             case "minecraft:flower_pot" -> {
 
                 //Set flower pot type.
-                Block block = world.getBlockAt(l);
-
-                //Set flower pot type.
                 JSONObject properties = (JSONObject) object.get("properties");
                 switch ((String) properties.get("type")) {
 
@@ -581,9 +600,6 @@ public class Converter {
             case "minecraft:skeleton_skull" -> {
 
                 JSONObject properties = (JSONObject) object.get("properties");
-
-                //Get the current skull at the location.
-                Block block = world.getBlockAt(l);
 
                 //Set skull types and if playerhead set texture.
                 String type = (String) properties.get("type");
@@ -697,7 +713,7 @@ public class Converter {
                 Location lBelow = new Location(world, l.getX(), l.getY() - 1, l.getZ());
                 noteBlock.setInstrument(getInstrument(world.getBlockAt(lBelow).getType()));
 
-                world.setBlockData(l, noteBlock);
+                block.setBlockData(noteBlock);
 
             }
 
@@ -750,7 +766,7 @@ public class Converter {
                     }
 
                     facing.setFace(BlockFace.UP, true);
-                    world.setBlockData(l, facing);
+                    block.setBlockData(facing);
 
                 }
             }
@@ -776,7 +792,7 @@ public class Converter {
                         door.setFacing(bDoor.getFacing());
                         door.setOpen(bDoor.isOpen());
 
-                        world.setBlockData(l, door);
+                        block.setBlockData(door);
 
                     }
 
@@ -791,20 +807,21 @@ public class Converter {
                         door.setHinge(aDoor.getHinge());
                         door.setPowered(aDoor.isPowered());
 
-                        world.setBlockData(l, door);
+                        block.setBlockData(door);
 
                     }
                 }
             }
         }
+
     }
 
-    private void setTopFlower(Material mat, Location l) {
+    private void setTopFlower(Material mat, Block block) {
         BlockData newBD = mat.createBlockData();
-        world.setBlockData(l, newBD);
+        block.setBlockData(newBD);
         Bisected bisected = (Bisected) newBD;
         bisected.setHalf(Bisected.Half.TOP);
-        world.setBlockData(l, bisected);
+        block.setBlockData(bisected);
     }
 
     //Check if the material is of a fence.

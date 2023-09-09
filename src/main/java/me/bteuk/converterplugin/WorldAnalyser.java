@@ -59,11 +59,11 @@ public class WorldAnalyser implements CommandExecutor {
 
             }
 
-            case "delete" -> {
+            /*case "delete" -> {
 
                 delete(sender, args);
 
-            }
+            }*/
         }
 
 
@@ -74,7 +74,7 @@ public class WorldAnalyser implements CommandExecutor {
     private void help(CommandSender sender) {
 
         sender.sendMessage("/wa search [regionMin] [regionMax]");
-        sender.sendMessage("/wa delete [regionMin] [regionMax]");
+        //sender.sendMessage("/wa delete [regionMin] [regionMax]");
 
     }
 
