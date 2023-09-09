@@ -5,7 +5,6 @@ import com.destroystokyo.paper.profile.ProfileProperty;
 import io.papermc.lib.PaperLib;
 import me.bteuk.converterplugin.utils.blocks.stairs.StairData;
 import me.bteuk.converterplugin.utils.exceptions.BlockNotFoundException;
-import me.bteuk.converterplugin.utils.exceptions.NotInChunkException;
 import org.bukkit.*;
 import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
@@ -18,6 +17,8 @@ import org.bukkit.block.data.type.*;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -43,7 +44,9 @@ public class Converter {
         isRunning = value;
     }
 
-    public boolean convert(JSONArray jsonArray) {
+    public CompletableFuture<Void> convert(JSONArray jsonArray) {
+
+        List<CompletableFuture<Void>> completableFutures = new ArrayList<>();
 
         //Iterate through array.
         //Catch any exceptions that may occur.
@@ -53,45 +56,42 @@ public class Converter {
 
             //Get the location of the block.
             Location l = new Location(world, (int) (long) jObject.get("x"), (int) (long) jObject.get("y"), (int) (long) jObject.get("z"));
+            Location lPlusX = l.clone();
+            lPlusX.setX(l.getX()+1);
+            Location lPlusZ = l.clone();
+            lPlusX.setZ(l.getZ()+1);
+            Location lMinX = l.clone();
+            lPlusX.setX(l.getX()-1);
+            Location lMinZ = l.clone();
+            lPlusX.setZ(l.getZ()-1);
 
-            CompletableFuture<Chunk> completableChunk = PaperLib.getChunkAtAsync(l);
-            completableChunk.whenComplete((chunk, throwable) -> {
+            //Make sure the chunk is loaded, plus the 4 adjacent chunks, since they may be needed.
+            CompletableFuture<Chunk>[] chunks = new CompletableFuture[]{
+                    PaperLib.getChunkAtAsync(l),
+                    PaperLib.getChunkAtAsync(lPlusX),
+                    PaperLib.getChunkAtAsync(lPlusZ),
+                    PaperLib.getChunkAtAsync(lMinX),
+                    PaperLib.getChunkAtAsync(lMinZ)
+            };
 
-                //Set the block to its correct state.
+            //When all 5 chunks are loaded, convert the block.
+            completableFutures.add(CompletableFuture.allOf(chunks).thenRunAsync(() -> Bukkit.getScheduler().runTask(instance, () -> {
                 try {
-                    //Get the block.
-                    Block block = getBlockAt(l, chunk);
-
-                    setBlockData(jObject, block);
-                } catch (BlockNotFoundException | NotInChunkException e) {
+                    setBlockData(jObject, l);
+                } catch (BlockNotFoundException e) {
                     instance.getLogger().warning(e.getMessage());
                 }
-            });
+            })));
+
         }
 
-        return true;
-    }
-
-    /**
-     * Get the block at a location that is contained by the given chunk.
-     *
-     * @param l     the location of the block you want to return
-     * @param chunk the chunk which should contain the block
-     * @return the {@link Block} at the location
-     * @throws NotInChunkException if the location is not in the chunk
-     */
-    private Block getBlockAt(Location l, Chunk chunk) throws NotInChunkException {
-        if (l.getBlockX() / 16 == chunk.getX() && l.getBlockZ() / 16 == chunk.getZ()) {
-            return chunk.getBlock(l.getBlockX() % 16, l.getBlockY(), l.getBlockZ() % 16);
-        } else {
-            throw new NotInChunkException("Location " + l.getBlockX() + "," + l.getBlockZ() + " are not in chunk " + chunk.getX() + "," + chunk.getZ());
-        }
+        return CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[0]));
     }
 
     //Set the blockData of the block.
-    private void setBlockData(JSONObject object, Block block) throws BlockNotFoundException, NotInChunkException {
+    private void setBlockData(JSONObject object, Location l) throws BlockNotFoundException {
 
-        Location l = block.getLocation();
+        Block block = world.getBlockAt(l);
 
         switch ((String) object.get("block")) {
 
@@ -128,7 +128,7 @@ public class Converter {
                 Stairs stair = getStair(l);
 
                 //Update the block.
-                block.setBlockData(stair);
+                block.setBlockData(stair, false);
 
             }
 
@@ -166,7 +166,7 @@ public class Converter {
                     fence.setFace(BlockFace.WEST, true);
                 }
 
-                block.setBlockData(fence);
+                block.setBlockData(fence, false);
             }
 
             //Stained glass (for some reason it's a different data type from normal glass panes, even though the data is the exact same)
@@ -206,7 +206,7 @@ public class Converter {
                     fence.setFace(BlockFace.WEST, true);
                 }
 
-                block.setBlockData(fence);
+                block.setBlockData(fence, false);
 
             }
 
@@ -214,11 +214,11 @@ public class Converter {
 
                 //Check if the fence can connect to adjacent blocks.
                 BlockData bd = world.getBlockData(l);
-                if (!(block instanceof Wall)) {
+                if (!(bd instanceof Wall)) {
                     throw new BlockNotFoundException("Found " + bd.getMaterial().name() + " expected " + object.get("block") + " at " + l.getX() + "," + l.getY() + "," + l.getZ());
                 }
 
-                block.setBlockData(getWall(l));
+                block.setBlockData(getWall(l), false);
 
             }
 
@@ -295,7 +295,7 @@ public class Converter {
                     }
                 }
 
-                block.setBlockData(chest);
+                block.setBlockData(chest, false);
 
             }
 
@@ -380,7 +380,7 @@ public class Converter {
                     }
                 }
 
-                block.setBlockData(redstoneWire);
+                block.setBlockData(redstoneWire, false);
 
             }
 
@@ -428,6 +428,8 @@ public class Converter {
                 if (world.getType(lYMax) == Material.CHORUS_PLANT || world.getType(lZMin) == Material.CHORUS_FLOWER) {
                     facing.setFace(BlockFace.UP, true);
                 }
+
+                block.setBlockData(facing, false);
             }
 
             case "minecraft:red_bed" -> {
@@ -437,22 +439,22 @@ public class Converter {
 
                 //Set colour.
                 switch ((String) properties.get("colour")) {
-                    case "white" -> block.setType(Material.WHITE_BED);
-                    case "orange" -> block.setType(Material.ORANGE_BED);
-                    case "magenta" -> block.setType(Material.MAGENTA_BED);
-                    case "light_blue" -> block.setType(Material.LIGHT_BLUE_BED);
-                    case "yellow" -> block.setType(Material.YELLOW_BED);
-                    case "lime" -> block.setType(Material.LIME_BED);
-                    case "pink" -> block.setType(Material.PINK_BED);
-                    case "gray" -> block.setType(Material.GRAY_BED);
-                    case "light_gray" -> block.setType(Material.LIGHT_GRAY_BED);
-                    case "cyan" -> block.setType(Material.CYAN_BED);
-                    case "purple" -> block.setType(Material.PURPLE_BED);
-                    case "blue" -> block.setType(Material.BLUE_BED);
-                    case "brown" -> block.setType(Material.BROWN_BED);
-                    case "green" -> block.setType(Material.GREEN_BED);
-                    case "red" -> block.setType(Material.RED_BED);
-                    case "black" -> block.setType(Material.BLACK_BED);
+                    case "white" -> block.setType(Material.WHITE_BED, false);
+                    case "orange" -> block.setType(Material.ORANGE_BED, false);
+                    case "magenta" -> block.setType(Material.MAGENTA_BED, false);
+                    case "light_blue" -> block.setType(Material.LIGHT_BLUE_BED, false);
+                    case "yellow" -> block.setType(Material.YELLOW_BED, false);
+                    case "lime" -> block.setType(Material.LIME_BED, false);
+                    case "pink" -> block.setType(Material.PINK_BED, false);
+                    case "gray" -> block.setType(Material.GRAY_BED, false);
+                    case "light_gray" -> block.setType(Material.LIGHT_GRAY_BED, false);
+                    case "cyan" -> block.setType(Material.CYAN_BED, false);
+                    case "purple" -> block.setType(Material.PURPLE_BED, false);
+                    case "blue" -> block.setType(Material.BLUE_BED, false);
+                    case "brown" -> block.setType(Material.BROWN_BED, false);
+                    case "green" -> block.setType(Material.GREEN_BED, false);
+                    case "red" -> block.setType(Material.RED_BED, false);
+                    case "black" -> block.setType(Material.BLACK_BED, false);
                 }
 
                 //Set part and facing.
@@ -475,7 +477,7 @@ public class Converter {
                     case "west" -> bed.setFacing(BlockFace.WEST);
                 }
 
-                block.setBlockData(bed);
+                block.setBlockData(bed, false);
 
             }
 
@@ -486,22 +488,22 @@ public class Converter {
 
                 //Set banner base colour.
                 switch ((String) properties.get("colour")) {
-                    case "white" -> block.setType(Material.WHITE_BANNER);
-                    case "orange" -> block.setType(Material.ORANGE_BANNER);
-                    case "magenta" -> block.setType(Material.MAGENTA_BANNER);
-                    case "light_blue" -> block.setType(Material.LIGHT_BLUE_BANNER);
-                    case "yellow" -> block.setType(Material.YELLOW_BANNER);
-                    case "lime" -> block.setType(Material.LIME_BANNER);
-                    case "pink" -> block.setType(Material.PINK_BANNER);
-                    case "gray" -> block.setType(Material.GRAY_BANNER);
-                    case "light_gray" -> block.setType(Material.LIGHT_GRAY_BANNER);
-                    case "cyan" -> block.setType(Material.CYAN_BANNER);
-                    case "purple" -> block.setType(Material.PURPLE_BANNER);
-                    case "blue" -> block.setType(Material.BLUE_BANNER);
-                    case "brown" -> block.setType(Material.BROWN_BANNER);
-                    case "green" -> block.setType(Material.GREEN_BANNER);
-                    case "red" -> block.setType(Material.RED_BANNER);
-                    case "black" -> block.setType(Material.BLACK_BANNER);
+                    case "white" -> block.setType(Material.WHITE_BANNER, false);
+                    case "orange" -> block.setType(Material.ORANGE_BANNER, false);
+                    case "magenta" -> block.setType(Material.MAGENTA_BANNER, false);
+                    case "light_blue" -> block.setType(Material.LIGHT_BLUE_BANNER, false);
+                    case "yellow" -> block.setType(Material.YELLOW_BANNER, false);
+                    case "lime" -> block.setType(Material.LIME_BANNER, false);
+                    case "pink" -> block.setType(Material.PINK_BANNER, false);
+                    case "gray" -> block.setType(Material.GRAY_BANNER, false);
+                    case "light_gray" -> block.setType(Material.LIGHT_GRAY_BANNER, false);
+                    case "cyan" -> block.setType(Material.CYAN_BANNER, false);
+                    case "purple" -> block.setType(Material.PURPLE_BANNER, false);
+                    case "blue" -> block.setType(Material.BLUE_BANNER, false);
+                    case "brown" -> block.setType(Material.BROWN_BANNER, false);
+                    case "green" -> block.setType(Material.GREEN_BANNER, false);
+                    case "red" -> block.setType(Material.RED_BANNER, false);
+                    case "black" -> block.setType(Material.BLACK_BANNER, false);
                 }
 
                 //Set rotation.
@@ -510,7 +512,7 @@ public class Converter {
                 }
 
                 setRotation(rot, Byte.parseByte((String) properties.get("rotation")));
-                block.setBlockData(rot);
+                block.setBlockData(rot, false);
 
                 //Set patterns
                 setBannerPatterns(block, (JSONArray) properties.get("patterns"));
@@ -526,22 +528,22 @@ public class Converter {
                 if (block.getType() == Material.WHITE_WALL_BANNER) {
 
                     switch ((String) properties.get("colour")) {
-                        case "white" -> block.setType(Material.WHITE_WALL_BANNER);
-                        case "orange" -> block.setType(Material.ORANGE_WALL_BANNER);
-                        case "magenta" -> block.setType(Material.MAGENTA_WALL_BANNER);
-                        case "light_blue" -> block.setType(Material.LIGHT_BLUE_WALL_BANNER);
-                        case "yellow" -> block.setType(Material.YELLOW_WALL_BANNER);
-                        case "lime" -> block.setType(Material.LIME_WALL_BANNER);
-                        case "pink" -> block.setType(Material.PINK_WALL_BANNER);
-                        case "gray" -> block.setType(Material.GRAY_WALL_BANNER);
-                        case "light_gray" -> block.setType(Material.LIGHT_GRAY_WALL_BANNER);
-                        case "cyan" -> block.setType(Material.CYAN_WALL_BANNER);
-                        case "purple" -> block.setType(Material.PURPLE_WALL_BANNER);
-                        case "blue" -> block.setType(Material.BLUE_WALL_BANNER);
-                        case "brown" -> block.setType(Material.BROWN_WALL_BANNER);
-                        case "green" -> block.setType(Material.GREEN_WALL_BANNER);
-                        case "red" -> block.setType(Material.RED_WALL_BANNER);
-                        case "black" -> block.setType(Material.BLACK_WALL_BANNER);
+                        case "white" -> block.setType(Material.WHITE_WALL_BANNER, false);
+                        case "orange" -> block.setType(Material.ORANGE_WALL_BANNER, false);
+                        case "magenta" -> block.setType(Material.MAGENTA_WALL_BANNER, false);
+                        case "light_blue" -> block.setType(Material.LIGHT_BLUE_WALL_BANNER, false);
+                        case "yellow" -> block.setType(Material.YELLOW_WALL_BANNER, false);
+                        case "lime" -> block.setType(Material.LIME_WALL_BANNER, false);
+                        case "pink" -> block.setType(Material.PINK_WALL_BANNER, false);
+                        case "gray" -> block.setType(Material.GRAY_WALL_BANNER, false);
+                        case "light_gray" -> block.setType(Material.LIGHT_GRAY_WALL_BANNER, false);
+                        case "cyan" -> block.setType(Material.CYAN_WALL_BANNER, false);
+                        case "purple" -> block.setType(Material.PURPLE_WALL_BANNER, false);
+                        case "blue" -> block.setType(Material.BLUE_WALL_BANNER, false);
+                        case "brown" -> block.setType(Material.BROWN_WALL_BANNER, false);
+                        case "green" -> block.setType(Material.GREEN_WALL_BANNER, false);
+                        case "red" -> block.setType(Material.RED_WALL_BANNER, false);
+                        case "black" -> block.setType(Material.BLACK_WALL_BANNER, false);
                     }
 
                     //Set facing direction.
@@ -558,7 +560,7 @@ public class Converter {
                         case "west" -> direction.setFacing(BlockFace.WEST);
                     }
 
-                    block.setBlockData(direction);
+                    block.setBlockData(direction, false);
 
                     //Set patterns
                     setBannerPatterns(block, (JSONArray) properties.get("patterns"));
@@ -571,28 +573,28 @@ public class Converter {
                 JSONObject properties = (JSONObject) object.get("properties");
                 switch ((String) properties.get("type")) {
 
-                    case "potted_dandelion" -> block.setType(Material.POTTED_DANDELION);
-                    case "potted_poppy" -> block.setType(Material.POTTED_POPPY);
-                    case "potted_blue_orchid" -> block.setType(Material.POTTED_BLUE_ORCHID);
-                    case "potted_allium" -> block.setType(Material.POTTED_ALLIUM);
-                    case "potted_azure_bluet" -> block.setType(Material.POTTED_AZURE_BLUET);
-                    case "potted_red_tulip" -> block.setType(Material.POTTED_RED_TULIP);
-                    case "potted_orange_tulip" -> block.setType(Material.POTTED_ORANGE_TULIP);
-                    case "potted_white_tulip" -> block.setType(Material.POTTED_WHITE_TULIP);
-                    case "potted_pink_tulip" -> block.setType(Material.POTTED_PINK_TULIP);
-                    case "potted_oxeye_daisy" -> block.setType(Material.POTTED_OXEYE_DAISY);
-                    case "potted_oak_sapling" -> block.setType(Material.POTTED_OAK_SAPLING);
-                    case "potted_spruce_sapling" -> block.setType(Material.POTTED_SPRUCE_SAPLING);
-                    case "potted_birch_sapling" -> block.setType(Material.POTTED_BIRCH_SAPLING);
-                    case "potted_jungle_sapling" -> block.setType(Material.POTTED_JUNGLE_SAPLING);
-                    case "potted_acacia_sapling" -> block.setType(Material.POTTED_ACACIA_SAPLING);
-                    case "potted_dark_oak_sapling" -> block.setType(Material.POTTED_DARK_OAK_SAPLING);
-                    case "potted_red_mushroom" -> block.setType(Material.POTTED_RED_MUSHROOM);
-                    case "potted_brown_mushroom" -> block.setType(Material.POTTED_BROWN_MUSHROOM);
-                    case "potted_fern" -> block.setType(Material.POTTED_FERN);
-                    case "potted_dead_bush" -> block.setType(Material.POTTED_DEAD_BUSH);
-                    case "potted_cactus" -> block.setType(Material.POTTED_CACTUS);
-                    default -> block.setType(Material.FLOWER_POT);
+                    case "potted_dandelion" -> block.setType(Material.POTTED_DANDELION, false);
+                    case "potted_poppy" -> block.setType(Material.POTTED_POPPY, false);
+                    case "potted_blue_orchid" -> block.setType(Material.POTTED_BLUE_ORCHID, false);
+                    case "potted_allium" -> block.setType(Material.POTTED_ALLIUM, false);
+                    case "potted_azure_bluet" -> block.setType(Material.POTTED_AZURE_BLUET, false);
+                    case "potted_red_tulip" -> block.setType(Material.POTTED_RED_TULIP, false);
+                    case "potted_orange_tulip" -> block.setType(Material.POTTED_ORANGE_TULIP, false);
+                    case "potted_white_tulip" -> block.setType(Material.POTTED_WHITE_TULIP, false);
+                    case "potted_pink_tulip" -> block.setType(Material.POTTED_PINK_TULIP, false);
+                    case "potted_oxeye_daisy" -> block.setType(Material.POTTED_OXEYE_DAISY, false);
+                    case "potted_oak_sapling" -> block.setType(Material.POTTED_OAK_SAPLING, false);
+                    case "potted_spruce_sapling" -> block.setType(Material.POTTED_SPRUCE_SAPLING, false);
+                    case "potted_birch_sapling" -> block.setType(Material.POTTED_BIRCH_SAPLING, false);
+                    case "potted_jungle_sapling" -> block.setType(Material.POTTED_JUNGLE_SAPLING, false);
+                    case "potted_acacia_sapling" -> block.setType(Material.POTTED_ACACIA_SAPLING, false);
+                    case "potted_dark_oak_sapling" -> block.setType(Material.POTTED_DARK_OAK_SAPLING, false);
+                    case "potted_red_mushroom" -> block.setType(Material.POTTED_RED_MUSHROOM, false);
+                    case "potted_brown_mushroom" -> block.setType(Material.POTTED_BROWN_MUSHROOM, false);
+                    case "potted_fern" -> block.setType(Material.POTTED_FERN, false);
+                    case "potted_dead_bush" -> block.setType(Material.POTTED_DEAD_BUSH, false);
+                    case "potted_cactus" -> block.setType(Material.POTTED_CACTUS, false);
+                    default -> block.setType(Material.FLOWER_POT, false);
 
                 }
             }
@@ -611,12 +613,12 @@ public class Converter {
                     //Set material.
                     switch (type) {
 
-                        case "skeleton_skull" -> block.setType(Material.SKELETON_SKULL);
-                        case "wither_skeleton_skull" -> block.setType(Material.WITHER_SKELETON_SKULL);
-                        case "zombie_head" -> block.setType(Material.ZOMBIE_HEAD);
-                        case "player_head" -> block.setType(Material.PLAYER_HEAD);
-                        case "creeper_head" -> block.setType(Material.CREEPER_HEAD);
-                        case "dragon_head" -> block.setType(Material.DRAGON_HEAD);
+                        case "skeleton_skull" -> block.setType(Material.SKELETON_SKULL, false);
+                        case "wither_skeleton_skull" -> block.setType(Material.WITHER_SKELETON_SKULL, false);
+                        case "zombie_head" -> block.setType(Material.ZOMBIE_HEAD, false);
+                        case "player_head" -> block.setType(Material.PLAYER_HEAD, false);
+                        case "creeper_head" -> block.setType(Material.CREEPER_HEAD, false);
+                        case "dragon_head" -> block.setType(Material.DRAGON_HEAD, false);
 
                     }
 
@@ -626,7 +628,7 @@ public class Converter {
 
                     setRotation(rot, (byte) (long) properties.get("rotation"));
 
-                    block.setBlockData(rot);
+                    block.setBlockData(rot, false);
 
                 } else if (facing.equals("north") || facing.equals("west") || facing.equals("south") || facing.equals("east")) {
 
@@ -634,12 +636,12 @@ public class Converter {
                     //Set material.
                     switch (type) {
 
-                        case "skeleton_skull" -> block.setType(Material.SKELETON_WALL_SKULL);
-                        case "wither_skeleton_skull" -> block.setType(Material.WITHER_SKELETON_WALL_SKULL);
-                        case "zombie_head" -> block.setType(Material.ZOMBIE_WALL_HEAD);
-                        case "player_head" -> block.setType(Material.PLAYER_WALL_HEAD);
-                        case "creeper_head" -> block.setType(Material.CREEPER_WALL_HEAD);
-                        case "dragon_head" -> block.setType(Material.DRAGON_WALL_HEAD);
+                        case "skeleton_skull" -> block.setType(Material.SKELETON_WALL_SKULL, false);
+                        case "wither_skeleton_skull" -> block.setType(Material.WITHER_SKELETON_WALL_SKULL, false);
+                        case "zombie_head" -> block.setType(Material.ZOMBIE_WALL_HEAD, false);
+                        case "player_head" -> block.setType(Material.PLAYER_WALL_HEAD, false);
+                        case "creeper_head" -> block.setType(Material.CREEPER_WALL_HEAD, false);
+                        case "dragon_head" -> block.setType(Material.DRAGON_WALL_HEAD, false);
 
                     }
 
@@ -656,7 +658,7 @@ public class Converter {
 
                     }
 
-                    block.setBlockData(dir);
+                    block.setBlockData(dir, false);
 
 
                 } else {
@@ -689,7 +691,7 @@ public class Converter {
 
                         skull.setPlayerProfile(profile);
 
-                        skull.update(); // so that the result can be seen
+                        skull.update(false, false); // so that the result can be seen
 
                     }
                 }
@@ -713,7 +715,7 @@ public class Converter {
                 Location lBelow = new Location(world, l.getX(), l.getY() - 1, l.getZ());
                 noteBlock.setInstrument(getInstrument(world.getBlockAt(lBelow).getType()));
 
-                block.setBlockData(noteBlock);
+                block.setBlockData(noteBlock, false);
 
             }
 
@@ -766,7 +768,7 @@ public class Converter {
                     }
 
                     facing.setFace(BlockFace.UP, true);
-                    block.setBlockData(facing);
+                    block.setBlockData(facing, false);
 
                 }
             }
@@ -792,7 +794,7 @@ public class Converter {
                         door.setFacing(bDoor.getFacing());
                         door.setOpen(bDoor.isOpen());
 
-                        block.setBlockData(door);
+                        block.setBlockData(door, false);
 
                     }
 
@@ -807,7 +809,7 @@ public class Converter {
                         door.setHinge(aDoor.getHinge());
                         door.setPowered(aDoor.isPowered());
 
-                        block.setBlockData(door);
+                        block.setBlockData(door, false);
 
                     }
                 }
@@ -818,10 +820,10 @@ public class Converter {
 
     private void setTopFlower(Material mat, Block block) {
         BlockData newBD = mat.createBlockData();
-        block.setBlockData(newBD);
+        block.setBlockData(newBD, false);
         Bisected bisected = (Bisected) newBD;
         bisected.setHalf(Bisected.Half.TOP);
-        block.setBlockData(bisected);
+        block.setBlockData(bisected, false);
     }
 
     //Check if the material is of a fence.
@@ -927,7 +929,8 @@ public class Converter {
                         return true;
                     } else if (stair.getFacing() == BlockFace.WEST && stair.getShape() == Stairs.Shape.INNER_LEFT) {
                         return true;
-                    } else return (stair.getFacing() == BlockFace.EAST && stair.getShape() == Stairs.Shape.INNER_RIGHT);
+                    } else
+                        return (stair.getFacing() == BlockFace.EAST && stair.getShape() == Stairs.Shape.INNER_RIGHT);
                 }
                 case WEST -> {
                     if (stair.getFacing() == BlockFace.EAST) {
@@ -942,7 +945,8 @@ public class Converter {
                         return true;
                     } else if (stair.getFacing() == BlockFace.EAST && stair.getShape() == Stairs.Shape.INNER_LEFT) {
                         return true;
-                    } else return (stair.getFacing() == BlockFace.WEST && stair.getShape() == Stairs.Shape.INNER_RIGHT);
+                    } else
+                        return (stair.getFacing() == BlockFace.WEST && stair.getShape() == Stairs.Shape.INNER_RIGHT);
                 }
                 case EAST -> {
                     if (stair.getFacing() == BlockFace.WEST) {
@@ -1617,7 +1621,7 @@ public class Converter {
                         getPatternType((String) pattern.get("pattern"))));
             }
 
-            banner.update();
+            banner.update(false, false);
         }
     }
 
