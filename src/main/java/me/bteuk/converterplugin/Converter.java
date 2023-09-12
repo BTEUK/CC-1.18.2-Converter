@@ -59,11 +59,11 @@ public class Converter {
             Location lPlusX = l.clone();
             lPlusX.setX(l.getX()+1);
             Location lPlusZ = l.clone();
-            lPlusX.setZ(l.getZ()+1);
+            lPlusZ.setZ(l.getZ()+1);
             Location lMinX = l.clone();
-            lPlusX.setX(l.getX()-1);
+            lMinX.setX(l.getX()-1);
             Location lMinZ = l.clone();
-            lPlusX.setZ(l.getZ()-1);
+            lMinZ.setZ(l.getZ()-1);
 
             //Make sure the chunk is loaded, plus the 4 adjacent chunks, since they may be needed.
             CompletableFuture<Chunk>[] chunks = new CompletableFuture[]{
