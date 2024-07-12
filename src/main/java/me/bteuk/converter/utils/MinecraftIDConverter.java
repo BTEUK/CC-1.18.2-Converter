@@ -1,9 +1,16 @@
 package me.bteuk.converter.utils;
 
 import net.querz.nbt.tag.CompoundTag;
+import net.querz.nbt.tag.FloatTag;
 import net.querz.nbt.tag.ListTag;
+import net.querz.nbt.tag.Tag;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 public class MinecraftIDConverter {
     
@@ -4291,5 +4298,162 @@ public class MinecraftIDConverter {
 
         return "air";
 
+    }
+
+    public static boolean isEntitySupported(String legacyNamespaceID){
+        if(!legacyNamespaceID.startsWith("minecraft"))
+            return false;
+
+        String legacyID = legacyNamespaceID.substring(10);
+
+        switch (legacyID){
+            case "armor_stand":
+            case "boat":
+            case "chest_minecart":
+            case "commandblock_minecart":
+            case "ender_crystal":
+            case "eye_of_ender_signal":
+            case "falling_block":
+            case "furnace_minecart":
+            case "hopper_minecart":
+            case "item":
+            case "item_frame":
+            case "minecart":
+            case "painting":
+            case "shulker":
+            case "spawner_minecart":
+            case "tnt":
+            case "tnt_minecart":
+            case "wither_skull":
+                return true;
+        }
+
+        return false;
+    }
+
+    public static String getEntityID(String legacyNamespaceID){
+
+        switch (legacyNamespaceID){
+            case "minecraft:commandblock_minecart":
+                return "minecraft:command_block_minecart";
+            case "minecraft:ender_crystal":
+                return "minecraft:end_crystal";
+            case "minecraft:eye_of_ender_signal":
+                return "minecraft:ender_pearl";
+            default:
+                return legacyNamespaceID;
+        }
+    }
+
+    public static void getEntitiesTags(String legacyID ,CompoundTag entity, JSONObject properties){
+        if(entity.containsKey("NoGravity"))
+            properties.put("NoGravity", entity.getByte("NoGravity"));
+
+        switch (legacyID){
+            case "minecraft:armor_stand":
+                properties.put("ShowArms", entity.getByte("ShowArms"));
+                properties.put("Invisible", entity.getByte("Invisible"));
+                properties.put("Small", entity.getByte("Small"));
+                properties.put("NoBasePlate", entity.getByte("NoBasePlate"));
+
+                JSONObject poseTagItem = new JSONObject();
+                CompoundTag armorPose = entity.getCompoundTag("Pose");
+
+
+
+                if(armorPose.containsKey("Body")) {
+                    ListTag<FloatTag> armorBodyPose = armorPose.getListTag("Body").asFloatTagList();
+                    List<Float> bodyPoseList = new ArrayList<>();
+                    for (FloatTag floatTag : armorBodyPose)
+                        bodyPoseList.add(floatTag.asFloat());
+                    poseTagItem.put("Body", bodyPoseList);
+                }
+
+                if(armorPose.containsKey("Head")) {
+                    ListTag<FloatTag> armorHeadPose = armorPose.getListTag("Head").asFloatTagList();
+                    List<Float> headPoseList = new ArrayList<>();
+                    for (FloatTag floatTag : armorHeadPose)
+                        headPoseList.add(floatTag.asFloat());
+                    poseTagItem.put("Head", headPoseList);
+                }
+                if(!poseTagItem.isEmpty())
+                    properties.put("Pose", poseTagItem);
+
+
+                ListTag<CompoundTag> armorItems = entity.getListTag("ArmorItems").asCompoundTagList();
+                List<JSONObject> jsonArmorItems = new ArrayList<>();
+                for(CompoundTag armor : armorItems){
+
+                    if(armor.entrySet().isEmpty()) {
+                        jsonArmorItems.add(new JSONObject());
+                        continue;
+                    }
+
+                    JSONObject jsonArmorItem = new JSONObject();
+                    jsonArmorItem.put("entity", armor.getString("id"));
+
+                    if(armor.containsKey("tag")){
+                        CompoundTag armorTag = armor.getCompoundTag("tag");
+                        if(armorTag.containsKey("display")){
+                            CompoundTag displayTag = armorTag.getCompoundTag("display");
+                            if(displayTag.containsKey("Name"))
+                                jsonArmorItem.put("display_name", displayTag.getString("Name"));
+                            if(displayTag.containsKey("color"))
+                                jsonArmorItem.put("display_color", displayTag.getInt("color"));
+                        }
+
+                        if(armor.getString("id").equals("skull") && armorTag.containsKey("SkullOwner")){
+                            CompoundTag skullOwnerTag = armorTag.getCompoundTag("SkullOwner");
+                            JSONObject skullOwnerItem = new JSONObject();
+                            skullOwnerItem.put("id", skullOwnerTag.getString("id"));
+
+                            if(skullOwnerTag.containsKey("Properties")){
+                                CompoundTag skullOwnerProperties = skullOwnerTag.getCompoundTag("Properties");
+                                if(skullOwnerProperties.containsKey("textures")){
+                                    ListTag skullOwnerTextures = skullOwnerProperties.getListTag("textures");
+                                    if(skullOwnerTextures.size() > 0){
+                                        Tag skullOwnerTextureTag = skullOwnerTextures.get(0);
+                                        if(((CompoundTag)skullOwnerTextureTag).containsKey("Value"))
+                                            skullOwnerItem.put("texture", ((CompoundTag)skullOwnerTextureTag).getString("Value"));
+                                    }
+                                }
+                            }
+
+                            jsonArmorItem.put("SkullOwner", skullOwnerItem);
+                        }
+                    }
+
+                    jsonArmorItems.add(jsonArmorItem);
+                }
+
+                properties.put("ArmorItems", jsonArmorItems);
+
+                ListTag<CompoundTag> handItems = entity.getListTag("HandItems").asCompoundTagList();
+                List<String> handItemsList = new ArrayList<>();
+                for(CompoundTag handItem : handItems){
+                    if(handItem.entrySet().isEmpty()) {
+                        handItemsList.add("");
+                        continue;
+                    }
+
+                    handItemsList.add(getEntityID(handItem.getString("id")));
+                }
+
+                properties.put("HandItems", handItemsList);
+
+                if(entity.containsKey("Rot")) {
+                    ListTag<FloatTag> armorRot = entity.getListTag("Rot").asFloatTagList();
+                    List<Float> rotItemsList = new ArrayList<>();
+                    for (FloatTag rot : armorRot) {
+                        rotItemsList.add(rot.asFloat());
+                    }
+                    properties.put("Rot", rotItemsList);
+                }
+
+
+                break;
+
+
+        }
     }
 }

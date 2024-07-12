@@ -68,7 +68,7 @@ public class RegionConverter extends Thread {
 
     UUID uuid;
 
-    JSONArray jaEntities;
+    //JSONArray jaEntities;
 
     byte meta;
     byte[] data;
@@ -105,7 +105,7 @@ public class RegionConverter extends Thread {
         this.mng = mng;
 
         //Create json array to store entities.
-        jaEntities = new JSONArray();
+        //jaEntities = new JSONArray();
 
     }
 
@@ -123,10 +123,10 @@ public class RegionConverter extends Thread {
                     mng.activeThreads.decrementAndGet();
 
                     //Write entities file.
-                    FileWriter ppFile = new FileWriter(mng.itr.output.resolve("entities") + "/" + uuid + ".json");
-                    ppFile.write(jaEntities.toJSONString());
-                    ppFile.flush();
-                    ppFile.close();
+                    //FileWriter ppFile = new FileWriter(mng.itr.output.resolve("entities") + "/" + uuid + ".json");
+                    //ppFile.write(jaEntities.toJSONString());
+                    //ppFile.flush();
+                    //ppFile.close();
                     break;
                 }
 
@@ -141,9 +141,9 @@ public class RegionConverter extends Thread {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (IOException e) {
+        }/* catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     /**
@@ -429,17 +429,7 @@ public class RegionConverter extends Thread {
 
             //Add them to the json file.
             for (CompoundTag entity : entities) {
-
-                JSONObject jo = new JSONObject();
-                jo.put("id", entity.getString("id"));
-
-                ListTag<DoubleTag> pos = (ListTag<DoubleTag>) entity.getListTag("Pos");
-
-                jo.put("x", pos.get(0).asDouble());
-                jo.put("y", pos.get(1).asDouble());
-                jo.put("z", pos.get(2).asDouble());
-
-                jaEntities.add(jo);
+                convertEntity(entity);
             }
 
             //Load tile entities.
@@ -714,5 +704,30 @@ public class RegionConverter extends Thread {
                 )
         ));
         save.save(new MinecraftChunkLocation(entryX, entryZ, "mca"), data);
+    }
+
+    private void convertEntity(CompoundTag entity){
+        JSONObject object = new JSONObject();
+
+        String id = entity.getString("id");
+
+        if(MinecraftIDConverter.isEntitySupported(id)){
+            object.put("entity", MinecraftIDConverter.getEntityID(id));
+
+            ListTag<DoubleTag> pos = entity.getListTag("Pos").asDoubleTagList();
+
+            object.put("x", pos.get(0).asDouble());
+            object.put("y", pos.get(1).asDouble());
+            object.put("z", pos.get(2).asDouble());
+
+            JSONObject properties = new JSONObject();
+            MinecraftIDConverter.getEntitiesTags(id, entity, properties);
+            if(!properties.isEmpty())
+                object.put("properties", properties);
+
+            ja.add(object);
+        }
+
+
     }
 }

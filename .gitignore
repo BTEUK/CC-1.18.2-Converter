@@ -51,3 +51,9 @@
 /.idea/modules.xml
 /.idea/vcs.xml
 /.idea/workspace.xml
+/proj_files
+/target
+CC-1.18.2-Converter.iml
+discord.xml
+jarRepositories.xml
+.gitignore
