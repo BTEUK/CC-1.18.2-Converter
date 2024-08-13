@@ -1,16 +1,11 @@
 package me.bteuk.converter.utils;
 
-import net.querz.nbt.tag.CompoundTag;
-import net.querz.nbt.tag.FloatTag;
-import net.querz.nbt.tag.ListTag;
-import net.querz.nbt.tag.Tag;
+import me.bteuk.converter.Main;
+import net.querz.nbt.tag.*;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class MinecraftIDConverter {
     
@@ -1196,7 +1191,7 @@ public class MinecraftIDConverter {
                 //hinge
                 switch (data) {
 
-                    case 8, 10, 12, 14 -> block_states.putString("hinge", "left");
+                    case 8, 10, 12, 14, 4 -> block_states.putString("hinge", "left");
                     default -> block_states.putString("hinge", "right");
 
                 }
@@ -4300,6 +4295,1511 @@ public class MinecraftIDConverter {
 
     }
 
+    public static String getBlockName(String legacyNamespaceID, CompoundTag blockStates, JSONObject newBlockStates){
+        String legacyID = legacyNamespaceID.substring(10);
+
+        Set<String> depreciatedBlockStates = new HashSet<>();
+        String namespaceID = legacyNamespaceID;
+
+        switch (legacyID){
+            case "grass":
+                namespaceID = "minecraft:grass_block";
+                break;
+            case "monster_egg":
+                depreciatedBlockStates.add("variant");
+                namespaceID = "minecraft:" + blockStates.getString("variant");
+                break;
+            case "stone_slab":
+                depreciatedBlockStates.add("variant");
+                String variant = blockStates.getString("variant");
+                namespaceID = "minecraft:" +(variant.equals("stone") ? "smooth_stone" : variant ) + "_slab";
+                break;
+            case "double_stone_slab":
+                depreciatedBlockStates.add("variant");
+                String variant2 = blockStates.getString("variant");
+                namespaceID = "minecraft:" + (variant2.equals("stone") ? "smooth_stone" : variant2);
+                break;
+            case "wooden_slab":
+                depreciatedBlockStates.add("variant");
+                namespaceID = "minecraft:" + blockStates.getString("variant") + "_slab";
+                break;
+            case "double_wooden_slab":
+                depreciatedBlockStates.add("variant");
+                namespaceID = "minecraft:" + blockStates.getString("variant") + "double_slab";
+                break;
+            case "stonebrick":
+                namespaceID = "minecraft:stone_bricks";
+                break;
+            case "log":
+            case "log2":
+                depreciatedBlockStates.add("wood_type");
+                namespaceID = "minecraft:" + blockStates.getString("wood_type") + "_log";
+                break;
+            case "planks":
+                depreciatedBlockStates.add("wood_type");
+                namespaceID = "minecraft:" + blockStates.getString("wood_type") + "_planks";
+                break;
+            case "red_nether_brick":
+                if(blockStates.containsKey("type"))
+                    depreciatedBlockStates.add("type");
+                namespaceID = legacyNamespaceID + "s";
+                break;
+            case "mossy_cobblestone":
+                namespaceID = "minecraft:mossy_stone_bricks";
+                break;
+            case "concrete":
+                depreciatedBlockStates.add("color");
+                namespaceID = "minecraft:" + blockStates.getString("color") + "_concrete";
+                break;
+            case "concrete_powder":
+                depreciatedBlockStates.add("color");
+                namespaceID = "minecraft:" + blockStates.getString("color") + "_concrete_powder";
+                break;
+            case "hardened_clay":
+                namespaceID = "minecraft:terracotta";
+                break;
+            case "stained_hardened_clay":
+                depreciatedBlockStates.add("color");
+                namespaceID = "minecraft:" + blockStates.getString("color") + "_terracotta";
+                break;
+            case "leaves":
+            case "leaves2":
+                if(blockStates.containsKey("decayable")) {
+                    depreciatedBlockStates.add("decayable");
+                    newBlockStates.put("persistent", blockStates.getBoolean("decayable"));
+                }
+                if(blockStates.containsKey("check_decay")){
+                    depreciatedBlockStates.add("check_decay");
+                    newBlockStates.put("persistent", !blockStates.getBoolean("check_decay"));
+                    newBlockStates.put("distance", 7);
+                }
+
+                depreciatedBlockStates.add("variant");
+                namespaceID = "minecraft:" + blockStates.getString("variant") + "_leaves";
+                break;
+        }
+
+        for(String blockState : depreciatedBlockStates)
+            blockStates.remove(blockState);
+
+        TagConv.getCompoundTagProperties(blockStates, newBlockStates);
+
+        return namespaceID;
+    }
+
+    public static byte getLegacyBlockID(String legacyID, byte data) {
+        if(legacyID.contains("bed"))
+            return 26;
+
+        if(legacyID.contains("wool"))
+            return 35;
+
+        switch (legacyID) {
+
+            //Air
+            case "air" -> {
+                return 0;
+            }
+
+            //Stone
+            case "stone" -> {
+                return 1;
+            }
+
+            //Grass
+            case "grass" -> {
+                return 2;
+            }
+
+            //Dirt
+            case "dirt" -> {
+                return 3;
+            }
+
+            //Cobblestone
+            case "cobblestone" -> {
+                return 4;
+            }
+
+            //Planks
+            case "planks" -> {
+                return 5;
+            }
+
+            //Sapling
+            case "sapling" -> {
+                return 6;
+            }
+
+            //Bedrock
+            case "bedrock" -> {
+                return 7;
+            }
+
+            //Water
+            case "flowing_water" -> {
+                return 8;
+            }
+
+            case "water" -> {
+                return 9;
+            }
+
+            //Lava
+            case "flowing_lava" -> {
+                return 10;
+            }
+
+            case "lava" -> {
+                return 11;
+            }
+
+            //Sand
+            case "sand" -> {
+                return 12;
+            }
+
+            //Gravel
+            case "gravel" -> {
+                return 13;
+            }
+
+            //Gold Ore
+            case "gold_ore" -> {
+                return 14;
+            }
+
+            //Iron Ore
+            case "iron_ore" -> {
+                return 15;
+            }
+
+            //Coal Ore
+            case "coal_ore" -> {
+                return 16;
+            }
+
+            //Log and Wood
+            case "log" -> {
+                return 17;
+            }
+
+            //Leaves
+            case "leaves" -> {
+                return 18;
+            }
+
+            //Sponge
+            case "sponge" -> {
+                return 19;
+            }
+
+            //Glass
+            case "glass" -> {
+                return 20;
+            }
+
+            //Lapis Ore
+            case "lapis_ore" -> {
+                return 21;
+            }
+
+            //Lapis Block
+            case "lapis_block" -> {
+                return 22;
+            }
+
+            //Dispenser
+            case "dispenser" -> {
+                return 23;
+            }
+
+            //Sandstone
+            case "sandstone" -> {
+                return 24;
+            }
+
+            //Noteblock
+            case "noteblock" -> {
+                return 25;
+            }
+
+            //Golden Rail
+            case "golden_rail" -> {
+                return 27;
+            }
+
+            //Detector Rail
+            case "detector_rail" -> {
+                return 28;
+            }
+
+            //Sticky Piston
+            case "sticky_piston" -> {
+                return 29;
+            }
+
+            //Cobweb
+            case "web" -> {
+                return 30;
+            }
+
+            //Tallgrass
+            case "tallgrass" -> {
+                return 31;
+            }
+
+            //Dead Bush
+            case "deadbush" -> {
+                return 32;
+            }
+
+            //Piston
+            case "piston" -> {
+                return 33;
+            }
+
+            //Piston Head
+            case "piston_head" -> {
+                return 34;
+            }
+
+            //Yellow Flower
+            case "yellow_flower" -> {
+                return 37;
+            }
+
+            //Red Flower
+            case "red_flower" -> {
+                return 38;
+            }
+
+            //Brown Mushroom
+            case "brown_mushroom" -> {
+                return 39;
+            }
+
+            //Red Mushroom
+            case "red_mushroom" -> {
+                return 40;
+            }
+
+            //Gold Block
+            case "gold_block" -> {
+                return 41;
+            }
+
+            //Iron Block
+            case "iron_block" -> {
+                return 42;
+            }
+
+            //Double Stone Slab
+            case "double_stone_slab" -> {
+                return 43;
+            }
+
+            //Stone Slab
+            case "stone_slab" -> {
+                return 44;
+            }
+
+            //Brick Block
+            case "brick_block" -> {
+                return 45;
+            }
+
+            //Tnt
+            case "tnt" -> {
+                return 46;
+            }
+
+            //Bookshelf
+            case "bookshelf" -> {
+                return 47;
+            }
+
+            //Moss Stone
+            case "mossy_cobblestone" -> {
+                return 48;
+            }
+
+            //Obsidian
+            case "obsidian" -> {
+                return 49;
+            }
+
+            //Torch
+            case "torch" -> {
+                return 50;
+            }
+
+            //Fire
+            case "fire" -> {
+                return 51;
+            }
+
+            //Mob Spawner
+            case "mob_spawner" -> {
+                return 52;
+            }
+
+            //Oak Stairs
+            case "oak_stairs" -> {
+                return 53;
+            }
+
+            //Chest
+            case "chest" -> {
+                return 54;
+            }
+
+            //Redstone Wire
+            case "redstone_wire" -> {
+                return 55;
+            }
+
+            //Diamond Ore
+            case "diamond_ore" -> {
+                return 56;
+            }
+
+            //Diamond Block
+            case "diamond_block" -> {
+                return 57;
+            }
+
+            //Crafting Table
+            case "crafting_table" -> {
+                return 58;
+            }
+
+            //Wheat Crops
+            case "wheat" -> {
+                return 59;
+            }
+
+            //Farmland
+            case "farmland" -> {
+                return 60;
+            }
+
+            //(Burning) Furnace
+            case "furnace" -> {
+                return 61;
+            }
+
+            case "lit_furnace" -> {
+                return 62;
+            }
+
+            //Standing Sign Block
+            case "standing_sign" -> {
+                return 63;
+            }
+
+            //Oak Door Block
+            case "wooden_door" -> {
+                return 64;
+            }
+
+            //Ladder
+            case "ladder" -> {
+                return 65;
+            }
+
+            //Rail
+            case "rail" -> {
+                return 66;
+            }
+
+            //Cobblestone Stairs
+            case "cobblestone_stairs" -> {
+                return 67;
+            }
+
+            //Wall Mounted Sign Block
+            case "wall_sign" -> {
+                return 68;
+            }
+
+            //Lever
+            case "lever" -> {
+                return 69;
+            }
+
+            //Stone Pressure Plate
+            case "stone_pressure_plate" -> {
+                return 70;
+            }
+
+            //Iron Door Block
+            case "iron_door" -> {
+                return 71;
+            }
+
+            //Wooden Pressure Plate
+            case "wooden_pressure_plate" -> {
+                return 72;
+            }
+
+            //Redstone Ore
+            case "redstone_ore" -> {
+                return 73;
+            }
+
+            case "lit_redstone_ore" -> {
+                return 74;
+            }
+
+            //Redstone Torch
+            case "unlit_redstone_torch" -> {
+                return 75;
+            }
+
+            case "redstone_torch" -> {
+                return 76;
+            }
+
+            //Stone Button
+            case "stone_button" -> {
+                return 77;
+            }
+
+            //Snow
+            case "snow_layer" -> {
+                return 78;
+            }
+
+            //Ice
+            case "ice" -> {
+                return 79;
+            }
+
+            //Snow Block
+            case "snow" -> {
+                return 80;
+            }
+
+            //Cactus
+            case "cactus" -> {
+                return 81;
+            }
+
+            //Clay
+            case "clay" -> {
+                return 82;
+            }
+
+            //Sugar Canes
+            case "reeds" -> {
+                return 83;
+            }
+
+            //Jukebox
+            case "jukebox" -> {
+                return 84;
+            }
+
+            //Oak Fence
+            case "fence" -> {
+                return 85;
+            }
+
+            //Pumpkin
+            case "pumpkin" -> {
+                return 86;
+            }
+
+            //Netherrack
+            case "netherrack" -> {
+                return 87;
+            }
+
+            //Soul Sand
+            case "soul_sand" -> {
+                return 88;
+            }
+
+            //Glowstone
+            case "glowstone" -> {
+                return 89;
+            }
+
+            //Nether Portal
+            case "portal" -> {
+                return 90;
+            }
+
+            //Jack o'Lantern
+            case "lit_pumpkin" -> {
+                return 91;
+            }
+
+            //Cake Block
+            case "cake" -> {
+                return 92;
+            }
+
+            //Redstone Repeater
+            case "unpowered_repeater" -> {
+                return 93;
+            }
+            case "powered_repeater" -> {
+                return 94;
+            }
+
+            //Stained Glass
+            case "stained_glass" -> {
+                return 95;
+            }
+
+            //Wooden Trapdoor
+            case "trapdoor" -> {
+                return 96;
+            }
+
+            //Monster Egg
+            case "monster_egg" -> {
+                return 97;
+            }
+
+            //Stone Brick
+            case "stonebrick" -> {
+                return 98;
+            }
+
+            //Brown Mushroom Block
+            case "brown_mushroom_block" -> {
+                return 99;
+            }
+
+            //Red Mushroom Block
+            case "red_mushroom_block" -> {
+                return 100;
+            }
+
+            //Iron Bars
+            case "iron_bars" -> {
+                return 101;
+            }
+
+            //Glass Pane
+            case "glass_pane" -> {
+                return 102;
+            }
+
+            //Melon Block
+            case "melon_block" -> {
+                return 103;
+            }
+
+            //Pumpkin Stem
+            case "pumpkin_stem" -> {
+                return 104;
+            }
+
+            //Melon Stem
+            case "melon_stem" -> {
+                return 105;
+            }
+
+            //Vines
+            case "vine" -> {
+                return 106;
+            }
+
+            //Oak Fence Gate
+            case "fence_gate" -> {
+                return 107;
+            }
+
+            //Brick Stairs
+            case "brick_stairs" -> {
+                return 108;
+            }
+
+            //Stone Brick Stairs
+            case "stone_brick_stairs" -> {
+                return 109;
+            }
+
+            //Mycelium
+            case "mycelium" -> {
+                return 110;
+            }
+
+            //Lily Pad
+            case "waterlily" -> {
+                return 111;
+            }
+
+            //Nether Brick
+            case "nether_brick" -> {
+                return 112;
+            }
+
+            //Nether Brick Fence
+            case "nether_brick_fence" -> {
+                return 113;
+            }
+
+            //Nether Brick Stairs
+            case "nether_brick_stairs" -> {
+                return 114;
+            }
+
+            //Nether Wart
+            case "nether_wart" -> {
+                return 115;
+            }
+
+            //Enchantment Table
+            case "enchanting_table" -> {
+                return 116;
+            }
+
+            //Brewing Stand
+            case "brewing_stand" -> {
+                return 117;
+            }
+
+            //Cauldron
+            case "cauldron" -> {
+                return 118;
+            }
+
+            //End Portal
+            case "end_portal" -> {
+                return 119;
+            }
+
+            //End Portal Frame
+            case "end_portal_frame" -> {
+                return 120;
+            }
+
+            //End Stone
+            case "end_stone" -> {
+                return 121;
+            }
+
+            //Dragon Egg
+            case "dragon_egg" -> {
+                return 122;
+            }
+
+            //Redstone Lamp
+            case "redstone_lamp" -> {
+                return 123;
+            }
+            case "lit_redstone_lamp" -> {
+                return 124;
+            }
+
+            //Double Wood Slabs
+            case "double_wooden_slab" -> {
+                return 125;
+            }
+
+            //Wooden Slab
+            case "wooden_slab" -> {
+                return 126;
+            }
+
+            //Cocoa
+            case "cocoa" -> {
+                return 127;
+            }
+
+            //Sandstone Stairs
+            case "sandstone_stairs" -> {
+                return (byte) 128;
+            }
+
+            //Emerald Ore
+            case "emerald_ore" -> {
+                return (byte) 129;
+            }
+
+            //Ender Chest
+            case "ender_chest" -> {
+                return (byte) 130;
+            }
+
+            //Tripwire Hook
+            case "tripwire_hook" -> {
+                return (byte) 131;
+            }
+
+            //Tripwire
+            case "tripwire" -> {
+                return (byte) 132;
+            }
+
+            //Emerald Block
+            case "emerald_block" -> {
+                return (byte) 133;
+            }
+
+            //Spruce Wood Stairs
+            case "spruce_stairs" -> {
+                return (byte) 134;
+            }
+
+            //Birch Wood Stairs
+            case "birch_stairs" -> {
+                return (byte) 135;
+            }
+
+            //Jungle Wood Stairs
+            case "jungle_stairs" -> {
+                return (byte) 136;
+            }
+
+            //Command Block
+            case "command_block" -> {
+                return (byte) 137;
+            }
+
+            //Beacon
+            case "beacon" -> {
+                return (byte) 138;
+            }
+
+            //Cobblestone Wall
+            case "cobblestone_wall" -> {
+                return (byte) 139;
+            }
+
+            //Flower Pot
+            case "flower_pot" -> {
+                return (byte) 140;
+            }
+
+            //Carrots
+            case "carrots" -> {
+                return (byte) 141;
+            }
+
+            //Potatoes
+            case "potatoes" -> {
+                return (byte) 142;
+            }
+
+            //Wooden Button
+            case "wooden_button" -> {
+                return (byte) 143;
+            }
+
+            //Mob Head
+            case "skull" -> {
+                return (byte) 144;
+            }
+
+            //Anvil
+            case "anvil" -> {
+                return (byte) 145;
+            }
+
+            //Trapped Chest
+            case "trapped_chest" -> {
+                return (byte) 146;
+            }
+
+            //Weighted Pressure Plate (light)
+            case "light_weighted_pressure_plate" -> {
+                return (byte) 147;
+            }
+
+            //Weighted Pressure Plate (heavy)
+            case "heavy_weighted_pressure_plate" -> {
+                return (byte) 148;
+            }
+
+            //Redstone Comporator
+            case "unpowered_comparator" -> {
+                return (byte) 149;
+            }
+            case "powered_comparator" -> {
+                return (byte) 150;
+            }
+
+            //Daylight Sensor
+            case "daylight_detector" -> {
+                return (byte) 151;
+            }
+            case "daylight_detector_inverted" -> {
+                return (byte) 178;
+            }
+
+            //Redstone Block
+            case "redstone_block" -> {
+                return (byte) 152;
+            }
+
+            //Nether Quartz Ore
+            case "quartz_ore" -> {
+                return (byte) 153;
+            }
+
+            //Hopper
+            case "hopper" -> {
+                return (byte) 154;
+            }
+
+            //Quartz Block
+            case "quartz_block" -> {
+                return (byte) 155;
+            }
+
+            //Quartz Stairs
+            case "quartz_stairs" -> {
+                return (byte) 156;
+            }
+
+            //Activitor Rail
+            case "activator_rail" -> {
+                return (byte) 157;
+            }
+
+            //Dropper
+            case "dropper" -> {
+                return (byte) 158;
+            }
+
+            //Hardened Clay
+            case "stained_hardened_clay" -> {
+                return (byte) 159;
+            }
+
+            //Stained Glass Panes
+            case "stained_glass_pane" -> {
+                return (byte) 160;
+            }
+
+            //Leaves 2
+            case "leaves2" -> {
+                return (byte) 161;
+            }
+
+            //Log 2
+            case "log2" -> {
+                return (byte) 162;
+            }
+
+            //Acacia Wood Stairs
+            case "acacia_stairs" -> {
+                return (byte) 163;
+            }
+
+            //Dark Oak Wood Stairs
+            case "dark_oak_stairs" -> {
+                return (byte) 164;
+            }
+
+            //Slime Block
+            case "slime" -> {
+                return (byte) 165;
+            }
+
+            //Barrier
+            case "barrier" -> {
+                return (byte) 166;
+            }
+
+            //Iron Trapdoor
+            case "iron_trapdoor" -> {
+                return (byte) 167;
+            }
+
+            //Prismarine
+            case "prismarine" -> {
+                return (byte) 168;
+            }
+
+            //Sea Lantern
+            case "sea_lantern" -> {
+                return (byte) 169;
+            }
+
+            //Hay Bale
+            case "hay_block" -> {
+                return (byte) 170;
+            }
+
+            //Carpet
+            case "carpet" -> {
+                return (byte) 171;
+            }
+
+            //Hardened Clay
+            case "hardened_clay" -> {
+                return (byte) 172;
+            }
+
+            //Block of Coal
+            case "coal_block" -> {
+                return (byte) 173;
+            }
+
+            //Packed Ice
+            case "packed_ice" -> {
+                return (byte) 174;
+            }
+
+            //Double Plant
+            //Top half is converted to the default (sunflower top), this will  be edited in post-processing
+            case "double_plant" -> {
+                return (byte) 175;
+            }
+
+            //Banner colour is stored in the block entity data, this will be applied post-processing.
+            //Free-standing Banner
+            case "standing_banner" -> {
+                return (byte) 176;
+            }
+
+            //Banner colour is stored in the block entity data, this will be applied post-processing.
+            //Wall-mounted Banner
+            case "wall_banner" -> {
+                return (byte) 177;
+            }
+
+            //Red Sandstone
+            case "red_sandstone" -> {
+                return (byte) 179;
+            }
+
+            //Red Sandstone Stais
+            case "red_sandstone_stairs" -> {
+                return (byte) 180;
+            }
+
+            //Red Sandstone Slab
+            case "double_stone_slab2" -> {
+                return (byte) 181;
+            }
+            case "stone_slab2" -> {
+                return (byte) 182;
+            }
+
+            //Spruce Fence Gate
+            case "spruce_fence_gate" -> {
+                return (byte) 183;
+            }
+
+            //Birch Fence Gate
+            case "birch_fence_gate" -> {
+                return (byte) 184;
+            }
+
+            //Jungle Fence Gate
+            case "jungle_fence_gate" -> {
+                return (byte) 185;
+            }
+
+            //Dark Oak Fence Gate
+            case "dark_oak_fence_gate" -> {
+                return (byte) 186;
+            }
+
+            //Acacia Fence Gate
+            case "acacia_fence_gate" -> {
+                return (byte) 187;
+            }
+
+            //Spruce Fence
+            case "spruce_fence" -> {
+                return (byte) 188;
+            }
+
+            //Birch Fence
+            case "birch_fence" -> {
+                return (byte) 189;
+            }
+
+            //Jungle Fence
+            case "jungle_fence" -> {
+                return (byte) 190;
+            }
+
+            //Dark Oak Fence
+            case "dark_oak_fence" -> {
+                return (byte) 191;
+            }
+
+            //Acacia Fence
+            case "acacia_fence" -> {
+                return (byte) 192;
+            }
+
+            //Spruce Door
+            case "spruce_door" -> {
+                return (byte) 193;
+            }
+
+            //Birch Door
+            case "birch_door" -> {
+                return (byte) 194;
+            }
+
+            //Jungle Door
+            case "jungle_door" -> {
+                return (byte) 195;
+            }
+
+            //Acacia Door
+            case "acacia_door" -> {
+                return (byte) 196;
+            }
+
+            //Dark Oak Door
+            case "dark_oak_door" -> {
+                return (byte) 197;
+            }
+
+            //End Rod
+            case "end_rod" -> {
+                return (byte) 198;
+            }
+
+            //Chorus Plant
+            case "chorus_plant" -> {
+                return (byte) 199;
+            }
+
+            //Chorus Flower
+            case "chorus_flower" -> {
+                return (byte) 200;
+            }
+
+            //Purpur Block
+            case "purpur_block" -> {
+                return (byte) 201;
+            }
+
+            //Purpur Pillar
+            case "purpur_pillar" -> {
+                return (byte) 202;
+            }
+
+            //Purpur Stairs
+            case "purpur_stairs" -> {
+                return (byte) 203;
+            }
+
+            //Purpur Slab
+            case "purpur_double_slab" -> {
+                return (byte) 204;
+            }
+            case "purpur_slab" -> {
+                return (byte) 205;
+            }
+
+            //End Stone Bricks
+            case "end_bricks" -> {
+                return (byte) 206;
+            }
+
+            //Beetroot Block
+            case "beetroots" -> {
+                return (byte) 207;
+            }
+
+            //Grass Path
+            case "grass_path" -> {
+                return (byte) 208;
+            }
+
+            //End Gateway
+            case "end_gateway" -> {
+                return (byte) 209;
+            }
+
+            //Repeating Command Block
+            case "repeating_command_block" -> {
+                return (byte) 210;
+            }
+
+            //Chain Command Block
+            case "chain_command_block" -> {
+                return (byte) 211;
+            }
+
+            //Frosted Ice
+            case "frosted_ice" -> {
+                return (byte) 212;
+            }
+
+            //Magma Block
+            case "magma" -> {
+                return (byte) 213;
+            }
+
+            //Nether Wart Block
+            case "nether_wart_block" -> {
+                return (byte) 214;
+            }
+
+            //Red Nether Brick
+            case "red_nether_bricks" -> {
+                return (byte) 215;
+            }
+
+            //Bone Block
+            case "bone_block" -> {
+                return (byte) 216;
+            }
+
+            //Structure Void
+            case "structure_void" -> {
+                return (byte) 217;
+            }
+
+            //Observer
+            case "observer" -> {
+                return (byte) 218;
+            }
+
+            //White Shulker Box
+            case "white_shulker_box" -> {
+                return (byte) 219;
+            }
+
+            //Orange Shulker Box
+            case "orange_shulker_box" -> {
+                return (byte) 220;
+            }
+
+            //Magenta Shulker Box
+            case "magenta_shulker_box" -> {
+                return (byte) 221;
+            }
+
+            //Light Blue Shulker Box
+            case "light_blue_shulker_box" -> {
+                return (byte) 222;
+            }
+
+            //Yellow Shulker Box
+            case "yellow_shulker_box" -> {
+                return (byte) 223;
+            }
+
+            //Lime Shulker Box
+            case "lime_shulker_box" -> {
+                return (byte) 224;
+            }
+
+            //Pink Shulker Box
+            case "pink_shulker_box" -> {
+                return (byte) 225;
+            }
+
+            //Gray Shulker Box
+            case "gray_shulker_box" -> {
+                return (byte) 226;
+            }
+
+            //Light Gray Shulker Box
+            case "silver_shulker_box" -> {
+                return (byte) 227;
+            }
+
+            //Cyan Shulker Box
+            case "cyan_shulker_box" -> {
+                return (byte) 228;
+            }
+
+            //Default Shulker Box
+            case "purple_shulker_box" -> {
+                return (byte) 229;
+            }
+
+            //Blue Shulker Box
+            case "blue_shulker_box" -> {
+                return (byte) 230;
+            }
+
+            //Brown Shulker Box
+            case "brown_shulker_box" -> {
+                return (byte) 231;
+            }
+
+            //Green Shulker Box
+            case "green_shulker_box" -> {
+                return (byte) 232;
+            }
+
+            //Red Shulker Box
+            case "red_shulker_box" -> {
+                return (byte) 233;
+            }
+
+            //Black Shulker Box
+            case "black_shulker_box" -> {
+                return (byte) 234;
+            }
+
+            //White Glazed Terracotta
+            case "white_glazed_terracotta" -> {
+                return (byte) 235;
+            }
+
+            //Orange Glazed Terracotta
+            case "orange_glazed_terracotta" -> {
+                return (byte) 236;
+            }
+
+            //Magenta Glazed Terracotta
+            case "magenta_glazed_terracotta" -> {
+                return (byte) 237;
+            }
+
+            //Light Blue Glazed Terracotta
+            case "light_blue_glazed_terracotta" -> {
+                return (byte) 238;
+            }
+
+            //Yellow Glazed Terracotta
+            case "yellow_glazed_terracotta" -> {
+                return (byte) 239;
+            }
+
+            //Lime Glazed Terracotta
+            case "lime_glazed_terracotta" -> {
+                return (byte) 240;
+            }
+
+            //Pink Glazed Terracotta
+            case "pink_glazed_terracotta" -> {
+                return (byte) 241;
+            }
+
+            //Gray Glazed Terracotta
+            case "gray_glazed_terracotta" -> {
+                return (byte) 242;
+            }
+
+            //Light Gray Glazed Terracotta
+            case "light_gray_glazed_terracotta" -> {
+                return (byte) 243;
+            }
+
+            //Cyan Glazed Terracotta
+            case "cyan_glazed_terracotta" -> {
+                return (byte) 244;
+            }
+
+            //Purple Glazed Terracotta
+            case "purple_glazed_terracotta" -> {
+                return (byte) 245;
+            }
+
+            //Blue Glazed Terracotta
+            case "blue_glazed_terracotta" -> {
+                return (byte) 246;
+            }
+
+            //Brown Glazed Terracotta
+            case "brown_glazed_terracotta" -> {
+                return (byte) 247;
+            }
+
+            //Green Glazed Terracotta
+            case "green_glazed_terracotta" -> {
+                return (byte) 248;
+            }
+
+            //Red Glazed Terracotta
+            case "red_glazed_terracotta" -> {
+                return (byte) 249;
+            }
+
+            //Black Glazed Terracotta
+            case "black_glazed_terracotta" -> {
+                return (byte) 250;
+            }
+
+            //Concrete
+            case "concrete" -> {
+                return (byte) 251;
+            }
+
+            //Concrete Powder
+            case "concrete_powder" -> {
+                return (byte) 252;
+            }
+
+            case "structure_block" -> {
+                return (byte) 255;
+            }
+        }
+
+        return 0;
+
+    }
+
+    public static String getBlockSelector(String legacyID, byte data, HashMap<String, String> states) {
+
+
+        //A data of -1 indicates any data value/state of the block
+        if(data == -1){
+            switch (legacyID){
+                case "dirt" -> {
+                    return "#dirt";
+                }
+                case "planks", "double_wooden_slab" -> {
+                    return "#planks";
+                }
+                case "sapling" -> {
+                    return "oak_sapling";
+                }
+                case "sand" -> {
+                    return "#sand";
+                }
+                case "log", "log2" -> {
+                    return "#logs";
+                }
+                case "bed" -> {
+                    return "#beds";
+                }
+                case "leaves" -> {
+                    return "#leaves";
+                }
+                case "wool" -> {
+                    return  "#wool";
+                }
+                case "red_flower" -> {
+                    return "#flowers";
+                }
+                case "stone_slab" -> {
+                    return "#slabs";
+                }
+                case "standing_sign" -> {
+                    return "#signs";
+                }
+                case "wooden_door" -> {
+                    return "oak_door";
+                }
+                case "stone_stairs" -> {
+                    return "cobblestone_stairs";
+                }
+                case "wall_sign" -> {
+                    return "#wall_signs";
+                }
+                case "wooden_pressure_plate" -> {
+                    return "#wooden_pressure_plates";
+                }
+                case "redstone_ore", "lit_redstone_ore" -> {
+                    return "#redstone_ores";
+                }
+                case "stone_button" -> {
+                    return "#stone_buttons";
+                }
+                case "snow_layer","snow" -> {
+                    return "#snow";
+                }
+                case "ice" -> {
+                    return "#ice";
+                }
+                case "fence" -> {
+                    return "#wooden_fences";
+                }
+                case "portal" -> {
+                    return "#portals";
+                }
+                case "trapdoor" -> {
+                    return "#wooden_trapdoors";
+                }
+                case "stonebrick" -> {
+                    return "#stone_bricks";
+                }
+                case "fence_gate" -> {
+                    return "#fence_gates";
+                }
+                case "cauldron" -> {
+                    return "#cauldrons";
+                }
+                case "wooden_slab" -> {
+                    return "#wooden_slabs";
+                }
+                case "emerald_ore" -> {
+                    return "#emerald_ores";
+                }
+                case "cobblestone_wall" -> {
+                    return "#walls";
+                }
+                case "flower_pot" -> {
+                    return "#flower_pots";
+                }
+                case "wooden_button" -> {
+                    return "#wooden_buttons";
+                }
+                case "anvil" -> {
+                    return "#anvil";
+                }
+                case "stained_hardened_clay" -> {
+                    return "terracotta";
+                }
+                case "leaves2" -> {
+                    return "#leaves";
+                }
+                case "carpet" -> {
+                    return "wool_carpets";
+                }
+                case "hardened_clay" -> {
+                    return "#terracotta";
+                }
+                case "standing_banner", "wall_banner" -> {
+                    return "banners";
+                }
+                case "concrete_powder" -> {
+                    return "#concrete_powder";
+                }
+            }
+
+            if(legacyID.contains("bed"))
+                return legacyID;
+
+            byte legacyBlockID = getLegacyBlockID(legacyID, (byte) 0);
+            return getBlockName(legacyBlockID, (byte) 0);
+        }
+
+        CompoundTag blockStates = new CompoundTag();
+        String blockName = "";
+
+        if(legacyID.contains("bed")){
+
+            if(legacyID.equals("bed"))
+                blockName = "#beds";
+            else
+                blockName = legacyID;
+
+            if (hasBlockStates((byte) 26, data))
+                blockStates = getBlockStates((byte) 26, data);
+        }else {
+            byte legacyBlockID = getLegacyBlockID(legacyID, data);
+            blockName = getBlockName(legacyBlockID, data);
+            if(hasBlockStates(legacyBlockID, data))
+                blockStates = getBlockStates(legacyBlockID, data);
+        }
+
+        if(!states.isEmpty()){
+            for(String key : states.keySet()){
+                blockStates.putString(key, states.get(key));
+            }
+        }
+
+        if(blockStates.size() != 0){
+            String flattenedBlockStates = TagConv.flattenStringsCompoundTag(blockStates);
+            return String.format("%1$s[%2$s]", blockName, flattenedBlockStates);
+        }
+
+        return blockName;
+    }
+
     public static boolean isEntitySupported(String legacyNamespaceID){
         if(!legacyNamespaceID.startsWith("minecraft"))
             return false;
@@ -4321,7 +5821,6 @@ public class MinecraftIDConverter {
             case "minecart":
             case "painting":
             case "shulker":
-            case "spawner_minecart":
             case "tnt":
             case "tnt_minecart":
             case "wither_skull":
@@ -4345,11 +5844,209 @@ public class MinecraftIDConverter {
         }
     }
 
-    public static void getEntitiesTags(String legacyID ,CompoundTag entity, JSONObject properties){
-        if(entity.containsKey("NoGravity"))
-            properties.put("NoGravity", entity.getByte("NoGravity"));
+    public static String getItemID(String legacyNamespaceID){
+        String _legacyNamespaceID = legacyNamespaceID;
+        legacyNamespaceID = getEntityID(legacyNamespaceID);
+        if(_legacyNamespaceID.equals(legacyNamespaceID)){
 
-        switch (legacyID){
+        }
+
+        return legacyNamespaceID;
+    }
+
+    public static String getLootTable(String legacyLootTable){
+        switch (legacyLootTable){
+            case "minecraft:chests/village_blacksmith":
+                return "minecraft:chests/village/village_weaponsmith";
+            case "minecraft:entities/zombie_pigman":
+                return "minecraft:entities/zombified_piglin";
+            case "minecraft:chests/end_chest":
+                return "minecraft:chest/player";
+        }
+
+        return legacyLootTable;
+    }
+
+    public static String getCommand(String legacyCommand){
+        //ToDo: Convert old /execute command (https://minecraft.fandom.com/wiki/Commands/execute/Before) to new one (https://minecraft.fandom.com/wiki/Commands/execute#as)
+
+        boolean addSlash = false;
+        if(legacyCommand.startsWith("/")) {
+            addSlash = true;
+            legacyCommand = legacyCommand.substring(1);
+        }
+
+        if(legacyCommand.startsWith("blockdata"))
+            legacyCommand = legacyCommand.replace("blockdata", "data merge block");
+        else if(legacyCommand.startsWith("entitydata"))
+            legacyCommand = legacyCommand.replace("entitydata", "data merge entity");
+        else if(legacyCommand.startsWith("execute")){
+            //   execute <entity> <x> <y> <z> <command …>
+            legacyCommand = legacyCommand.substring(8);
+            //   <entity> <x> <y> <z> <command …>
+            int index = legacyCommand.indexOf(" ");
+            String entitySelector = legacyCommand.substring(0, index);
+            legacyCommand = legacyCommand.substring(index + 1);
+
+            //Find third index of white space
+            index = legacyCommand.indexOf(" ");
+            for(int i = 0; i < 2; i++)
+                index = legacyCommand.indexOf(" ", index + 1);
+            String position = getPositionSelector(legacyCommand.substring(0, index));
+
+
+            legacyCommand = legacyCommand.substring(index + 1);
+
+            //If the command syntax is the alternative syntax
+            if(legacyCommand.startsWith("detect")){
+                //    detect <x2> <y2> <z2> <block> <dataValue|state> <command …>
+                legacyCommand = legacyCommand.substring(7);
+
+                //    <x2> <y2> <z2> <block> <dataValue|state> <command …>
+                //Find third index of white space
+                index = legacyCommand.indexOf(" ");
+                for(int i = 0; i < 2; i++)
+                    index = legacyCommand.indexOf(" ", index + 1);
+                String blockPos = getPositionSelector(legacyCommand.substring(0, index));
+                legacyCommand = legacyCommand.substring(index + 1);
+
+                //    <block> <dataValue|state> <command …>
+                index = legacyCommand.indexOf(" ");
+                String blockSelector = legacyCommand.substring(0, index);
+                legacyCommand = legacyCommand.substring(index + 1);
+
+                //    <dataValue|state> <command …>
+                index = legacyCommand.indexOf(" ");
+                String dataOrState = legacyCommand.substring(0, index);
+                String command = legacyCommand.substring(index + 1);
+                command = getCommand(command);
+
+                if(blockSelector.startsWith("minecraft:"))
+                    blockSelector = blockSelector.substring(10);
+
+                byte data = -1;
+                HashMap<String, String> states = new HashMap<>();
+
+                try {
+                    int parsedState = Integer.parseInt(dataOrState);
+                    data = (byte) parsedState;
+                }catch (Exception ex){
+                    //Threat the <dataValue|state> parameter as a state
+                    TagConv.parseFlattenedTags(dataOrState, states);
+                    data = 0;
+                }
+                blockSelector = getBlockSelector(blockSelector, data, states);
+
+                legacyCommand = String.format("execute as %1$s positioned %2$s if block %3$s %4$s run %5$s", entitySelector, position, blockPos, blockSelector, command);
+
+            }else {
+                String command = getCommand(legacyCommand);
+                legacyCommand = String.format("execute as %1$s positioned %2$s run %3$s", entitySelector, position, command);
+            }
+        }else if(legacyCommand.startsWith("setblock")){
+            legacyCommand = legacyCommand.substring(9);
+            //      3945016 538 -4147002 birch_stairs facing=east
+            //      3945016 538 -4147001 concrete 3 destroy
+            //      3945016 538 -4147002 concrete
+            String[] arguments = legacyCommand.split(" ");
+            List<String> newArguments = new ArrayList<>();
+
+            if(arguments.length >= 4){
+                newArguments.add(arguments[0]);
+                if(!arguments[1].startsWith("~")){
+                    arguments[1] = offsetPositionSelector(arguments[1]);
+                }
+                newArguments.add(arguments[1]);
+                newArguments.add(arguments[2]);
+
+                String blockSelector = "";
+                HashMap<String, String> states = new HashMap<>();
+                byte data = 0;
+                String oldBlockHandling = "";
+
+                if(arguments.length >= 5){
+                    //Check if the optional parameter [dataValue|state] is a data value or a state
+
+                    try {
+                        int parsedData = Integer.parseInt(arguments[4]);
+                        //optional parameter is a data value
+                        data = (byte) parsedData;
+
+                    }catch (Exception ex){
+                        //optional parameter is a state
+                        TagConv.parseFlattenedTags(arguments[4], states);
+                    }
+
+                    //Check if the arguments include the optional oldBlockHandling argument
+                    if(arguments.length >= 6){
+                        oldBlockHandling = arguments[5];
+                    }
+                }
+
+                blockSelector = getBlockSelector(arguments[3], data, states);
+                newArguments.add(blockSelector);
+                if(!oldBlockHandling.isEmpty())
+                    newArguments.add(oldBlockHandling);
+            }
+
+            legacyCommand = "setblock";
+            for(String arg : newArguments)
+                legacyCommand = String.format("%1$s %2$s", legacyCommand, arg);
+        }
+
+        if(addSlash)
+            legacyCommand = String.format("/%s", legacyCommand);
+
+
+        return  legacyCommand;
+    }
+
+    public static String getPositionSelector(String position){
+        String[] positions = position.split(" ");
+        if(!positions[1].startsWith("~")){
+            positions[1] = offsetPositionSelector(positions[1]);
+        }
+        return String.format("%1$s %2$s %3$s", positions[0], positions[1], positions[2]);
+    }
+
+    private static String offsetPositionSelector(String yPos){
+        if(yPos.contains(".")){
+            Double parsedPosition = Double.parseDouble(yPos);
+            parsedPosition -= Main.OFFSET;
+            return parsedPosition.toString();
+        }else {
+            Integer parsedPosition = Integer.parseInt(yPos);
+            parsedPosition += Main.OFFSET;
+            return parsedPosition.toString();
+        }
+    }
+
+    public static void getEntitiesTags(String legacyID ,CompoundTag entity, JSONObject properties) {
+        TagConv.getByteTagProperty(entity,"NoGravity","NoGravity",properties);
+        TagConv.floatTagListToJson("Rotation", entity, properties);
+
+        if (legacyID.contains("minecart")) {
+            TagConv.getByteTagProperty(entity, "CustomDisplayTile", "display_tile", properties);
+            TagConv.getIntTagProperty(entity, "DisplayOffset", "display_tile_offset", properties);
+
+            if(entity.containsKey("DisplayState")){
+                CompoundTag displayStateTag = entity.getCompoundTag("DisplayState");
+
+                TagConv.getStringTagProperty(displayStateTag, "Name", "", properties);
+
+                String legacyNamespaceID = displayStateTag.getString("Name");
+                if(displayStateTag.containsKey("Properties")){
+                    CompoundTag displayStateProp = displayStateTag.getCompoundTag("Properties");
+                    JSONObject displayTileBlockStates = new JSONObject();
+                    properties.put("display_tile_block", getBlockName(legacyNamespaceID, displayStateProp, displayTileBlockStates));
+                    if(!displayTileBlockStates.isEmpty())
+                        properties.put("display_tile_block_states", displayTileBlockStates);
+                }else
+                    properties.put("display_tile_block", getBlockName(legacyNamespaceID, new CompoundTag(), new JSONObject()));
+            }
+        }
+
+        switch (legacyID) {
             case "minecraft:armor_stand":
                 properties.put("ShowArms", entity.getByte("ShowArms"));
                 properties.put("Invisible", entity.getByte("Invisible"));
@@ -4359,32 +6056,22 @@ public class MinecraftIDConverter {
                 JSONObject poseTagItem = new JSONObject();
                 CompoundTag armorPose = entity.getCompoundTag("Pose");
 
+                TagConv.floatTagListToJson("Body", armorPose, poseTagItem);
+                TagConv.floatTagListToJson("Head", armorPose, poseTagItem);
+                TagConv.floatTagListToJson("LeftArm", armorPose, poseTagItem);
+                TagConv.floatTagListToJson("RightArm", armorPose, poseTagItem);
+                TagConv.floatTagListToJson("LeftLeg", armorPose, poseTagItem);
+                TagConv.floatTagListToJson("RightLeg", armorPose, poseTagItem);
 
-
-                if(armorPose.containsKey("Body")) {
-                    ListTag<FloatTag> armorBodyPose = armorPose.getListTag("Body").asFloatTagList();
-                    List<Float> bodyPoseList = new ArrayList<>();
-                    for (FloatTag floatTag : armorBodyPose)
-                        bodyPoseList.add(floatTag.asFloat());
-                    poseTagItem.put("Body", bodyPoseList);
-                }
-
-                if(armorPose.containsKey("Head")) {
-                    ListTag<FloatTag> armorHeadPose = armorPose.getListTag("Head").asFloatTagList();
-                    List<Float> headPoseList = new ArrayList<>();
-                    for (FloatTag floatTag : armorHeadPose)
-                        headPoseList.add(floatTag.asFloat());
-                    poseTagItem.put("Head", headPoseList);
-                }
-                if(!poseTagItem.isEmpty())
+                if (!poseTagItem.isEmpty())
                     properties.put("Pose", poseTagItem);
 
 
                 ListTag<CompoundTag> armorItems = entity.getListTag("ArmorItems").asCompoundTagList();
                 List<JSONObject> jsonArmorItems = new ArrayList<>();
-                for(CompoundTag armor : armorItems){
+                for (CompoundTag armor : armorItems) {
 
-                    if(armor.entrySet().isEmpty()) {
+                    if (armor.entrySet().isEmpty()) {
                         jsonArmorItems.add(new JSONObject());
                         continue;
                     }
@@ -4392,29 +6079,26 @@ public class MinecraftIDConverter {
                     JSONObject jsonArmorItem = new JSONObject();
                     jsonArmorItem.put("entity", armor.getString("id"));
 
-                    if(armor.containsKey("tag")){
+                    if (armor.containsKey("tag")) {
                         CompoundTag armorTag = armor.getCompoundTag("tag");
-                        if(armorTag.containsKey("display")){
+                        if (armorTag.containsKey("display")) {
                             CompoundTag displayTag = armorTag.getCompoundTag("display");
-                            if(displayTag.containsKey("Name"))
-                                jsonArmorItem.put("display_name", displayTag.getString("Name"));
-                            if(displayTag.containsKey("color"))
-                                jsonArmorItem.put("display_color", displayTag.getInt("color"));
+                            TagConv.getStringTagProperty(displayTag,"Name","display_name", jsonArmorItem);
+                            TagConv.getIntTagProperty(displayTag,"color","display_color", jsonArmorItem);
                         }
 
-                        if(armor.getString("id").equals("skull") && armorTag.containsKey("SkullOwner")){
+                        if (armor.getString("id").equals("minecraft:skull") && armorTag.containsKey("SkullOwner")) {
                             CompoundTag skullOwnerTag = armorTag.getCompoundTag("SkullOwner");
                             JSONObject skullOwnerItem = new JSONObject();
-                            skullOwnerItem.put("id", skullOwnerTag.getString("id"));
+                            skullOwnerItem.put("id", skullOwnerTag.getString("Id"));
 
-                            if(skullOwnerTag.containsKey("Properties")){
+                            if (skullOwnerTag.containsKey("Properties")) {
                                 CompoundTag skullOwnerProperties = skullOwnerTag.getCompoundTag("Properties");
-                                if(skullOwnerProperties.containsKey("textures")){
+                                if (skullOwnerProperties.containsKey("textures")) {
                                     ListTag skullOwnerTextures = skullOwnerProperties.getListTag("textures");
-                                    if(skullOwnerTextures.size() > 0){
+                                    if (skullOwnerTextures.size() > 0) {
                                         Tag skullOwnerTextureTag = skullOwnerTextures.get(0);
-                                        if(((CompoundTag)skullOwnerTextureTag).containsKey("Value"))
-                                            skullOwnerItem.put("texture", ((CompoundTag)skullOwnerTextureTag).getString("Value"));
+                                        TagConv.getStringTagProperty((CompoundTag) skullOwnerTextureTag,"Value","texture", skullOwnerItem);
                                     }
                                 }
                             }
@@ -4430,8 +6114,8 @@ public class MinecraftIDConverter {
 
                 ListTag<CompoundTag> handItems = entity.getListTag("HandItems").asCompoundTagList();
                 List<String> handItemsList = new ArrayList<>();
-                for(CompoundTag handItem : handItems){
-                    if(handItem.entrySet().isEmpty()) {
+                for (CompoundTag handItem : handItems) {
+                    if (handItem.entrySet().isEmpty()) {
                         handItemsList.add("");
                         continue;
                     }
@@ -4441,19 +6125,49 @@ public class MinecraftIDConverter {
 
                 properties.put("HandItems", handItemsList);
 
-                if(entity.containsKey("Rot")) {
-                    ListTag<FloatTag> armorRot = entity.getListTag("Rot").asFloatTagList();
-                    List<Float> rotItemsList = new ArrayList<>();
-                    for (FloatTag rot : armorRot) {
-                        rotItemsList.add(rot.asFloat());
-                    }
-                    properties.put("Rot", rotItemsList);
-                }
+
 
 
                 break;
+            case "minecraft:chest_minecart":
+            case "minecraft:hopper_minecart":
+                if(entity.containsKey("Items")){
+                    ListTag<CompoundTag> itemsList = entity.getListTag("Items").asCompoundTagList();
+                    List<JSONObject> jsonObjects = new ArrayList<>();
+                    for(CompoundTag compoundTag : itemsList){
+                        JSONObject jsonItem = new JSONObject();
+                        TagConv.getCompoundTagProperties(compoundTag, jsonItem);
+                        if(jsonItem.containsKey("id")){
+                            //ToDo: Concert all legacy items id to 1.18.2 including, the items tag NBT entry
+                            jsonItem.put("id", getItemID((String) jsonItem.get("id")));
+                        }
 
+                        jsonObjects.add(jsonItem);
+                    }
+                    properties.put("minecart_items", jsonObjects);
+                }
+                if(entity.containsKey("LootTable"))
+                    properties.put("loot_table", getLootTable(entity.getString("LootTable")));
+                TagConv.getLongTagProperty(entity, "LootTableSeed", "loot_table_seed", properties);
 
+                if(legacyID.contains("hopper")){
+                    TagConv.getByteTagProperty(entity, "Enabled", "enabled", properties);
+                    //TagConv.getIntTagProperty(entity, "TransferCooldown","transfer_cooldown", properties);
+                }
+
+                break;
+            case "minecraft:furnace_minecart":
+                TagConv.getShortTagProperty(entity, "Fuel", "fuel", properties);
+                TagConv.getDoubleTagProperty(entity, "PushX", "push_x", properties);
+                TagConv.getDoubleTagProperty(entity, "PushZ", "push_z", properties);
+                break;
+            case "minecraft:tnt_minecart":
+                TagConv.getIntTagProperty(entity, "TNTFuse", "tnt_fuse", properties);
+                break;
+            case "minecraft:commandblock_minecart":
+                if(entity.containsKey("Command"))
+                    properties.put("command", getCommand(entity.getString("Command")));
+                break;
         }
     }
 }

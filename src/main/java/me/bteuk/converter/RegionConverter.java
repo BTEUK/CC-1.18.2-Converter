@@ -68,7 +68,7 @@ public class RegionConverter extends Thread {
 
     UUID uuid;
 
-    //JSONArray jaEntities;
+    JSONArray jaEntities;
 
     byte meta;
     byte[] data;
@@ -105,7 +105,7 @@ public class RegionConverter extends Thread {
         this.mng = mng;
 
         //Create json array to store entities.
-        //jaEntities = new JSONArray();
+        jaEntities = new JSONArray();
 
     }
 
@@ -169,7 +169,11 @@ public class RegionConverter extends Thread {
 
             //Write the json array to a file.
             FileWriter ppFile = new FileWriter(mng.itr.output.resolve("post-processing") + "/" + file.replace(".2dr", ".json"));
-            ppFile.write(ja.toJSONString());
+            JSONObject postProcObj = new JSONObject();
+            postProcObj.put("block", ja);
+            if(!jaEntities.isEmpty())
+                postProcObj.put("entity", jaEntities);
+            ppFile.write(postProcObj.toJSONString());
             ppFile.flush();
             ppFile.close();
 
@@ -450,6 +454,9 @@ public class RegionConverter extends Thread {
             for (LegacyID id : uniqueBlocks) {
                 //Store the index of this block, so we can easily reference it
                 // from the palette without having the convert it again.
+                if(id.equals((byte) -60, (byte) 4)){
+                    String w = "2";
+                }
                 paletteID.put(id, counter);
                 counter++;
                 palette.add(MinecraftIDConverter.getBlock(id));
@@ -530,6 +537,7 @@ public class RegionConverter extends Thread {
             cY = j / 256;
             cZ = (j - (cY * 256)) / 16;
             cX = j - (cY * 256) - (cZ * 16);
+
 
             //Find the tile entity from the list.
             if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
@@ -717,15 +725,20 @@ public class RegionConverter extends Thread {
             ListTag<DoubleTag> pos = entity.getListTag("Pos").asDoubleTagList();
 
             object.put("x", pos.get(0).asDouble());
-            object.put("y", pos.get(1).asDouble());
+            object.put("y", pos.get(1).asDouble() + (double) Main.OFFSET);
             object.put("z", pos.get(2).asDouble());
+
+            if(id.contains("minecart")){
+                //(Math.floor(pos.get(2).asDouble()) == -4147010 || Math.floor(pos.get(2).asDouble()) == -4147009 || Math.floor(pos.get(2).asDouble()) == -4147011)
+                String w = "2";
+            }
 
             JSONObject properties = new JSONObject();
             MinecraftIDConverter.getEntitiesTags(id, entity, properties);
             if(!properties.isEmpty())
                 object.put("properties", properties);
 
-            ja.add(object);
+            jaEntities.add(object);
         }
 
 
