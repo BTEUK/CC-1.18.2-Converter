@@ -17,7 +17,7 @@ import java.util.UUID;
 
 public class ArmorStandHelper {
     public static void propArmorStand(ArmorStand armorStand, JSONObject properties) throws ParseException, IOException {
-        armorStand.setGravity((int) (long) properties.getOrDefault("NoGravity", (long)0) == 1);
+        Utils.prepEntity(armorStand, properties);
         armorStand.setArms((int) (long)properties.get("ShowArms") == 1);
         armorStand.setInvisible((int) (long) properties.get("Invisible") == 1);
         armorStand.setSmall((int) (long) properties.get("Small") == 1);
@@ -139,11 +139,6 @@ public class ArmorStandHelper {
                 armorEquipment.setItemInMainHand(handItem);
             else
                 armorEquipment.setItemInOffHand(handItem);
-        }
-
-        if(properties.containsKey("Rotation")){
-            JSONArray entityRotationArray = (JSONArray) properties.get("Rotation");
-            armorStand.setRotation( (float) (double)entityRotationArray.get(0), (float) (double)entityRotationArray.get(1));
         }
     }
 }

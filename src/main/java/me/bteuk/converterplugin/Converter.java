@@ -19,7 +19,9 @@ import org.bukkit.block.data.*;
 import org.bukkit.block.data.type.*;
 import org.bukkit.block.data.type.Observer;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Painting;
 import org.bukkit.entity.minecart.*;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -1894,39 +1896,61 @@ public class Converter {
     private void setEntity(String entityNamespace, JSONObject object, Location location) throws IOException, ParseException {
         JSONObject objectProps = (JSONObject)object.get("properties");
 
-        switch (entityNamespace){
-            case "minecraft:armor_stand":
+        switch (entityNamespace) {
+            case "minecraft:armor_stand" -> {
                 ArmorStand armorStand = (ArmorStand) world.spawnEntity(location, EntityType.ARMOR_STAND);
                 ArmorStandHelper.propArmorStand(armorStand, objectProps);
-                break;
-            case "minecraft:minecart":
+            }
+            case "minecraft:minecart" -> {
                 RideableMinecart rideableMinecart = (RideableMinecart) world.spawnEntity(location, EntityType.MINECART);
                 MinecartHelper.setCommonMinecartProps(rideableMinecart, objectProps);
-                break;
-            case "minecraft:chest_minecart":
+            }
+            case "minecraft:chest_minecart" ->{
                 StorageMinecart storageMinecart = (StorageMinecart) world.spawnEntity(location, EntityType.MINECART_CHEST);
                 MinecartHelper.setCommonMinecartProps(storageMinecart, objectProps);
                 MinecartHelper.prepChestMinecart(storageMinecart, objectProps);
-                break;
-            case "minecraft:hopper_minecart":
+            }
+            case "minecraft:hopper_minecart" -> {
                 HopperMinecart hopperMinecart = (HopperMinecart) world.spawnEntity(location, EntityType.MINECART_HOPPER);
                 MinecartHelper.setCommonMinecartProps(hopperMinecart, objectProps);
                 MinecartHelper.prepHopperMinecart(hopperMinecart, objectProps);
-                break;
-            case "minecraft:command_block_minecart":
+            }
+            case "minecraft:command_block_minecart" -> {
                 CommandMinecart commandMinecart = (CommandMinecart) world.spawnEntity(location, EntityType.MINECART_COMMAND);
                 MinecartHelper.setCommonMinecartProps(commandMinecart, objectProps);
                 MinecartHelper.prepCommandMinecart(commandMinecart, objectProps);
-                break;
-            case "minecraft:furnace_minecart":
+            }
+            case "minecraft:furnace_minecart" -> {
                 PoweredMinecart furnaceMinecart = (PoweredMinecart) world.spawnEntity(location, EntityType.MINECART_FURNACE);
                 MinecartHelper.setCommonMinecartProps(furnaceMinecart, objectProps);
                 MinecartHelper.prepFurnaceMinecart(furnaceMinecart, objectProps);
-                break;
-            case "minecraft:tnt_minecart":                ExplosiveMinecart explosiveMinecart = (ExplosiveMinecart) world.spawnEntity(location, EntityType.MINECART_TNT);
+            }
+            case "minecraft:tnt_minecart" -> {
+                ExplosiveMinecart explosiveMinecart = (ExplosiveMinecart) world.spawnEntity(location, EntityType.MINECART_TNT);
                 MinecartHelper.setCommonMinecartProps(explosiveMinecart, objectProps);
                 MinecartHelper.prepExplosiveMinecart(explosiveMinecart, objectProps);
-                break;
+            }
+            case "minecraft:end_crystal" -> {
+                EnderCrystal enderCrystal = (EnderCrystal) world.spawnEntity(location, EntityType.ENDER_CRYSTAL);
+                Utils.prepEntity(enderCrystal, objectProps);
+                if(objectProps.containsKey("beam_target")){
+                    List<Integer> beamTarget = Utils.getIntegerListFromJson(objectProps, "beam_target");
+                    enderCrystal.setBeamTarget(new Location(location.getWorld(), beamTarget.get(0), beamTarget.get(1), beamTarget.get(2)));
+                }
+                enderCrystal.setShowingBottom((objectProps.containsKey("show_button") ? (int) (long)objectProps.get("show_button") == 1 : false));
+            }
+            case "minecraft:painting" -> {
+                JSONArray tilePos = (JSONArray) objectProps.get("tile_pos");
+                location = new Location(location.getWorld(), (double) (long) tilePos.get(0), (double) (long) tilePos.get(1), (double) (long) tilePos.get(2));
+
+                Painting painting = (Painting) world.spawnEntity(location, EntityType.PAINTING);
+                Utils.prepEntity(painting, objectProps);
+                Art motive = Art.getByName((String) objectProps.get("motive"));
+                painting.setArt(motive);
+                if(objectProps.containsKey("facing")){
+                    painting.setFacingDirection(BlockFace.valueOf((String) objectProps.get("facing")));
+                }
+            }
 
         }
     }

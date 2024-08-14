@@ -20,12 +20,7 @@ import java.util.List;
 public class MinecartHelper {
 
     public static void setCommonMinecartProps(Minecart minecart, JSONObject props){
-        if(props.containsKey("NoGravity"))
-            minecart.setGravity((int) (long) props.get("NoGravity") == 1);
-        if(props.containsKey("Rotation")){
-            JSONArray entityRotationArray = (JSONArray) props.get("Rotation");
-            minecart.setRotation( (float) (double)entityRotationArray.get(0), (float) (double)entityRotationArray.get(1));
-        }
+        Utils.prepEntity(minecart, props);
 
         if(props.containsKey("display_tile") && (int) (long) props.get("display_tile") == 1){
             String displayTileBlock = ((String)props.get("display_tile_block")).substring(10);
