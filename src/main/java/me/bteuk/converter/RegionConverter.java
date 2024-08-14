@@ -728,11 +728,6 @@ public class RegionConverter extends Thread {
             object.put("y", pos.get(1).asDouble() + (double) Main.OFFSET);
             object.put("z", pos.get(2).asDouble());
 
-            if(id.contains("minecart")){
-                //(Math.floor(pos.get(2).asDouble()) == -4147010 || Math.floor(pos.get(2).asDouble()) == -4147009 || Math.floor(pos.get(2).asDouble()) == -4147011)
-                String w = "2";
-            }
-
             JSONObject properties = new JSONObject();
             MinecraftIDConverter.getEntitiesTags(id, entity, properties);
             if(!properties.isEmpty())

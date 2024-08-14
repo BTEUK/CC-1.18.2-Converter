@@ -51,6 +51,8 @@
 /.idea/modules.xml
 /.idea/vcs.xml
 /.idea/workspace.xml
+/.idea/encodings.xml
+/.idea/uiDesigner.xml
 /proj_files
 /target
 CC-1.18.2-Converter.iml

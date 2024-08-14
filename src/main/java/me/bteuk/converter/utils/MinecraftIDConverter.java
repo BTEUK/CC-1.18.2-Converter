@@ -5812,8 +5812,6 @@ public class MinecraftIDConverter {
             case "chest_minecart":
             case "commandblock_minecart":
             case "ender_crystal":
-            case "eye_of_ender_signal":
-            case "falling_block":
             case "furnace_minecart":
             case "hopper_minecart":
             case "item":
@@ -5867,6 +5865,11 @@ public class MinecraftIDConverter {
         return legacyLootTable;
     }
 
+    /**
+     * Convert the syntax of the 1.12.2 command to the syntax of commands in 1.18 and later
+     * @param legacyCommand The 1.12.2 command
+     * @return Converted to 1.18.2 command
+     */
     public static String getCommand(String legacyCommand){
         //ToDo: Convert old /execute command (https://minecraft.fandom.com/wiki/Commands/execute/Before) to new one (https://minecraft.fandom.com/wiki/Commands/execute#as)
 
@@ -6001,6 +6004,11 @@ public class MinecraftIDConverter {
         return  legacyCommand;
     }
 
+    /**
+     * Get the new position selector as the result of the world shifting on the Y axis
+     * @param position The 1.12.2 position selector, ex. 10 20 5
+     * @return The offset position selector, ex. 10 (20 + Main.OFFSET) 5 -> 10 5 5
+     */
     public static String getPositionSelector(String position){
         String[] positions = position.split(" ");
         if(!positions[1].startsWith("~")){
@@ -6009,6 +6017,11 @@ public class MinecraftIDConverter {
         return String.format("%1$s %2$s %3$s", positions[0], positions[1], positions[2]);
     }
 
+    /**
+     * Offset the Y position by Main.OFFSET
+     * @param yPos The Y position to offset
+     * @return The offset Y position
+     */
     private static String offsetPositionSelector(String yPos){
         if(yPos.contains(".")){
             Double parsedPosition = Double.parseDouble(yPos);
@@ -6019,6 +6032,27 @@ public class MinecraftIDConverter {
             parsedPosition += Main.OFFSET;
             return parsedPosition.toString();
         }
+    }
+
+    /**
+     * Parse the NBT tags of hanging entities to JSON
+     * @param entity The CompoundTag of the entity
+     * @param properties The JSONObject to parse to
+     */
+    public static void parseHangingEntityTags(CompoundTag entity, JSONObject properties){
+        byte facing = entity.getByte("Facing");
+        String enumFacing = "DOWN";
+        switch (facing) {
+            case 3 -> { enumFacing = "SOUTH"; }
+            case 4 -> { enumFacing = "WEST"; }
+            case 2 -> { enumFacing = "NORTH"; }
+            case 5 -> { enumFacing = "EAST"; }
+            case 1 -> { enumFacing = "UP"; }
+            case 0 -> { enumFacing = "DOWN"; }
+        }
+        properties.put("facing", enumFacing);
+        //Integer[] tile = new Integer[]{entity.getInt("TileX"), entity.getInt("TileY"), entity.getInt("TileZ") };
+        //properties.put("tile_pos", tile);
     }
 
     public static void getEntitiesTags(String legacyID ,CompoundTag entity, JSONObject properties) {
@@ -6047,7 +6081,7 @@ public class MinecraftIDConverter {
         }
 
         switch (legacyID) {
-            case "minecraft:armor_stand":
+            case "minecraft:armor_stand" -> {
                 properties.put("ShowArms", entity.getByte("ShowArms"));
                 properties.put("Invisible", entity.getByte("Invisible"));
                 properties.put("Small", entity.getByte("Small"));
@@ -6083,8 +6117,8 @@ public class MinecraftIDConverter {
                         CompoundTag armorTag = armor.getCompoundTag("tag");
                         if (armorTag.containsKey("display")) {
                             CompoundTag displayTag = armorTag.getCompoundTag("display");
-                            TagConv.getStringTagProperty(displayTag,"Name","display_name", jsonArmorItem);
-                            TagConv.getIntTagProperty(displayTag,"color","display_color", jsonArmorItem);
+                            TagConv.getStringTagProperty(displayTag, "Name", "display_name", jsonArmorItem);
+                            TagConv.getIntTagProperty(displayTag, "color", "display_color", jsonArmorItem);
                         }
 
                         if (armor.getString("id").equals("minecraft:skull") && armorTag.containsKey("SkullOwner")) {
@@ -6098,7 +6132,7 @@ public class MinecraftIDConverter {
                                     ListTag skullOwnerTextures = skullOwnerProperties.getListTag("textures");
                                     if (skullOwnerTextures.size() > 0) {
                                         Tag skullOwnerTextureTag = skullOwnerTextures.get(0);
-                                        TagConv.getStringTagProperty((CompoundTag) skullOwnerTextureTag,"Value","texture", skullOwnerItem);
+                                        TagConv.getStringTagProperty((CompoundTag) skullOwnerTextureTag, "Value", "texture", skullOwnerItem);
                                     }
                                 }
                             }
@@ -6126,18 +6160,15 @@ public class MinecraftIDConverter {
                 properties.put("HandItems", handItemsList);
 
 
-
-
-                break;
-            case "minecraft:chest_minecart":
-            case "minecraft:hopper_minecart":
-                if(entity.containsKey("Items")){
+            }
+            case "minecraft:chest_minecart", "minecraft:hopper_minecart" -> {
+                if (entity.containsKey("Items")) {
                     ListTag<CompoundTag> itemsList = entity.getListTag("Items").asCompoundTagList();
                     List<JSONObject> jsonObjects = new ArrayList<>();
-                    for(CompoundTag compoundTag : itemsList){
+                    for (CompoundTag compoundTag : itemsList) {
                         JSONObject jsonItem = new JSONObject();
                         TagConv.getCompoundTagProperties(compoundTag, jsonItem);
-                        if(jsonItem.containsKey("id")){
+                        if (jsonItem.containsKey("id")) {
                             //ToDo: Concert all legacy items id to 1.18.2 including, the items tag NBT entry
                             jsonItem.put("id", getItemID((String) jsonItem.get("id")));
                         }
@@ -6146,28 +6177,55 @@ public class MinecraftIDConverter {
                     }
                     properties.put("minecart_items", jsonObjects);
                 }
-                if(entity.containsKey("LootTable"))
+                if (entity.containsKey("LootTable"))
                     properties.put("loot_table", getLootTable(entity.getString("LootTable")));
                 TagConv.getLongTagProperty(entity, "LootTableSeed", "loot_table_seed", properties);
 
-                if(legacyID.contains("hopper")){
+                if (legacyID.contains("hopper")) {
                     TagConv.getByteTagProperty(entity, "Enabled", "enabled", properties);
                     //TagConv.getIntTagProperty(entity, "TransferCooldown","transfer_cooldown", properties);
                 }
-
-                break;
-            case "minecraft:furnace_minecart":
+            }
+            case "minecraft:furnace_minecart" -> {
                 TagConv.getShortTagProperty(entity, "Fuel", "fuel", properties);
                 TagConv.getDoubleTagProperty(entity, "PushX", "push_x", properties);
                 TagConv.getDoubleTagProperty(entity, "PushZ", "push_z", properties);
-                break;
-            case "minecraft:tnt_minecart":
+            }
+            case "minecraft:tnt_minecart" -> {
                 TagConv.getIntTagProperty(entity, "TNTFuse", "tnt_fuse", properties);
-                break;
-            case "minecraft:commandblock_minecart":
-                if(entity.containsKey("Command"))
+            }
+            case "minecraft:commandblock_minecart" -> {
+                if (entity.containsKey("Command"))
                     properties.put("command", getCommand(entity.getString("Command")));
-                break;
+            }
+            case "minecraft:ender_crystal" -> {
+                if(entity.containsKey("BeamTarget")){
+                    CompoundTag beamTarget = entity.getCompoundTag("BeamTarget");
+                    properties.put("beam_target", Arrays.asList(new Integer[] {beamTarget.getInt("X"), beamTarget.getInt("Y") + Main.OFFSET, beamTarget.getInt("Z")}));
+                }
+                TagConv.getByteTagProperty(entity, "ShowBottom", "show_button", properties);
+            }
+            case "minecraft:painting" -> {
+                byte facing = entity.getByte("Facing");
+                String enumFacing = "SOUTH";
+                switch (facing) {
+                    case 3 -> { enumFacing = "EAST"; }
+                    case 2 -> { enumFacing = "NORTH"; }
+                    case 1 -> { enumFacing = "WEST"; }
+                    case 0 -> { enumFacing = "SOUTH"; }
+                }
+                properties.put("facing", enumFacing);
+                properties.put("tile_pos", Arrays.asList(new Integer[]{entity.getInt("TileX"), entity.getInt("TileY") + Main.OFFSET, entity.getInt("TileZ")}));
+
+                String motive = entity.getString("Motive");
+                switch (motive) {
+                    case "SkullAndRoses" ->   motive = "SKULL_AND_ROSES";
+                    case "DonkeyKong" -> motive = "DONKEY_KONG";
+                    case "BurningSkull" -> motive = "BURNING_SKULL";
+                    default ->  motive = motive.toUpperCase();
+                }
+                properties.put("motive", motive);
+            }
         }
     }
 }
