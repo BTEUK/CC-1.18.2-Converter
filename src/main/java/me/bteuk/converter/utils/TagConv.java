@@ -20,6 +20,25 @@ public class TagConv {
         }
     }
 
+    public static void getStringTagListProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
+        if(tag.containsKey(tagName)){
+            ListTag<StringTag> stringTags = tag.getListTag(tagName).asStringTagList();
+            List<String> stringList = new ArrayList<>();
+            for(StringTag stringTag : stringTags)
+                stringList.add(stringTag.getValue());
+
+            if(!stringList.isEmpty())
+                properties.put(propName, stringList);
+        }
+    }
+
+    public static void getIntArrayTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
+        if(tag.containsKey(tagName)){
+            IntArrayTag intArrayTag = tag.getIntArrayTag(tagName);
+            properties.put(propName, intArrayTag.getValue());
+        }
+    }
+
     public static void getByteTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
         if(tag.containsKey(tagName))
             properties.put(propName, tag.getByte(tagName));
@@ -58,18 +77,6 @@ public class TagConv {
     public static void getFloatTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
         if(tag.containsKey(tagName))
             properties.put(propName, tag.getFloat(tagName));
-    }
-
-    public static void parseItemCompoundTag(CompoundTag tag, JSONObject properties){
-        getByteTagProperty(tag, "Count", "count", properties);
-        getByteTagProperty(tag, "Slot", "slot", properties);
-        properties.put("id", MinecraftIDConverter.getItemID(tag.getString("id")));
-        if(tag.containsKey("tag")) {
-            CompoundTag itemTag = tag.getCompoundTag("tag");
-            JSONObject tagObject = new JSONObject();
-            getCompoundTagProperties(itemTag, tagObject);
-            properties.put("tag", tagObject);
-        }
     }
 
     public static void getCompoundTagProperties(CompoundTag tag, JSONObject properties){

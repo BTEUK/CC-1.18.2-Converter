@@ -441,9 +441,7 @@ public class RegionConverter extends Thread {
 
             //Convert each block in the chunk individually.
             for (int j = 0; j < 4096; j++) {
-
                 convertBlock(y, j);
-
             }
 
             //Convert the list of unique blocks to a 1.18.2 block palette.

@@ -343,13 +343,18 @@ public class MinecraftIDConverter {
         140 (Flower pot content)
         144 (Mob head types and player head texture)
         25 (Note block content)
+        54 Chest
+        146 Trapped Chest
+        219-234 Skulker Box
 
         */
 
         switch (id) {
 
             case 53, 67, 108, 109, 114, (byte) 128, (byte) 134, (byte) 135, (byte) 136, (byte) 156, (byte) 163,
-                    (byte) 164, (byte) 180, (byte) 203, 26, (byte) 176, (byte) 177, (byte) 140, (byte) 144, 25 -> {
+                    (byte) 164, (byte) 180, (byte) 203, 26, (byte) 176, (byte) 177, (byte) 140, (byte) 144, 25,
+                54, (byte) 146, (byte) 219, (byte) 220, (byte) 221, (byte) 222, (byte) 223, (byte) 224, (byte) 225,
+                        (byte) 226, (byte) 227, (byte) 228, (byte) 229, (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234 -> {
                 return true;
             }
 
@@ -372,7 +377,8 @@ public class MinecraftIDConverter {
         140 (Flower pot content)
         144 (Mob head types and player head texture)
         25 (Note block content)
-
+        54 Chests
+        146 Trapped Chest
         */
 
         JSONObject jo = new JSONObject();
@@ -590,6 +596,17 @@ public class MinecraftIDConverter {
                 jo.put("note", block_entity.getByte("note"));
             }
 
+            case 54, (byte) 146, (byte) 219, (byte) 220, (byte) 221, (byte) 222, (byte) 223, (byte) 224, (byte) 225,
+                 (byte) 226, (byte) 227, (byte) 228, (byte) 229, (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234  -> {
+                if(block_entity.containsKey("Items")){
+                    JSONArray items = getItems(block_entity);
+                    if(!items.isEmpty())
+                        jo.put("items", items);
+                }
+                if(block_entity.containsKey("LootTable"))
+                    jo.put("loot_table", getLootTable(block_entity.getString("LootTable")));
+                TagConv.getLongTagProperty(block_entity, "LootTableSeed", "loot_table_seed", jo);
+            }
         }
 
         return jo;
@@ -686,9 +703,15 @@ public class MinecraftIDConverter {
                     (byte) 164, (byte) 180, (byte) 203, 85, 113, (byte) 188, (byte) 189, (byte) 190, (byte) 191,
                     (byte) 192, (byte) 139, 101, 102, (byte) 160, 54, (byte) 146, 55, (byte) 199, 26,
                     (byte) 176, (byte) 177, 104, 105, (byte) 140, (byte) 144, 25, (byte) 132, 106,
-                    64, 71, (byte) 193, (byte) 194, (byte) 195, (byte) 196, (byte) 197 -> {
+                    64, 71, (byte) 193, (byte) 194, (byte) 195, (byte) 196, (byte) 197,
+                 (byte) 219, (byte) 220, (byte) 221, (byte) 222, (byte) 223, (byte) 224, (byte) 225,
+                 (byte) 226, (byte) 227, (byte) 228, (byte) 229, (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234-> {
                 return true;
             }
+            /*
+            * 23, 54, (byte) 146, (byte) 158, (byte) 219, (byte) 220, (byte) 221,
+                    (byte) 222, (byte) 223, (byte) 224, (byte) 225, (byte) 226, (byte) 227, (byte) 228, (byte) 229,
+                    (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234*/
         }
 
         return false;
@@ -4387,7 +4410,7 @@ public class MinecraftIDConverter {
         return namespaceID;
     }
 
-    public static byte getLegacyBlockID(String legacyID, byte data) {
+    public static byte getLegacyBlockID(String legacyID) {
         if(legacyID.contains("bed"))
             return 26;
 
@@ -5763,7 +5786,7 @@ public class MinecraftIDConverter {
             if(legacyID.contains("bed"))
                 return legacyID;
 
-            byte legacyBlockID = getLegacyBlockID(legacyID, (byte) 0);
+            byte legacyBlockID = getLegacyBlockID(legacyID);
             return getBlockName(legacyBlockID, (byte) 0);
         }
 
@@ -5780,7 +5803,7 @@ public class MinecraftIDConverter {
             if (hasBlockStates((byte) 26, data))
                 blockStates = getBlockStates((byte) 26, data);
         }else {
-            byte legacyBlockID = getLegacyBlockID(legacyID, data);
+            byte legacyBlockID = getLegacyBlockID(legacyID);
             blockName = getBlockName(legacyBlockID, data);
             if(hasBlockStates(legacyBlockID, data))
                 blockStates = getBlockStates(legacyBlockID, data);
@@ -5842,14 +5865,463 @@ public class MinecraftIDConverter {
         }
     }
 
-    public static String getItemID(String legacyNamespaceID){
-        String _legacyNamespaceID = legacyNamespaceID;
-        legacyNamespaceID = getEntityID(legacyNamespaceID);
-        if(_legacyNamespaceID.equals(legacyNamespaceID)){
+    public static String getMobID(String legacyMobID){
+        if(!legacyMobID.startsWith("minecraft:"))
+            return legacyMobID;
 
+        String legacyID = legacyMobID.substring(10);
+        switch (legacyID) {
+            case "evocation_illager": return "minecraft:evoker";
+            case "vindication_illager": return "minecraft:vindicator";
+            case "illusion_illager": return "minecraft:illusioner";
+            case "zombie_pigman": return "minecraft:zombified_piglin";
+            case "snowman": return "minecraft:snow_golem";
+            case "villager_golem": return "iron_golem";
+        }
+        return legacyMobID;
+
+    }
+
+    public static String getEnchantmentsID(short legacyID){
+        switch (legacyID){
+            case 6: return "aqua_affinity";
+            case 18: return "bane_of_arthropods";
+            case 3: return "blast_protection";
+            case 10: return "binding_curse";
+            case 71: return "vanishing_curse";
+            case 8: return "depth_strider";
+            case 32: return "efficiency";
+            case 2: return "feather_falling";
+            case 20: return "fire_aspect";
+            case 1: return "fire_protection";
+            case 50: return "flame";
+            case 35: return "fortune";
+            case 9: return "frost_walker";
+            case 51: return "infinity";
+            case 19: return "knockback";
+            case 21: return "looting";
+            case 61: return "luck_of_the_sea";
+            case 62: return "lure";
+            case 70: return "mending";
+            case 48: return "power";
+            case 4: return "projectile_protection";
+            case 49: return "punch";
+            case 5: return "respiration";
+            case 16: return "sharpness";
+            case 33: return "silk_touch";
+            case 17: return "smite";
+            case 22: return "sweeping";
+            case 7: return "thorns";
+            case 34: return "unbreaking";
+            default: return "protection";
+        }
+    }
+
+    public static String getItemID(String legacyNamespaceID, CompoundTag item, JSONObject props){
+        String namespaceID = legacyNamespaceID;
+
+        if(legacyNamespaceID.startsWith("minecraft:")) {
+            String legacyID = legacyNamespaceID.substring(10);
+            short damage = item.getShort("Damage");
+            CompoundTag tagItem = new CompoundTag();
+            if(item.containsKey("tag"))
+                tagItem = item.getCompoundTag("tag");
+
+            TagConv.getByteTagProperty(item, "Count", "count", props);
+            TagConv.getByteTagProperty(item, "Slot", "slot", props);
+
+            boolean processTag = true;
+
+            String newID = "";
+            switch (legacyID){
+                case "golden_apple" -> {
+                    if(damage == 1)
+                        newID = "enchanted_golden_apple";
+                }
+                case "boat" -> {
+                    newID = "oak_boat";
+                }
+                case "reeds" -> {
+                    newID = "sugar_cane";
+                }case "fish" -> {
+                    switch (damage){
+                        case 0 -> newID = "cod";
+                        case 1 -> newID = "salmon";
+                        case 2 -> newID = "tropical_fish";
+                        case 3 -> newID = "pufferfish";
+                    }
+                } case "cooked_fish" -> {
+                    switch (damage){
+                        case 0 -> newID = "cooked_cod";
+                        case 1 -> newID = "cooked_salmon";
+                    }
+                }
+                case "dye" -> {
+                    switch (damage){
+                        case 0 -> newID = "ink_sac";
+                        case 1 -> newID = "rose_red";
+                        case 2 -> newID = "cactus_green";
+                        case 3 -> newID = "cocoa_beans";
+                        case 4 -> newID = "lapis_lazuli";
+                        case 5 -> newID = "purple_dye";
+                        case 6 -> newID = "cyan_dye";
+                        case 7 -> newID = "light_gray_dye";
+                        case 8 -> newID = "gray_dye";
+                        case 9 -> newID = "pink_dye";
+                        case 10 -> newID = "lime_dye";
+                        case 11 -> newID = "dandelion_yellow";
+                        case 12 -> newID = "light_blue_dye";
+                        case 13 -> newID = "magenta_dye";
+                        case 14 -> newID = "orange_dye";
+                        case 15 -> newID = "bone_meal";
+                    }
+                }
+                case "melon" -> newID = "melon_slice";
+                case "speckled_melon" -> newID = "glistering_melon_slice";
+                case "potion", "splash_potion", "lingering_potion" -> {
+                    TagConv.getIntTagProperty(tagItem, "CustomPotionColor", "custom_potion_color", props);
+                }
+                case "spawn_egg" -> {
+                    processTag = false;
+                    if(tagItem.containsKey("EntityTag")){
+                        CompoundTag entityTag = tagItem.getCompoundTag("EntityTag");
+                        String mobType = getMobID(entityTag.getString("id"));
+                        if(mobType.startsWith("minecraft:"))
+                            newID = String.format("%s_spawn_egg", mobType.substring(10));
+                    }
+                }
+                case "firework_charge" -> newID = "firework_star";
+                case "fireworks" -> newID = "firework_rocket";
+                case "netherbrick" -> newID = "nether_brick";
+                case "banner" -> {
+                    newID = "black_banner";
+                    switch (damage) {
+                        case 15 -> newID = "white_banner";
+                        case 14 -> newID = "orange_banner";
+                        case 13 -> newID = "magenta_banner";
+                        case 12 -> newID = "light_blue_banner";
+                        case 11 -> newID = "yellow_banner";
+                        case 10 -> newID = "lime_banner";
+                        case 9 -> newID = "pink_banner";
+                        case 8 -> newID = "gray_banner";
+                        case 7 -> newID = "light_gray_banner";
+                        case 6 -> newID = "cyan_banner";
+                        case 5 -> newID = "purple_banner";
+                        case 4 -> newID = "blue_banner";
+                        case 3 -> newID = "brown_banner";
+                        case 2 -> newID = "green_banner";
+                        case 1 -> newID = "red_banner";
+                    }
+                }
+                case "mob_spawner" -> newID = "spawner";
+                case "writable_book", "written_book" -> {
+                    if(legacyID.equals("written_book")){
+                        TagConv.getByteTagProperty(tagItem, "resolved", "book_resolved", props);
+                        TagConv.getByteTagProperty(tagItem, "generation", "book_generation", props);
+                        TagConv.getStringTagProperty(tagItem, "author", "book_author", props);
+                        TagConv.getStringTagProperty(tagItem, "title", "book_title", props);
+                    }
+                    TagConv.getStringTagListProperty(tagItem, "pages", "book_pages", props);
+                }
+                case "knowledge_book" -> {
+                    TagConv.getStringTagListProperty(tagItem, "Recipes", "book_recipes", props);
+                }
+                case "map", "filled_map" -> {
+                    //ToDo: Add full support for maps
+                }
+                case "skull" -> {
+                    switch (damage){
+                        case 0 -> newID = "skeleton_skull";
+                        case 1 -> newID = "wither_skeleton_skull";
+                        case 2 -> newID = "zombie_head";
+                        case 3 -> newID = "player_head";
+                        case 4 -> newID = "creeper_head";
+                        case 5 -> newID = "dragon_head";
+                    }
+                }
+                case "chorus_fruit_popped" -> newID = "popped_chorus_fruit";
+                case "torch" -> newID = "wall_torch";
+                case "tripwire_hook" -> newID = "tripwire";
+            }
+
+            //Music Discs
+            if(legacyID.startsWith("record_"))
+                newID = legacyID.replace("record_", "music_disc_");
+
+            if(!newID.isEmpty())
+                namespaceID = "minecraft:" + newID;
+
+            if(newID.isEmpty()) {
+                byte id = getLegacyBlockID(legacyID);
+
+                //item is not a block item
+                if (newID.isEmpty() && !legacyID.equals("air") && id == 0) {
+                    //Get the 1.18+ entity namespace id
+                    namespaceID = getEntityID(namespaceID);
+                } else {
+                    //Item is a block
+                    if (legacyID.equals("bed")) {
+                        String bedVersion = "white_bed";
+                        switch (damage) {
+                            case 1 -> bedVersion = "orange_bed";
+                            case 2 -> bedVersion = "magenta_bed";
+                            case 3 -> bedVersion = "light_blue_bed";
+                            case 4 -> bedVersion = "yellow_bed";
+                            case 5 -> bedVersion = "lime_bed";
+                            case 6 -> bedVersion = "pink_bed";
+                            case 7 -> bedVersion = "gray_bed";
+                            case 8 -> bedVersion = "light_gray_bed";
+                            case 9 -> bedVersion = "cyan_bed";
+                            case 10 -> bedVersion = "purple_bed";
+                            case 11 -> bedVersion = "blue_bed";
+                            case 12 -> bedVersion = "brown_bed";
+                            case 13 -> bedVersion = "green_bed";
+                            case 14 -> bedVersion = "red_bed";
+                            case 15 -> bedVersion = "black_bed";
+                        }
+                        namespaceID = "minecraft:" + bedVersion;
+                    } else if (legacyID.equals("skull")) {
+                        String skullType = "skeleton_skull";
+                        switch (damage) {
+                            case 1 -> skullType = "wither_skeleton_skull";
+                            case 2 -> skullType = "player_head";
+                            case 3 -> skullType = "zombie_head";
+                            case 4 -> skullType = "creeper_head";
+                            case 5 -> skullType = "dragon_head";
+                        }
+                        namespaceID = "minecraft:" + skullType;
+                    } else if (legacyID.equals("torch"))
+                        namespaceID = "minecraft:wall_torch";
+                    else if (legacyID.equals("tripwire_hook"))
+                        namespaceID = "minecraft:tripwire";
+                    else {
+                        //Block items use the "Damage" tag as the "block data" tag, that determines the variant of the block
+                        namespaceID = "minecraft:" + getBlockName(id, (byte) damage);
+                    }
+                }
+            }
+
+            //Parse the items structure tags, and It's "tag" NBT tag (https://minecraft.fandom.com/wiki/Player.dat_format?oldid=1161216)
+            if(processTag && (item.containsKey("tag") && item.getCompoundTag("tag").size() > 0)) {
+                JSONObject generalTags = new JSONObject();
+                JSONObject blockTags = new JSONObject();
+                JSONObject enchantmentsTags = new JSONObject();
+                JSONArray attributeModifiers = new JSONArray();
+                JSONObject potionEffects = new JSONObject();
+
+
+                //General Tags
+                TagConv.getByteTagProperty(tagItem, "Unbreakable", "unbreakable", generalTags);
+                if(tagItem.containsKey("CanDestroy")){
+                    ListTag<StringTag> canDestroyBlocks = tagItem.getListTag("CanDestroy").asStringTagList();
+                    List<String> canDestroy = new ArrayList<>();
+                    for(StringTag blockID : canDestroyBlocks){
+                        byte _id = getLegacyBlockID(blockID.getValue().substring(10));
+                        canDestroy.add(getBlockName(_id, (byte) 0));
+                    }
+                    if(!canDestroy.isEmpty())
+                        generalTags.put("CanDestroy", canDestroy);
+                }
+
+
+                //Block Tags
+                if(tagItem.containsKey("CanPlaceOn")){
+                    ListTag<StringTag> canPlaceOnBlocks = tagItem.getListTag("CanPlaceOn").asStringTagList();
+                    List<String> canPlaceOn = new ArrayList<>();
+                    for(StringTag blockID : canPlaceOnBlocks){
+                        byte _id = getLegacyBlockID(blockID.getValue().substring(10));
+                        canPlaceOn.add(getBlockName(_id, (byte) 0));
+                    }
+                    if(!canPlaceOn.isEmpty())
+                        blockTags.put("CanPlaceOn", canPlaceOn);
+                }
+                if(tagItem.containsKey("BlockEntityTag")) {
+                    CompoundTag blockEntityTag = tagItem.getCompoundTag("BlockEntityTag");
+                    JSONObject entityTag = new JSONObject();
+                    TagConv.getCompoundTagProperties(blockEntityTag, entityTag);
+                    if(!entityTag.isEmpty())
+                        blockTags.put("BlockEntityTag", entityTag);
+                }
+
+
+                //Enchantments
+                if(tagItem.containsKey("ench")){
+                    ListTag<CompoundTag> enchantmentsTag = tagItem.getListTag("ench").asCompoundTagList();
+                    JSONArray enchantments = getEnchantments(enchantmentsTag);
+                    if(!enchantments.isEmpty())
+                        enchantmentsTags.put("enchantments", enchantments);
+                }
+                if(tagItem.containsKey("StoredEnchantments")){
+                    ListTag<CompoundTag> storedEnchantmentsTag = tagItem.getListTag("StoredEnchantments").asCompoundTagList();
+                    JSONArray enchantments = getEnchantments(storedEnchantmentsTag);
+                    if(!enchantments.isEmpty())
+                        enchantmentsTags.put("stored_enchantments", enchantments);
+                }
+                TagConv.getIntTagProperty(tagItem, "RepairCost", "repair_cost", enchantmentsTags);
+
+
+                //Attribute Modifiers
+                if(tagItem.containsKey("AttributeModifiers")){
+                    ListTag<CompoundTag> attributeModifiersTags = tagItem.getListTag("AttributeModifiers").asCompoundTagList();
+                    for(CompoundTag attributeModifiersTag : attributeModifiersTags){
+                        JSONObject attributeModifierItem = new JSONObject();
+                        TagConv.getStringTagProperty(attributeModifiersTag, "AttributeName", "attribute_name", attributeModifierItem);
+                        TagConv.getStringTagProperty(attributeModifiersTag, "Name", "name", attributeModifierItem);
+                        TagConv.getStringTagProperty(attributeModifiersTag, "Slot", "slot", attributeModifierItem);
+                        int operationID = attributeModifiersTag.getInt("Operation");
+                        String operation = "add";
+                        if(operationID == 1)
+                            operation = "multiply_base";
+                        else if(operationID == 2)
+                            operation = "multiply";
+                        attributeModifierItem.put("operation", operation);
+                        TagConv.getDoubleTagProperty(attributeModifiersTag, "Amount", "amount", attributeModifierItem);
+
+                        attributeModifiers.add(attributeModifierItem);
+                    }
+                }
+
+
+                //Potions
+                TagConv.getStringTagProperty(tagItem,"Potion", "Potion", potionEffects);
+                //ToDo: Add support for CustomPotionEffects?
+
+
+                //Display Properties
+                getDisplayProps(tagItem, props);
+
+                //Player heads
+                getSkullOwner(tagItem, props);
+
+                //Fireworks
+                getFireworkTags(tagItem, props);
+
+                if(!generalTags.isEmpty())
+                    props.put("GeneralTags", generalTags);
+                if(!blockTags.isEmpty())
+                    props.put("BlockTags", blockTags);
+                if(!enchantmentsTags.isEmpty())
+                    props.put("EnchantmentsTags", enchantmentsTags);
+                if(!attributeModifiers.isEmpty())
+                    props.put("AttributeModifiers", attributeModifiers);
+                if(!potionEffects.isEmpty())
+                    props.put("PotionEffects", potionEffects);
+
+            }
+
+        }else {
+            JSONObject customItem = new JSONObject();
+            TagConv.getCompoundTagProperties(item, customItem);
+            if(!customItem.isEmpty())
+                props.put("CustomItemProps", customItem);
         }
 
-        return legacyNamespaceID;
+
+
+
+
+        return namespaceID;
+    }
+
+    /**
+     * Parse the item "tag" display properties tags
+     * @param tag The "tag" tag of the item
+     * @param props If "tag" contains display properties, write them under "DisplayProps" in the props
+     */
+    public static void getDisplayProps(CompoundTag tag, JSONObject props){
+        if (tag.containsKey("display")) {
+            JSONObject displayProps = new JSONObject();
+            CompoundTag displayTag = tag.getCompoundTag("display");
+            TagConv.getStringTagProperty(displayTag, "Name", "display_name", displayProps);
+            TagConv.getIntTagProperty(displayTag, "color", "display_color", displayProps);
+
+            if(!displayProps.isEmpty())
+                props.put("DisplayProps", displayProps);
+        }
+    }
+
+    /**
+     * Parse the item "tag" skull owner tag
+     * @param tag The "tag" tag of the item
+     * @param props If the "tag" contains the skull owner tag, write it under "SkullOwner" in the props
+     */
+    public static void getSkullOwner(CompoundTag tag, JSONObject props){
+        if(tag.containsKey("SkullOwner")) {
+            CompoundTag skullOwnerTag = tag.getCompoundTag("SkullOwner");
+            JSONObject skullOwnerItem = new JSONObject();
+            skullOwnerItem.put("id", skullOwnerTag.getString("Id"));
+
+            if (skullOwnerTag.containsKey("Properties")) {
+                CompoundTag skullOwnerProperties = skullOwnerTag.getCompoundTag("Properties");
+                if (skullOwnerProperties.containsKey("textures")) {
+                    ListTag skullOwnerTextures = skullOwnerProperties.getListTag("textures");
+                    if (skullOwnerTextures.size() > 0) {
+                        Tag skullOwnerTextureTag = skullOwnerTextures.get(0);
+                        TagConv.getStringTagProperty((CompoundTag) skullOwnerTextureTag, "Value", "texture", skullOwnerItem);
+                    }
+                }
+            }
+
+            props.put("SkullOwner", skullOwnerItem);
+        }
+    }
+
+    /**
+     * Parse the item "tag" fireworks tags
+     * @param tag The "tag" tag of the item
+     * @param props If the "tag" contains fireworks tag, write it under "Fireworks" in the props
+     */
+    public static void getFireworkTags(CompoundTag tag, JSONObject props){
+        JSONObject fireworksItems = new JSONObject();
+        if(tag.containsKey("Explosion")){
+            CompoundTag explosionTag = tag.getCompoundTag("Explosion");
+            JSONObject explosionItem = new JSONObject();
+            getExplosionTags(explosionTag, explosionItem);
+
+            if(!explosionItem.isEmpty())
+                fireworksItems.put("Explosion", explosionItem);
+        }
+
+        if(tag.containsKey("Fireworks")){
+            CompoundTag fireworksTag = tag.getCompoundTag("Fireworks");
+            JSONObject fireworksItem = new JSONObject();
+            TagConv.getByteTagProperty(fireworksTag, "Flight", "flight", fireworksItem);
+            if(fireworksTag.containsKey("Explosions")){
+                ListTag<CompoundTag> explosions = fireworksTag.getListTag("Explosions").asCompoundTagList();
+                List<JSONObject> explosionsItem = new ArrayList<>();
+                for(CompoundTag explosion : explosions){
+                    JSONObject explosionItem = new JSONObject();
+                    getExplosionTags(explosion, explosionItem);
+                    explosionsItem.add(explosionItem);
+                }
+                fireworksItem.put("explosions", explosionsItem);
+            }
+
+            if(!fireworksItem.isEmpty())
+                fireworksItems.put("Fireworks", fireworksItem);
+        }
+
+        if(!fireworksItems.isEmpty())
+            props.put("Fireworks", fireworksItems);
+    }
+
+    private static void getExplosionTags(CompoundTag explosion, JSONObject explosionItem){
+        TagConv.getByteTagProperty(explosion, "Flicker", "flicker", explosionItem);
+        TagConv.getByteTagProperty(explosion, "Trail", "trail", explosionItem);
+        TagConv.getByteTagProperty(explosion, "Type", "type", explosionItem);
+        TagConv.getIntArrayTagProperty(explosion, "Colors", "colors", explosionItem);
+        TagConv.getIntArrayTagProperty(explosion, "FadeColors", "fade_colors", explosionItem);
+    }
+
+    private static JSONArray getEnchantments(ListTag<CompoundTag> enchantments){
+        JSONArray enchantmentItems = new JSONArray();
+        for(CompoundTag enchantmentTag : enchantments){
+            JSONObject enchantment = new JSONObject();
+            enchantment.put("id", getEnchantmentsID(enchantmentTag.getShort("id")));
+            enchantment.put("lvl", enchantmentTag.getShort("lvl"));
+            enchantmentItems.add(enchantment);
+        }
+        return enchantmentItems;
     }
 
     public static String getLootTable(String legacyLootTable){
@@ -6055,6 +6527,26 @@ public class MinecraftIDConverter {
         //properties.put("tile_pos", tile);
     }
 
+    public static JSONArray getItems(CompoundTag entity){
+        JSONArray itemsArray = new JSONArray();
+        ListTag<CompoundTag> itemsList = entity.getListTag("Items").asCompoundTagList();
+        for (CompoundTag compoundTag : itemsList) {
+            JSONObject jsonItem = new JSONObject();
+            if (compoundTag.containsKey("id")) {
+                //ToDo: Concert all legacy items id to 1.18.2 including, the items tag NBT entry
+                JSONObject itemProps = new JSONObject();
+                jsonItem.put("id", getItemID(compoundTag.getString("id"), compoundTag, itemProps));
+                if(!itemProps.isEmpty()){
+                    jsonItem.put("Properties", itemProps);
+                }
+            }
+
+            itemsArray.add(jsonItem);
+        }
+
+        return itemsArray;
+    }
+
     public static void getEntitiesTags(String legacyID ,CompoundTag entity, JSONObject properties) {
         TagConv.getByteTagProperty(entity,"NoGravity","NoGravity",properties);
         TagConv.floatTagListToJson("Rotation", entity, properties);
@@ -6115,30 +6607,10 @@ public class MinecraftIDConverter {
 
                     if (armor.containsKey("tag")) {
                         CompoundTag armorTag = armor.getCompoundTag("tag");
-                        if (armorTag.containsKey("display")) {
-                            CompoundTag displayTag = armorTag.getCompoundTag("display");
-                            TagConv.getStringTagProperty(displayTag, "Name", "display_name", jsonArmorItem);
-                            TagConv.getIntTagProperty(displayTag, "color", "display_color", jsonArmorItem);
-                        }
+                        getDisplayProps(armorTag, jsonArmorItem);
 
-                        if (armor.getString("id").equals("minecraft:skull") && armorTag.containsKey("SkullOwner")) {
-                            CompoundTag skullOwnerTag = armorTag.getCompoundTag("SkullOwner");
-                            JSONObject skullOwnerItem = new JSONObject();
-                            skullOwnerItem.put("id", skullOwnerTag.getString("Id"));
-
-                            if (skullOwnerTag.containsKey("Properties")) {
-                                CompoundTag skullOwnerProperties = skullOwnerTag.getCompoundTag("Properties");
-                                if (skullOwnerProperties.containsKey("textures")) {
-                                    ListTag skullOwnerTextures = skullOwnerProperties.getListTag("textures");
-                                    if (skullOwnerTextures.size() > 0) {
-                                        Tag skullOwnerTextureTag = skullOwnerTextures.get(0);
-                                        TagConv.getStringTagProperty((CompoundTag) skullOwnerTextureTag, "Value", "texture", skullOwnerItem);
-                                    }
-                                }
-                            }
-
-                            jsonArmorItem.put("SkullOwner", skullOwnerItem);
-                        }
+                        if (armor.getString("id").equals("minecraft:skull"))
+                            getSkullOwner(armorTag, jsonArmorItem);
                     }
 
                     jsonArmorItems.add(jsonArmorItem);
@@ -6163,19 +6635,9 @@ public class MinecraftIDConverter {
             }
             case "minecraft:chest_minecart", "minecraft:hopper_minecart" -> {
                 if (entity.containsKey("Items")) {
-                    ListTag<CompoundTag> itemsList = entity.getListTag("Items").asCompoundTagList();
-                    List<JSONObject> jsonObjects = new ArrayList<>();
-                    for (CompoundTag compoundTag : itemsList) {
-                        JSONObject jsonItem = new JSONObject();
-                        TagConv.getCompoundTagProperties(compoundTag, jsonItem);
-                        if (jsonItem.containsKey("id")) {
-                            //ToDo: Concert all legacy items id to 1.18.2 including, the items tag NBT entry
-                            jsonItem.put("id", getItemID((String) jsonItem.get("id")));
-                        }
-
-                        jsonObjects.add(jsonItem);
-                    }
-                    properties.put("minecart_items", jsonObjects);
+                    JSONArray itemsArray = getItems(entity);
+                    if(!itemsArray.isEmpty())
+                        properties.put("items", itemsArray);
                 }
                 if (entity.containsKey("LootTable"))
                     properties.put("loot_table", getLootTable(entity.getString("LootTable")));
@@ -6225,6 +6687,13 @@ public class MinecraftIDConverter {
                     default ->  motive = motive.toUpperCase();
                 }
                 properties.put("motive", motive);
+            }
+            case "minecraft:chest" -> {
+                if(entity.containsKey("Items")){
+                    JSONArray itemsArray = getItems(entity);
+                    if(!itemsArray.isEmpty())
+                        properties.put("items", itemsArray);
+                }
             }
         }
     }
