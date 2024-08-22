@@ -8,6 +8,7 @@ import me.bteuk.converterplugin.utils.blocks.stairs.StairData;
 import me.bteuk.converterplugin.utils.entities.ArmorStandHelper;
 import me.bteuk.converterplugin.utils.entities.MinecartHelper;
 import me.bteuk.converterplugin.utils.exceptions.BlockNotFoundException;
+import me.bteuk.converterplugin.utils.items.ItemsHelper;
 import org.bukkit.*;
 import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
@@ -18,11 +19,12 @@ import org.bukkit.block.banner.PatternType;
 import org.bukkit.block.data.*;
 import org.bukkit.block.data.type.*;
 import org.bukkit.block.data.type.Observer;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.EnderCrystal;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Painting;
+import org.bukkit.entity.*;
 import org.bukkit.entity.minecart.*;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.loot.LootTable;
+import org.bukkit.loot.LootTables;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
@@ -43,6 +45,8 @@ public class Converter {
         this.world = world;
 
         isRunning = false;
+
+        ItemsHelper.setLogger(instance.getLogger());
     }
 
     public boolean isRunning() {
@@ -152,7 +156,7 @@ public class Converter {
                             setEntity(entityNamespace,jObject, entityLocation);
                         }
                         catch (Exception e){
-                            instance.getLogger().warning("setEntity error: \n"  + e.getMessage());
+                            instance.getLogger().warning(String.format("setEntity (%1$s) error: \n%2$s", entityNamespace, e.getMessage()));
                         }
                     }
                 }
@@ -370,6 +374,37 @@ public class Converter {
                 }
 
                 block.setBlockData(chest, false);
+
+                if(object.containsKey("properties")){
+                    JSONObject props = (JSONObject) object.get("properties");
+                    if(props.containsKey("loot_table")){
+                        org.bukkit.block.Chest _chest = (org.bukkit.block.Chest) block.getState();
+                        String _lootTable = (String) props.get("loot_table");
+                        LootTable lootTable = LootTables.SIMPLE_DUNGEON.getLootTable();
+                        if(_lootTable.startsWith("minecraft")) {
+                            _lootTable = _lootTable.substring(10);
+                            _lootTable = _lootTable.substring(_lootTable.indexOf("/") + 1).toUpperCase();
+                            try{
+                                lootTable = LootTables.valueOf(_lootTable).getLootTable();
+                            }catch (Exception ex){ }
+                        }
+
+
+                        if(props.containsKey("loot_table_seed")){
+                            long _lootTableSeed = (long) props.get("loot_table_seed");
+                            _chest.setLootTable(lootTable, _lootTableSeed);
+                        }else {
+                            _chest.setLootTable(lootTable);
+                        }
+                    }
+
+                    if(props.containsKey("items")){
+                        org.bukkit.block.Chest _chest = (org.bukkit.block.Chest) block.getState();
+                        Inventory chestInventory = _chest.getBlockInventory();
+                        JSONArray itemsRaw = (JSONArray) props.get("items");
+                        ItemsHelper.setItems(chestInventory, itemsRaw);
+                    }
+                }
 
             }
 
@@ -1893,7 +1928,7 @@ public class Converter {
         }
     }
 
-    private void setEntity(String entityNamespace, JSONObject object, Location location) throws IOException, ParseException {
+    private void setEntity(String entityNamespace, JSONObject object, Location location) throws Exception {
         JSONObject objectProps = (JSONObject)object.get("properties");
 
         switch (entityNamespace) {
@@ -1950,6 +1985,32 @@ public class Converter {
                 if(objectProps.containsKey("facing")){
                     painting.setFacingDirection(BlockFace.valueOf((String) objectProps.get("facing")));
                 }
+            }
+            case "minecraft:item_frame" -> {
+                ItemFrame itemFrame = (ItemFrame) world.spawnEntity(location, EntityType.ITEM_FRAME);
+                Utils.prepEntity(itemFrame, objectProps);
+                if(objectProps.containsKey("fixed"))
+                    itemFrame.setFixed((int)(long)objectProps.get("fixed")==1);
+                if(objectProps.containsKey("invisible"))
+                    itemFrame.setVisible((int)(long)objectProps.get("invisible")==0);
+                if(objectProps.containsKey("item")){
+                    JSONObject item = (JSONObject) objectProps.get("item");
+                    JSONObject itemProps = (JSONObject) item.getOrDefault("Properties", new JSONObject());
+                    String itemID = (String) item.get("id");
+                    if(itemID.startsWith("minecraft:")) {
+                        itemID = itemID.substring(10);
+                        ItemStack _item = ItemsHelper.getItem(itemID, itemProps);
+                        itemFrame.setItem(_item);
+                    }
+                }
+                if(objectProps.containsKey("item_rotation")){
+                    itemFrame.setRotation(Rotation.valueOf((String) objectProps.get("item_rotation")));
+                }
+                if(objectProps.containsKey("item_drop_chance")){
+                    Double itemDropChance = (double)objectProps.get("item_drop_chance");
+                    itemFrame.setItemDropChance(itemDropChance.floatValue());
+                }
+
             }
 
         }

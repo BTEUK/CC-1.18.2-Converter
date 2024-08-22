@@ -1,6 +1,7 @@
 package me.bteuk.converterplugin.utils.entities;
 
 import me.bteuk.converterplugin.utils.Utils;
+import me.bteuk.converterplugin.utils.items.ItemsHelper;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Minecart;
@@ -24,7 +25,7 @@ public class MinecartHelper {
 
         if(props.containsKey("display_tile") && (int) (long) props.get("display_tile") == 1){
             String displayTileBlock = ((String)props.get("display_tile_block")).substring(10);
-            Material displayTileMaterial = Material.getMaterial(displayTileBlock);
+            Material displayTileMaterial = Material.getMaterial(displayTileBlock.toUpperCase());
             if(props.containsKey("display_tile_block_states")){
                 JSONObject displayBlockStates = (JSONObject) props.get("display_tile_block_states");
                 String _blockData = "minecraft:" + displayTileBlock + "[" + Utils.flattenBlockState(displayBlockStates) + "]";
@@ -71,12 +72,10 @@ public class MinecartHelper {
     }
 
     public static void prepInventoryChest(InventoryHolder inventoryHolder, JSONObject props){
-        if(props.containsKey("minecart_items")){
-            JSONArray minecartItems = (JSONArray) props.get("minecart_items");
-            //ToDo: Create items stacks from the minecart items
-            //Inventory inventory = storageMinecart.getInventory();
-            //ItemStack itemStack = new ItemStack(Material.getMaterial())
-            //inventory.addItem()
+        if(props.containsKey("items")){
+            JSONArray minecartItems = (JSONArray) props.get("items");
+            Inventory inventory = inventoryHolder.getInventory();
+            ItemsHelper.setItems(inventory, minecartItems);
         }
     }
 

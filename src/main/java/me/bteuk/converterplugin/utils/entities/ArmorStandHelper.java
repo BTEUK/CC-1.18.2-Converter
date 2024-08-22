@@ -1,11 +1,15 @@
 package me.bteuk.converterplugin.utils.entities;
 
+import me.bteuk.converterplugin.Converter;
 import me.bteuk.converterplugin.utils.Utils;
+import me.bteuk.converterplugin.utils.items.ItemsHelper;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.util.EulerAngle;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -16,7 +20,7 @@ import java.math.BigInteger;
 import java.util.UUID;
 
 public class ArmorStandHelper {
-    public static void propArmorStand(ArmorStand armorStand, JSONObject properties) throws ParseException, IOException {
+    public static void propArmorStand(ArmorStand armorStand, JSONObject properties) throws Exception {
         Utils.prepEntity(armorStand, properties);
         armorStand.setArms((int) (long)properties.get("ShowArms") == 1);
         armorStand.setInvisible((int) (long) properties.get("Invisible") == 1);
@@ -71,57 +75,25 @@ public class ArmorStandHelper {
             if (armorItemObject.isEmpty())
                 continue;
 
-            String armorItemID = ((String) armorItemObject.get("entity")).substring(10);
+            String armorItemID = ((String) armorItemObject.get("id")).substring(10);
+            JSONObject armorItemProps = (JSONObject) armorItemObject.getOrDefault("Properties", new JSONObject());
 
-            //Player head
-            if (c == 3 && armorItemID.equals("skull") && armorItemObject.containsKey("SkullOwner")) {
+            ItemStack armorItem = ItemsHelper.getItem(armorItemID, armorItemProps);
 
-                ItemStack skullItem = null;
-
-                JSONObject skullOwnerObject = (JSONObject) armorItemObject.get("SkullOwner");
-
-                if (skullOwnerObject.containsKey("profileId")) {
-                    String rawUUID = (String) skullOwnerObject.get("profileId");
-                    BigInteger mostBits = new BigInteger(rawUUID.substring(0, 16), 16);
-                    BigInteger leastBits = new BigInteger(rawUUID.substring(16, 32), 16);
-                    UUID playerID = new UUID(mostBits.longValue(), leastBits.longValue());
-                    skullItem = ItemSkullHelper.fromUUID(playerID);
-
-                } else if (skullOwnerObject.containsKey("profileName")) {
-                    String profileName = (String) skullOwnerObject.get("profileName");
-                    skullItem = ItemSkullHelper.fromUsername(profileName);
-                } else if (skullOwnerObject.containsKey("texture")) {
-                    String skullId = (String)skullOwnerObject.getOrDefault("id", "");
-                    String skullTexture = (String) skullOwnerObject.get("texture");
-
-                    skullItem = ItemSkullHelper.fromBase64(skullId , skullTexture);
+            /*if (armorItemObject.containsKey("DisplayProps")) {
+                JSONObject displayProps = (JSONObject) armorItemObject.get("DisplayProps");
+                if(displayProps.containsKey("display_name")) {
+                    SkullMeta skullMeta = (SkullMeta) skullItem.getItemMeta();
+                    skullMeta.displayName(Component.text((String) displayProps.get("display_name")));
+                    skullItem.setItemMeta(skullMeta);
                 }
+            }*/
 
-                if (skullItem != null) {
-                    //if (armorItemObject.containsKey("display_name")) {
-                    //    SkullMeta skullMeta = (SkullMeta) skullItem.getItemMeta();
-                    //    skullMeta.displayName(Component.text((String) armorItemObject.get("display_name")));
-                    //    skullItem.setItemMeta(skullMeta);
-                    //}
-
-                    armorEquipment.setHelmet(skullItem);
-                }
-
-
-            } else {
-                ItemStack armorItem = new ItemStack(Material.getMaterial(armorItemID.toUpperCase()));
-                if (armorItemObject.containsKey("display_color")) {
-                    LeatherArmorMeta armorMeta = (LeatherArmorMeta) armorItem.getItemMeta();
-                    armorMeta.setColor(org.bukkit.Color.fromRGB((int) (long) armorItemObject.get("display_color")));
-                    armorItem.setItemMeta(armorMeta);
-                }
-
-                if (c == 0)
-                    armorEquipment.setBoots(armorItem);
-                else if (c == 1)
-                    armorEquipment.setLeggings(armorItem);
-                else
-                    armorEquipment.setChestplate(armorItem);
+            switch (c){
+                case 0 -> armorEquipment.setBoots(armorItem);
+                case 1 -> armorEquipment.setLeggings(armorItem);
+                case 2 -> armorEquipment.setChestplate(armorItem);
+                case 3 -> armorEquipment.setHelmet(armorItem);
             }
         }
 
@@ -133,12 +105,13 @@ public class ArmorStandHelper {
 
             handItemID = handItemID.substring(10);
 
-            ItemStack handItem = new ItemStack(Material.getMaterial(handItemID.toUpperCase()));
+            ItemStack handItem = ItemsHelper.getItem(handItemID, new JSONObject());
 
-            if(c == 0)
+            if (c == 0)
                 armorEquipment.setItemInMainHand(handItem);
             else
                 armorEquipment.setItemInOffHand(handItem);
+
         }
     }
 }

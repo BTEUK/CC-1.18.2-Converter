@@ -1,6 +1,8 @@
 package me.bteuk.converterplugin.utils;
 
+import org.bukkit.Material;
 import org.bukkit.entity.Entity;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.loot.LootTable;
 import org.bukkit.loot.LootTables;
 import org.bukkit.util.EulerAngle;
@@ -57,7 +59,7 @@ public class Utils {
 
     public static List<Integer> getIntegerListFromJson(JSONObject properties, String key){
         List<Integer> list = new ArrayList<>();
-        JSONArray rawArray = (JSONArray) properties.get("key");
+        JSONArray rawArray = (JSONArray) properties.get(key);
         for(Object item : rawArray)
             list.add((int) (long) item);
         return list;
