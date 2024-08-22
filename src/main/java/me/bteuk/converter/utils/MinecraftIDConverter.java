@@ -5922,7 +5922,9 @@ public class MinecraftIDConverter {
 
         if(legacyNamespaceID.startsWith("minecraft:")) {
             String legacyID = legacyNamespaceID.substring(10);
-            short damage = item.getShort("Damage");
+            short damage = 0;
+            if(item.containsKey("Damage"))
+                damage = item.getShort("Damage");
             CompoundTag tagItem = new CompoundTag();
             if(item.containsKey("tag"))
                 tagItem = item.getCompoundTag("tag");
@@ -5958,22 +5960,22 @@ public class MinecraftIDConverter {
                 }
                 case "dye" -> {
                     switch (damage){
-                        case 0 -> newID = "ink_sac";
-                        case 1 -> newID = "rose_red";
-                        case 2 -> newID = "cactus_green";
-                        case 3 -> newID = "cocoa_beans";
-                        case 4 -> newID = "lapis_lazuli";
+                        case 0 -> newID = "black_dye";
+                        case 1 -> newID = "red_dye";
+                        case 2 -> newID = "green_dye";
+                        case 3 -> newID = "brown_dye";
+                        case 4 -> newID = "blu_dye";
                         case 5 -> newID = "purple_dye";
                         case 6 -> newID = "cyan_dye";
                         case 7 -> newID = "light_gray_dye";
                         case 8 -> newID = "gray_dye";
                         case 9 -> newID = "pink_dye";
                         case 10 -> newID = "lime_dye";
-                        case 11 -> newID = "dandelion_yellow";
+                        case 11 -> newID = "yellow_dye";
                         case 12 -> newID = "light_blue_dye";
                         case 13 -> newID = "magenta_dye";
                         case 14 -> newID = "orange_dye";
-                        case 15 -> newID = "bone_meal";
+                        case 15 -> newID = "white_dye";
                     }
                 }
                 case "melon" -> newID = "melon_slice";
@@ -6040,8 +6042,6 @@ public class MinecraftIDConverter {
                     }
                 }
                 case "chorus_fruit_popped" -> newID = "popped_chorus_fruit";
-                case "torch" -> newID = "wall_torch";
-                case "tripwire_hook" -> newID = "tripwire";
             }
 
             //Music Discs
@@ -6090,10 +6090,7 @@ public class MinecraftIDConverter {
                             case 5 -> skullType = "dragon_head";
                         }
                         namespaceID = "minecraft:" + skullType;
-                    } else if (legacyID.equals("torch"))
-                        namespaceID = "minecraft:wall_torch";
-                    else if (legacyID.equals("tripwire_hook"))
-                        namespaceID = "minecraft:tripwire";
+                    }
                     else {
                         //Block items use the "Damage" tag as the "block data" tag, that determines the variant of the block
                         namespaceID = "minecraft:" + getBlockName(id, (byte) damage);
@@ -6117,7 +6114,7 @@ public class MinecraftIDConverter {
                     List<String> canDestroy = new ArrayList<>();
                     for(StringTag blockID : canDestroyBlocks){
                         byte _id = getLegacyBlockID(blockID.getValue().substring(10));
-                        canDestroy.add(getBlockName(_id, (byte) 0));
+                        canDestroy.add(getNameSpace(_id, (byte) 0));
                     }
                     if(!canDestroy.isEmpty())
                         generalTags.put("CanDestroy", canDestroy);
@@ -6168,12 +6165,14 @@ public class MinecraftIDConverter {
                         TagConv.getStringTagProperty(attributeModifiersTag, "AttributeName", "attribute_name", attributeModifierItem);
                         TagConv.getStringTagProperty(attributeModifiersTag, "Name", "name", attributeModifierItem);
                         TagConv.getStringTagProperty(attributeModifiersTag, "Slot", "slot", attributeModifierItem);
+                        TagConv.getLongTagProperty(attributeModifiersTag, "UUIDMost", "uuid_most", attributeModifierItem);
+                        TagConv.getLongTagProperty(attributeModifiersTag, "UUIDLeast", "uuid_least", attributeModifierItem);
                         int operationID = attributeModifiersTag.getInt("Operation");
-                        String operation = "add";
+                        String operation = "ADD_NUMBER";
                         if(operationID == 1)
-                            operation = "multiply_base";
+                            operation = "ADD_SCALAR";
                         else if(operationID == 2)
-                            operation = "multiply";
+                            operation = "MULTIPLY_SCALAR_1";
                         attributeModifierItem.put("operation", operation);
                         TagConv.getDoubleTagProperty(attributeModifiersTag, "Amount", "amount", attributeModifierItem);
 
@@ -6288,13 +6287,14 @@ public class MinecraftIDConverter {
             TagConv.getByteTagProperty(fireworksTag, "Flight", "flight", fireworksItem);
             if(fireworksTag.containsKey("Explosions")){
                 ListTag<CompoundTag> explosions = fireworksTag.getListTag("Explosions").asCompoundTagList();
-                List<JSONObject> explosionsItem = new ArrayList<>();
+                List<JSONObject> explosionsItems = new ArrayList<>();
                 for(CompoundTag explosion : explosions){
                     JSONObject explosionItem = new JSONObject();
                     getExplosionTags(explosion, explosionItem);
-                    explosionsItem.add(explosionItem);
+                    explosionsItems.add(explosionItem);
                 }
-                fireworksItem.put("explosions", explosionsItem);
+
+                fireworksItem.put("explosions", explosionsItems);
             }
 
             if(!fireworksItem.isEmpty())
@@ -6343,8 +6343,6 @@ public class MinecraftIDConverter {
      * @return Converted to 1.18.2 command
      */
     public static String getCommand(String legacyCommand){
-        //ToDo: Convert old /execute command (https://minecraft.fandom.com/wiki/Commands/execute/Before) to new one (https://minecraft.fandom.com/wiki/Commands/execute#as)
-
         boolean addSlash = false;
         if(legacyCommand.startsWith("/")) {
             addSlash = true;
@@ -6533,7 +6531,6 @@ public class MinecraftIDConverter {
         for (CompoundTag compoundTag : itemsList) {
             JSONObject jsonItem = new JSONObject();
             if (compoundTag.containsKey("id")) {
-                //ToDo: Concert all legacy items id to 1.18.2 including, the items tag NBT entry
                 JSONObject itemProps = new JSONObject();
                 jsonItem.put("id", getItemID(compoundTag.getString("id"), compoundTag, itemProps));
                 if(!itemProps.isEmpty()){
@@ -6602,16 +6599,16 @@ public class MinecraftIDConverter {
                         continue;
                     }
 
-                    JSONObject jsonArmorItem = new JSONObject();
-                    jsonArmorItem.put("entity", armor.getString("id"));
-
-                    if (armor.containsKey("tag")) {
-                        CompoundTag armorTag = armor.getCompoundTag("tag");
-                        getDisplayProps(armorTag, jsonArmorItem);
-
-                        if (armor.getString("id").equals("minecraft:skull"))
-                            getSkullOwner(armorTag, jsonArmorItem);
+                    if(armor.getString("id").equals("minecraft:skull")){
+                        String w = "2";
                     }
+
+                    JSONObject jsonArmorItem = new JSONObject();
+                    JSONObject jsonArmorItemProps = new JSONObject();
+                    String itemID = getItemID(armor.getString("id"), armor, jsonArmorItemProps);;
+                    jsonArmorItem.put("id", itemID);
+                    if(!jsonArmorItemProps.isEmpty())
+                        jsonArmorItem.put("Properties", jsonArmorItemProps);
 
                     jsonArmorItems.add(jsonArmorItem);
                 }
@@ -6626,7 +6623,7 @@ public class MinecraftIDConverter {
                         continue;
                     }
 
-                    handItemsList.add(getEntityID(handItem.getString("id")));
+                    handItemsList.add(getItemID(handItem.getString("id"), new CompoundTag(), new JSONObject()));
                 }
 
                 properties.put("HandItems", handItemsList);
@@ -6694,6 +6691,37 @@ public class MinecraftIDConverter {
                     if(!itemsArray.isEmpty())
                         properties.put("items", itemsArray);
                 }
+            }
+            case "minecraft:item_frame" -> {
+                TagConv.getByteTagProperty(entity, "Fixed", "fixed", properties);
+                TagConv.getByteTagProperty(entity, "Invisible","invisible", properties);
+                if(entity.containsKey("Item")){
+                    CompoundTag item = entity.getCompoundTag("Item");
+                    String itemID = item.getString("id");
+                    JSONObject itemProps = new JSONObject();
+                    itemID = getItemID(itemID, item, itemProps);
+                    JSONObject _itemObj = new JSONObject();
+                    _itemObj.put("id", itemID);
+                    if(!itemProps.isEmpty())
+                        _itemObj.put("Properties", itemProps);
+                    properties.put("item", _itemObj);
+                }
+                TagConv.getFloatTagProperty(entity,"ItemDropChance","item_drop_chance", properties);
+                if(entity.containsKey("ItemRotation")){
+                    byte itemRotation = entity.getByte("ItemRotation");
+                    String rotation = "NONE";
+                    switch (itemRotation){
+                        case 1 -> rotation = "CLOCKWISE_45";
+                        case 2 -> rotation = "CLOCKWISE";
+                        case 3 -> rotation = "CLOCKWISE_135";
+                        case 4 -> rotation = "FLIPPED";
+                        case 5 -> rotation = "FLIPPED_45";
+                        case 6 -> rotation = "COUNTER_CLOCKWISE";
+                        case 7 -> rotation = "COUNTER_CLOCKWISE_45\n";
+                    }
+                    properties.put("item_rotation", rotation);
+                }
+
             }
         }
     }
