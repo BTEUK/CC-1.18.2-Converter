@@ -1,22 +1,12 @@
 package me.bteuk.converterplugin.utils.entities;
 
 import me.bteuk.converterplugin.utils.Utils;
-import me.bteuk.converterplugin.utils.items.ItemsHelper;
+import me.bteuk.converterplugin.utils.inventory.InventoryHelper;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Minecart;
 import org.bukkit.entity.minecart.*;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.loot.LootTable;
-import org.bukkit.loot.LootTables;
-import org.bukkit.metadata.MetadataValue;
-import org.bukkit.metadata.MetadataValueAdapter;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-
-import java.util.List;
 
 public class MinecartHelper {
 
@@ -40,13 +30,13 @@ public class MinecartHelper {
     }
 
     public static void prepChestMinecart(StorageMinecart storageMinecart, JSONObject props){
-        prepInventoryChest(storageMinecart, props);
-        prepLootableChest(storageMinecart, props);
+        InventoryHelper.prepInventoryChest(storageMinecart, props);
+        InventoryHelper.prepLootableChest(storageMinecart, props);
     }
 
     public static void prepHopperMinecart(HopperMinecart hopperMinecart, JSONObject props){
-        prepInventoryChest(hopperMinecart, props);
-        prepLootableChest(hopperMinecart, props);
+        InventoryHelper.prepInventoryChest(hopperMinecart, props);
+        InventoryHelper.prepLootableChest(hopperMinecart, props);
         if(props.containsKey("enabled"))
             hopperMinecart.setEnabled((int) (long) props.get("enabled") == 1);
     }
@@ -70,25 +60,4 @@ public class MinecartHelper {
             //ToDo: Once updated to 1.20.4+ Use explosiveMinecart.setFuseTicks((int)props.get("tnt_fuse"))
         }
     }
-
-    public static void prepInventoryChest(InventoryHolder inventoryHolder, JSONObject props){
-        if(props.containsKey("items")){
-            JSONArray minecartItems = (JSONArray) props.get("items");
-            Inventory inventory = inventoryHolder.getInventory();
-            ItemsHelper.setItems(inventory, minecartItems);
-        }
-    }
-
-    public static void prepLootableChest(com. destroystokyo. paper. loottable. LootableEntityInventory lootableEntityInventory, JSONObject props){
-        if(props.containsKey("loot_table")){
-            String _lootTable = (String) props.get("loot_table");
-            LootTable lootTable = Utils.getLootTable(_lootTable);
-            if(_lootTable != null)
-                if(props.containsKey("loot_table_seed"))
-                    lootableEntityInventory.setLootTable(lootTable, (long) props.get("loot_table_seed"));
-                else
-                    lootableEntityInventory.setLootTable(lootTable);
-        }
-    }
-
 }

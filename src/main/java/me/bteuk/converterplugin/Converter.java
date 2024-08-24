@@ -15,7 +15,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Skull;
 import org.bukkit.block.banner.Pattern;
-import org.bukkit.block.banner.PatternType;
 import org.bukkit.block.data.*;
 import org.bukkit.block.data.type.*;
 import org.bukkit.block.data.type.Observer;
@@ -27,9 +26,7 @@ import org.bukkit.loot.LootTable;
 import org.bukkit.loot.LootTables;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -377,8 +374,9 @@ public class Converter {
 
                 if(object.containsKey("properties")){
                     JSONObject props = (JSONObject) object.get("properties");
+                    org.bukkit.block.Chest _chest = (org.bukkit.block.Chest) block.getState();
+
                     if(props.containsKey("loot_table")){
-                        org.bukkit.block.Chest _chest = (org.bukkit.block.Chest) block.getState();
                         String _lootTable = (String) props.get("loot_table");
                         LootTable lootTable = LootTables.SIMPLE_DUNGEON.getLootTable();
                         if(_lootTable.startsWith("minecraft")) {
@@ -399,13 +397,52 @@ public class Converter {
                     }
 
                     if(props.containsKey("items")){
-                        org.bukkit.block.Chest _chest = (org.bukkit.block.Chest) block.getState();
                         Inventory chestInventory = _chest.getBlockInventory();
                         JSONArray itemsRaw = (JSONArray) props.get("items");
                         ItemsHelper.setItems(chestInventory, itemsRaw);
                     }
                 }
 
+            }
+
+            case "minecraft:shulker_box", "minecraft:pink_shulker_box", "minecraft:red_shulker_box",
+                 "minecraft:lime_shulker_box", "minecraft:gray_shulker_box","minecraft:cyan_shulker_box",
+                 "minecraft:blue_shulker_box", "minecraft:white_shulker_box", "minecraft:brown_shulker_box",
+                 "minecraft:green_shulker_box", "minecraft:black_shulker_box", "minecraft:orange_shulker_box",
+                 "minecraft:yellow_shulker_box", "minecraft:purple_shulker_box", "minecraft:magenta_shulker_box",
+                 "minecraft:light_blue_shulker_box", "minecraft:light_gray_shulker_box"  -> {
+
+
+                if(object.containsKey("properties")){
+                    JSONObject props = (JSONObject) object.get("properties");
+                    org.bukkit.block.ShulkerBox shulkerBox = (org.bukkit.block.ShulkerBox) block.getState();
+
+                    if(props.containsKey("loot_table")){
+                        String _lootTable = (String) props.get("loot_table");
+                        LootTable lootTable = LootTables.SIMPLE_DUNGEON.getLootTable();
+                        if(_lootTable.startsWith("minecraft")) {
+                            _lootTable = _lootTable.substring(10);
+                            _lootTable = _lootTable.substring(_lootTable.indexOf("/") + 1).toUpperCase();
+                            try{
+                                lootTable = LootTables.valueOf(_lootTable).getLootTable();
+                            }catch (Exception ex){ }
+                        }
+
+
+                        if(props.containsKey("loot_table_seed")){
+                            long _lootTableSeed = (long) props.get("loot_table_seed");
+                            shulkerBox.setLootTable(lootTable, _lootTableSeed);
+                        }else {
+                            shulkerBox.setLootTable(lootTable);
+                        }
+                    }
+
+                    if(props.containsKey("items")){
+                        Inventory chestInventory = shulkerBox.getInventory();
+                        JSONArray itemsRaw = (JSONArray) props.get("items");
+                        ItemsHelper.setItems(chestInventory, itemsRaw);
+                    }
+                }
             }
 
             case "minecraft:redstone_wire" -> {
@@ -1459,245 +1496,6 @@ public class Converter {
         return wall;
     }
 
-    private PatternType getPatternType(String p) {
-
-        switch (p) {
-
-            case "bs" -> {
-                return PatternType.STRIPE_BOTTOM;
-            }
-
-            case "ts" -> {
-                return PatternType.STRIPE_TOP;
-            }
-
-            case "ls" -> {
-                return PatternType.STRIPE_LEFT;
-            }
-
-            case "rs" -> {
-                return PatternType.STRIPE_RIGHT;
-            }
-
-            case "cs" -> {
-                return PatternType.STRIPE_CENTER;
-            }
-
-            case "ms" -> {
-                return PatternType.STRIPE_MIDDLE;
-            }
-
-            case "drs" -> {
-                return PatternType.STRIPE_DOWNRIGHT;
-            }
-
-            case "dls" -> {
-                return PatternType.STRIPE_DOWNLEFT;
-            }
-
-            case "ss" -> {
-                return PatternType.STRIPE_SMALL;
-            }
-
-            case "cr" -> {
-                return PatternType.CROSS;
-            }
-
-            case "sc" -> {
-                return PatternType.STRAIGHT_CROSS;
-            }
-
-            case "ld" -> {
-                return PatternType.DIAGONAL_LEFT;
-            }
-
-            case "rud" -> {
-                return PatternType.DIAGONAL_RIGHT_MIRROR;
-            }
-
-            case "lud" -> {
-                return PatternType.DIAGONAL_LEFT_MIRROR;
-            }
-
-            case "rd" -> {
-                return PatternType.DIAGONAL_RIGHT;
-            }
-
-            case "vh" -> {
-                return PatternType.HALF_VERTICAL;
-            }
-
-            case "vhr" -> {
-                return PatternType.HALF_VERTICAL_MIRROR;
-            }
-
-            case "hh" -> {
-                return PatternType.HALF_HORIZONTAL;
-            }
-
-            case "hhb" -> {
-                return PatternType.HALF_HORIZONTAL_MIRROR;
-            }
-
-            case "bl" -> {
-                return PatternType.SQUARE_BOTTOM_LEFT;
-            }
-
-            case "br" -> {
-                return PatternType.SQUARE_BOTTOM_RIGHT;
-            }
-
-            case "tl" -> {
-                return PatternType.SQUARE_TOP_LEFT;
-            }
-
-            case "tr" -> {
-                return PatternType.SQUARE_TOP_RIGHT;
-            }
-
-            case "bt" -> {
-                return PatternType.TRIANGLE_BOTTOM;
-            }
-
-            case "tt" -> {
-                return PatternType.TRIANGLE_TOP;
-            }
-
-            case "bts" -> {
-                return PatternType.TRIANGLES_BOTTOM;
-            }
-
-            case "tts" -> {
-                return PatternType.TRIANGLES_TOP;
-            }
-
-            case "mc" -> {
-                return PatternType.CIRCLE_MIDDLE;
-            }
-
-            case "mr" -> {
-                return PatternType.RHOMBUS_MIDDLE;
-            }
-            case "bo" -> {
-                return PatternType.BORDER;
-            }
-
-            case "cbo" -> {
-                return PatternType.CURLY_BORDER;
-            }
-
-            case "bri" -> {
-                return PatternType.BRICKS;
-            }
-
-            case "gra" -> {
-                return PatternType.GRADIENT;
-            }
-
-            case "gru" -> {
-                return PatternType.GRADIENT_UP;
-            }
-
-            case "cre" -> {
-                return PatternType.CREEPER;
-            }
-
-            case "sku" -> {
-                return PatternType.SKULL;
-            }
-
-            case "flo" -> {
-                return PatternType.FLOWER;
-            }
-
-            case "moj" -> {
-                return PatternType.MOJANG;
-            }
-
-            case "glb" -> {
-                return PatternType.GLOBE;
-            }
-
-            case "pig" -> {
-                return PatternType.PIGLIN;
-            }
-
-            default -> {
-                return PatternType.BASE;
-            }
-        }
-    }
-
-    private DyeColor getDyeColour(String c) {
-
-        switch (c) {
-
-            case "orange" -> {
-                return DyeColor.ORANGE;
-            }
-
-            case "magenta" -> {
-                return DyeColor.MAGENTA;
-            }
-
-            case "light_blue" -> {
-                return DyeColor.LIGHT_BLUE;
-            }
-
-            case "yellow" -> {
-                return DyeColor.YELLOW;
-            }
-
-            case "lime" -> {
-                return DyeColor.LIME;
-            }
-
-            case "pink" -> {
-                return DyeColor.PINK;
-            }
-
-            case "gray" -> {
-                return DyeColor.GRAY;
-            }
-
-            case "light_gray" -> {
-                return DyeColor.LIGHT_GRAY;
-            }
-
-            case "cyan" -> {
-                return DyeColor.CYAN;
-            }
-
-            case "purple" -> {
-                return DyeColor.PURPLE;
-            }
-
-            case "blue" -> {
-                return DyeColor.BLUE;
-            }
-
-            case "brown" -> {
-                return DyeColor.BROWN;
-            }
-
-            case "green" -> {
-                return DyeColor.GREEN;
-            }
-
-            case "red" -> {
-                return DyeColor.RED;
-            }
-
-            case "black" -> {
-                return DyeColor.BLACK;
-            }
-
-            default -> {
-                return DyeColor.WHITE;
-            }
-        }
-    }
-
     private void setRotation(Rotatable rot, byte rotation) {
         switch (rotation) {
 
@@ -1729,8 +1527,8 @@ public class Converter {
             for (Object o : patterns) {
                 JSONObject pattern = (JSONObject) o;
 
-                banner.addPattern(new Pattern(getDyeColour((String) pattern.get("colour")),
-                        getPatternType((String) pattern.get("pattern"))));
+                banner.addPattern(new Pattern(Utils.getDyeColour((String) pattern.get("colour")),
+                        Utils.getPatternType((String) pattern.get("pattern"))));
             }
 
             banner.update(false, false);

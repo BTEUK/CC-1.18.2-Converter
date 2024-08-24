@@ -1,4 +1,4 @@
-package me.bteuk.converterplugin.utils.entities;
+package me.bteuk.converterplugin.utils.items;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import org.bukkit.Bukkit;

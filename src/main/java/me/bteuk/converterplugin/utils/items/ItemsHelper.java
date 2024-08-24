@@ -1,7 +1,7 @@
 package me.bteuk.converterplugin.utils.items;
 
 import com.destroystokyo.paper.Namespaced;
-import me.bteuk.converterplugin.utils.entities.ItemSkullHelper;
+import me.bteuk.converterplugin.utils.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextColor;
@@ -10,19 +10,19 @@ import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.block.ShulkerBox;
+import org.bukkit.block.banner.Pattern;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.enchantments.EnchantmentWrapper;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.*;
+import org.bukkit.loot.LootTable;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,6 +45,16 @@ public class ItemsHelper {
         ItemMeta itemMeta = itemStack.getItemMeta();
 
         boolean skipDisplayProps = false;
+
+
+
+        if(id.contains("potion") && props.containsKey("custom_potion_color")){
+            int customPotionColor = (int)(long)props.get("custom_potion_color");
+            PotionMeta potionMeta = (PotionMeta) itemStack.getItemMeta();
+            potionMeta.setColor(Color.fromRGB(customPotionColor));
+            itemStack.setItemMeta(potionMeta);
+            itemMeta = itemStack.getItemMeta();
+        }
 
         //Player Head
         if(props.containsKey("SkullOwner")){
@@ -71,26 +81,6 @@ public class ItemsHelper {
             skipDisplayProps = true;
         }
 
-        //General tags
-        if(props.containsKey("GeneralTags")){
-            JSONObject generalTags = (JSONObject) props.get("GeneralTags");
-            if(generalTags.containsKey("unbreakable"))
-                itemMeta.setUnbreakable((int)(long)generalTags.get("unbreakable") == 1);
-            if(generalTags.containsKey("CanDestroy")){
-                JSONArray canDestroy = (JSONArray) generalTags.get("CanDestroy");
-                Collection<Namespaced> canDestroyCol = new JSONArray();
-                int index = 0;
-                for(int c = 0; c < canDestroy.size(); c++){
-                    String _namespaceID = (String) canDestroy.get(c);
-                    index = _namespaceID.indexOf(":");
-                    canDestroyCol.add(new NamespacedKey(_namespaceID.substring(0, index), _namespaceID.substring(index + 1)));
-                }
-                if(!canDestroyCol.isEmpty())
-                    itemMeta.setDestroyableKeys(canDestroyCol);
-            }
-        }
-
-
         //Potions
         if(props.containsKey("PotionEffects")){
             JSONObject potionEffects = (JSONObject) props.get("PotionEffects");
@@ -98,6 +88,43 @@ public class ItemsHelper {
             PotionMeta potionMeta = (PotionMeta) itemMeta;
             potionMeta.setBasePotionData(new PotionData(PotionType.valueOf(_potion)));
             itemStack.setItemMeta(potionMeta);
+        }else if((id.equals("writable_book") || id.equals("written_book"))){
+            BookMeta bookMeta = (BookMeta) itemStack.getItemMeta();
+            BookMeta.BookMetaBuilder bookMetaBuilder = bookMeta.toBuilder();
+
+
+            if(props.containsKey("book_author"))
+                bookMetaBuilder.author(Component.text((String) props.get("book_author")));
+            if(props.containsKey("book_title"))
+                bookMetaBuilder.title(Component.text((String) props.get("book_title")));
+
+            if(props.containsKey("book_pages")){
+                JSONArray _bookPages = (JSONArray)props.get("book_pages");
+                List<Component> bookPages = new ArrayList<>();
+                for(int c = 0; c < _bookPages.size(); c++){
+                    bookPages.add(Component.text((String) _bookPages.get(c)));
+                }
+                bookMetaBuilder.pages(bookPages);
+            }
+
+            bookMeta = bookMetaBuilder.build();
+
+            if(props.containsKey("book_generation"))
+                bookMeta.setGeneration(BookMeta.Generation.valueOf((String) props.get("book_generation")));
+
+            itemStack.setItemMeta(bookMeta);
+            itemMeta = itemStack.getItemMeta();
+        }else if(id.equals("knowledge_book") && props.containsKey("book_recipes")){
+            JSONArray bookRecipes = (JSONArray) props.get("book_recipes");
+            KnowledgeBookMeta knowledgeBookMeta = (KnowledgeBookMeta) itemStack.getItemMeta();
+            for(int c = 0; c < bookRecipes.size(); c++){
+                String recipe = (String) bookRecipes.get(c);
+                if(recipe.startsWith("minecraft:"))
+                    knowledgeBookMeta.addRecipe(new NamespacedKey("minecraft", recipe.substring(10)));
+            }
+
+            itemStack.setItemMeta(knowledgeBookMeta);
+            itemMeta = itemStack.getItemMeta();
         }
 
 
@@ -132,6 +159,29 @@ public class ItemsHelper {
             itemStack.setItemMeta(fireworkMeta);
         }
 
+
+        //General tags
+        if(props.containsKey("GeneralTags")){
+            JSONObject generalTags = (JSONObject) props.get("GeneralTags");
+            if(generalTags.containsKey("unbreakable"))
+                itemMeta.setUnbreakable((int)(long)generalTags.get("unbreakable") == 1);
+            if(generalTags.containsKey("CanDestroy")){
+                JSONArray canDestroy = (JSONArray) generalTags.get("CanDestroy");
+                Collection<Namespaced> canDestroyCol = new JSONArray();
+                int index = 0;
+                for(int c = 0; c < canDestroy.size(); c++){
+                    String _namespaceID = (String) canDestroy.get(c);
+                    index = _namespaceID.indexOf(":");
+                    canDestroyCol.add(new NamespacedKey(_namespaceID.substring(0, index), _namespaceID.substring(index + 1)));
+                }
+                if(!canDestroyCol.isEmpty())
+                    itemMeta.setDestroyableKeys(canDestroyCol);
+            }
+        }
+
+
+
+
         //Display Properties
         if(props.containsKey("DisplayProps") && !skipDisplayProps){
             JSONObject displayProps = (JSONObject) props.get("DisplayProps");
@@ -155,9 +205,6 @@ public class ItemsHelper {
                 }
                 itemMeta.displayName(component.asComponent());
             }
-
-
-
         }
 
         //Block Tags
@@ -176,7 +223,44 @@ public class ItemsHelper {
                     itemMeta.setPlaceableKeys(canPlaceOnCol);
             }
             if(blockTags.containsKey("BlockEntityTag")){
-                //ToDo: Go through items that use the BlockEntityTag tag
+                JSONObject blockEntity = (JSONObject) blockTags.get("BlockEntityTag");
+
+                if(id.contains("shulker_box") && blockEntity.containsKey("items")){
+                    JSONArray _items = (JSONArray) blockEntity.get("items");
+
+                    BlockStateMeta blockStateMeta = (BlockStateMeta)itemMeta;
+                    ShulkerBox shulkerBox = (ShulkerBox) blockStateMeta.getBlockState();
+
+                    if(blockEntity.containsKey("loot_table")){
+                        String _lootTable = (String) blockEntity.get("loot_table");
+                        LootTable lootTable = Utils.getLootTable(_lootTable);
+                        if(blockEntity.containsKey("loot_table_seed")){
+                            long _lootTableSeed = (long) blockEntity.get("loot_table_seed");
+                            shulkerBox.setLootTable(lootTable, _lootTableSeed);
+                        }else
+                            shulkerBox.setLootTable(lootTable);
+                    }
+
+                    Inventory inventory = shulkerBox.getInventory();
+                    setItems(inventory, _items);
+
+                    blockStateMeta.setBlockState(shulkerBox);
+                    itemStack.setItemMeta(blockStateMeta);
+                    itemMeta = itemStack.getItemMeta();
+                }else if(id.contains("banner")){
+                    BannerMeta bannerMeta = (BannerMeta) itemMeta;
+                    JSONArray _patterns = (JSONArray) blockEntity.get("patterns");
+                    for(int c = 0; c < _patterns.size(); c++){
+                        JSONObject _pattern = (JSONObject) _patterns.get(c);
+                        bannerMeta.addPattern(new Pattern(Utils.getDyeColour((String) _pattern.get("colour")),
+                                Utils.getPatternType((String) _pattern.get("pattern"))));
+                    }
+
+                    itemStack.setItemMeta(bannerMeta);
+                    itemMeta = itemStack.getItemMeta();
+                }
+
+
             }
         }
 
