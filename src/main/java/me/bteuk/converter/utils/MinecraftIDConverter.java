@@ -1,14 +1,31 @@
 package me.bteuk.converter.utils;
 
 import me.bteuk.converter.Main;
+import net.querz.nbt.io.NBTInputStream;
+import net.querz.nbt.io.NBTUtil;
+import net.querz.nbt.io.NamedTag;
 import net.querz.nbt.tag.*;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 public class MinecraftIDConverter {
-    
+    private static final Logger log = LoggerFactory.getLogger(MinecraftIDConverter.class);
+    private static MinecraftIDConverter instance = new MinecraftIDConverter();
+
+
         /*
 
     List of blocks for post-processing:
@@ -6054,9 +6071,30 @@ public class MinecraftIDConverter {
                     TagConv.getStringTagListProperty(tagItem, "pages", "book_pages", props);
                 }
                 case "knowledge_book" -> {
-                    TagConv.getStringTagListProperty(tagItem, "Recipes", "book_recipes", props);
+                    if(tagItem.containsKey("Tags")){
+                        List<String> _recipes = new ArrayList<>();
+                        Tag<?> tags = tagItem.get("Tags");
+                        if(tags instanceof CompoundTag){
+                            CompoundTag _tag = (CompoundTag) tags;
+                            getRecipes(_tag, _recipes);
+                        }else if(tags instanceof ListTag<?>){
+                            ListTag<CompoundTag> _tags = ((ListTag<?>) tags).asCompoundTagList();
+                            for(CompoundTag _tag : _tags)
+                                getRecipes(_tag, _recipes);
+                        }
+
+                        if(!_recipes.isEmpty())
+                            props.put("book_recipes", _recipes);
+                    }
                 }
-                case "map", "filled_map" -> {
+                case "filled_map" -> {
+                    try {
+                        short org_id = instance.convertMapItem(damage);
+                        if(org_id != -1)
+                            props.put("org_id", org_id);
+                    }catch (Exception ex){
+                        String w = "2";
+                    }
                     //ToDo: Add full support for maps
                 }
                 case "skull" -> {
@@ -6167,6 +6205,9 @@ public class MinecraftIDConverter {
                         getPatternTags(blockEntityTag, entityTag);
                     else if(legacyID.contains("shulker_box"))
                         getInventoryTags(blockEntityTag, entityTag);
+                    else {
+                        String w = "2";
+                    }
 
 
                     //TagConv.getCompoundTagProperties(blockEntityTag, entityTag);
@@ -6373,6 +6414,68 @@ public class MinecraftIDConverter {
 
             properties.put("patterns", _patterns);
         }
+    }
+
+    public static void getRecipes(CompoundTag recipeTag, List<String> recipes){
+        if(recipeTag.containsKey("Recipes")){
+            Tag<?> recipesTag = recipeTag.get("Recipes");
+            if(recipesTag instanceof StringTag)
+                recipes.add(((StringTag)recipesTag).getValue());
+            else if(recipesTag instanceof ListTag<?>){
+                ListTag<StringTag> recipesListTag = ((ListTag<?>) recipesTag).asStringTagList();
+                for(StringTag recipeStringTag : recipesListTag)
+                    recipes.add(recipeStringTag.getValue());
+            }
+        }
+    }
+
+    public static Path DATA_PATH;
+    public static Path MAPS_PATH;
+    private ConcurrentHashMap<Short, CompletableFuture<Short>> convertedMapItems = new ConcurrentHashMap<>();
+
+    public short convertMapItem(short id) throws ExecutionException, InterruptedException {
+        CompletableFuture<Short> future = convertedMapItems.computeIfAbsent(id,this::processMapItem);
+        return future.get();
+    }
+
+    private CompletableFuture<Short> processMapItem(short id){
+        return CompletableFuture.supplyAsync(() -> {
+            Path mapDatPath = DATA_PATH.resolve("map_" + id + ".dat");
+            if(Files.exists(mapDatPath)){
+                try {
+                    CompoundTag mapTag = (CompoundTag) NBTUtil.read(mapDatPath.toFile()).getTag();
+                    CompoundTag mapDataTag = mapTag.getCompoundTag("data");
+
+                    if(mapDataTag.getInt("dimension") != 0)
+                        return (short)-1;
+
+                    JSONObject mapItem = new JSONObject();
+                    TagConv.getByteTagProperty(mapDataTag, "scale", "scale", mapItem);
+                    //TagConv.getShortTagProperty(mapDataTag, "height", "height", mapItem);
+                    //TagConv.getShortTagProperty(mapDataTag, "width", "width", mapItem);
+                    TagConv.getByteTagProperty(mapDataTag, "unlimitedTracking", "unlimited_tracking", mapItem);
+                    TagConv.getIntTagProperty(mapDataTag, "xCenter", "x_center", mapItem);
+                    TagConv.getIntTagProperty(mapDataTag, "zCenter", "z_center", mapItem);
+                    TagConv.getByteArrayTagProperty(mapDataTag, "colors", "colors", mapItem);
+
+                    /*if(mapDataTag.containsKey("colors")){
+                        byte[] _colors = mapDataTag.getByteArrayTag("colors").getValue();
+                        List<Integer> colors = new ArrayList<>();
+                        for(int c = 0; c < _colors.length; c++)
+                            colors.add((Byte.toUnsignedInt(_colors[c]) + 1) / 4);
+                        mapItem.put("colors", colors);
+                    }*/
+
+                    TagConv.getCompoundTagProperties(mapDataTag, mapItem);
+
+                    FileWriter mapFile = new FileWriter(MAPS_PATH.resolve("map_" + id + ".json" ).toFile());
+                    mapFile.write(mapItem.toJSONString());
+                    mapFile.flush();
+                    mapFile.close();
+                }catch (Exception ex){ log.error(String.format("Error while processing map_%1$d.dat | Error: %2$s", id, ex.getMessage()));}
+            }
+           return id;
+        });
     }
 
     public static void getBlockEntityTags(String legacyID, Byte data, CompoundTag blockEntity, JSONObject properties){

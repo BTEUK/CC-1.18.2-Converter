@@ -34,8 +34,22 @@ public class TagConv {
 
     public static void getIntArrayTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
         if(tag.containsKey(tagName)){
-            IntArrayTag intArrayTag = tag.getIntArrayTag(tagName);
-            properties.put(propName, intArrayTag.getValue());
+            int[] intArray = tag.getIntArrayTag(tagName).getValue();
+            List<Integer> intList = new ArrayList<>();
+            for(int c = 0; c < intArray.length; c++)
+                intList.add(intArray[c]);
+            properties.put(propName, intList);
+        }
+    }
+
+    public static void getByteArrayTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
+        if(tag.containsKey(tagName)){
+            byte[] byteArray = tag.getByteArrayTag(tagName).getValue();
+            List<Byte> byteList = new ArrayList<>();
+            for(int c = 0; c < byteArray.length; c++)
+                byteList.add(byteArray[c]);
+
+            properties.put(propName, byteList);
         }
     }
 

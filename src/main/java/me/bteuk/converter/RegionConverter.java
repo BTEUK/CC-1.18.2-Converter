@@ -46,7 +46,10 @@ public class RegionConverter extends Thread {
 
     boolean unique;
 
-    final BlockingQueue<String> queue;
+    final BlockingQueue<RegionTask> queue;
+
+    //Paths to map_<#>.dat in "data" folder
+    List<String> maps = new ArrayList<>();
 
     //Biome related stuff.
     ListTag<StringTag> biomePalette = new ListTag<>(StringTag.class);
@@ -98,7 +101,7 @@ public class RegionConverter extends Thread {
 
     int counter;
 
-    public RegionConverter(UUID uuid, BlockingQueue<String> queue, ThreadManager mng) {
+    public RegionConverter(UUID uuid, BlockingQueue<RegionTask> queue, ThreadManager mng) {
 
         this.uuid = uuid;
         this.queue = queue;
@@ -117,9 +120,9 @@ public class RegionConverter extends Thread {
         //Iterate until the queue is empty.
         try {
             while (true) {
-                file = queue.take();
+                RegionTask regionTask = queue.take();
 
-                if (file.equals("end")) {
+                if (regionTask.isEndTask()) {
                     mng.activeThreads.decrementAndGet();
 
                     //Write entities file.
@@ -129,6 +132,8 @@ public class RegionConverter extends Thread {
                     //ppFile.close();
                     break;
                 }
+
+                file = regionTask.getRegion();
 
                 try {
                     convert();

@@ -10,8 +10,10 @@ import cubicchunks.regionlib.lib.provider.SimpleRegionProvider;
 import me.bteuk.converter.cc.MemoryReadRegion;
 import me.bteuk.converter.cc.RWLockingCachedRegionProvider;
 import me.bteuk.converter.cc.Utils;
+import me.bteuk.converter.utils.MinecraftIDConverter;
 
 import java.io.*;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,6 +56,7 @@ public class WorldIterator {
         try {
             Files.createDirectories(output.resolve("post-processing"));
             Files.createDirectories(output.resolve("region"));
+            Files.createDirectories(output.resolve("maps"));
             //Files.createDirectories(output.resolve("entities"));
         } catch (IOException e) {
             e.printStackTrace();
@@ -63,6 +66,11 @@ public class WorldIterator {
 
         //Get all the files in the folder.
         String[] files = new File(input.resolve("region2d").toString()).list();
+
+        //Set the data folder of the world and output maps folder to ID converter
+        MinecraftIDConverter.DATA_PATH = input.resolve("data");
+        MinecraftIDConverter.MAPS_PATH = output.resolve("maps");
+
 
         if (files == null) {
             return;
@@ -77,7 +85,7 @@ public class WorldIterator {
 
             //Add all the files to the queue.
             try {
-                manager.queue.put(sFile);
+                manager.queue.put(RegionTask.regionTask(sFile));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
