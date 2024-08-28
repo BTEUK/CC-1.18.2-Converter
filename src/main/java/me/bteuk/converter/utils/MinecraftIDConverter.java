@@ -731,7 +731,7 @@ public class MinecraftIDConverter {
         }
         block_entity.putBoolean("keepPacked", false);
         block_entity.putInt("x", tile_entity.getInt("x"));
-        block_entity.putInt("y", tile_entity.getInt("y"));
+        block_entity.putInt("y", tile_entity.getInt("y") + Main.OFFSET);
         block_entity.putInt("z", tile_entity.getInt("z"));
 
         //Now for the unique tags.
