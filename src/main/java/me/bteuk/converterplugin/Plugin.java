@@ -2,6 +2,8 @@ package me.bteuk.converterplugin;
 
 import io.papermc.lib.PaperLib;
 import me.bteuk.converterplugin.utils.exceptions.FolderEmptyException;
+import me.bteuk.converterplugin.utils.items.ItemMapsHelper;
+import me.bteuk.converterplugin.utils.items.ItemsHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -11,12 +13,10 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Optional;
@@ -32,7 +32,7 @@ public class Plugin extends JavaPlugin {
 
         saveDefaultConfig();
 
-        //Get datafolder.
+        //Get data folder.
         Path folder = Path.of(getDataFolder().getAbsolutePath()).resolve("post-processing");
 
         //If no files exist in the folder, disable the plugin as it is no longer necessary.
@@ -52,6 +52,32 @@ public class Plugin extends JavaPlugin {
 
         World world = Bukkit.getWorld(worldName);
 
+        //Get json parser.
+        JSONParser parser = new JSONParser();
+        getLogger().info("Converter activated.");
+
+        try {
+            Path mapsItemFolder = Path.of(getDataFolder().getAbsolutePath()).resolve("maps");
+            Path mapsIdFile = Path.of(getDataFolder().getAbsolutePath()).resolve("mapID.json");
+            Path dataFolder = Paths.get( Bukkit.getWorldContainer().getCanonicalPath().replace("\\", "/"), worldName, "data");
+
+            //Setup item maps helper
+            new ItemMapsHelper(world, mapsIdFile, mapsItemFolder,dataFolder, parser);
+
+            //Read mapID.json file, that contains the mapping of original map item ID's to new map item ID's
+            if (Files.exists(mapsIdFile))
+                ItemMapsHelper.instance.readReadMapsID();
+
+            if(!isFolderEmpty(mapsItemFolder)) {
+                getLogger().info("Converting map items");
+                ItemMapsHelper.instance.convertMaps();
+                getLogger().info("Converted map items");
+            }
+
+        }catch (Exception exception) {
+            getLogger().warning(String.format("Error while converting map items in maps folder: %1$s", exception.getMessage()));
+        }
+
         //Enable world analyser functions if enabled in config.
         if (getConfig().getBoolean("world_analyser")) {
 
@@ -59,12 +85,9 @@ public class Plugin extends JavaPlugin {
 
         }
 
+
         Converter converter = new Converter(this, world);
         LinkedHashSet<File> converterQueue = new LinkedHashSet<>();
-
-        //Get json parser.
-        JSONParser parser = new JSONParser();
-        getLogger().info("Converter activated.");
 
         //List of repeating tasks, they are stored, so they can be cancelled if not needed.
         tasks = new ArrayList<>();
@@ -182,6 +205,16 @@ public class Plugin extends JavaPlugin {
 
                     }
                 }, 0L, 80L).getTaskId());
+
+    }
+
+    @Override
+    public void onDisable(){
+        try {
+            ItemMapsHelper.instance.writeMapsID();
+        }catch (Exception ex){
+            getLogger().warning("Warning, error while writing mapID.json: " + ex.getMessage());
+        }
 
     }
 

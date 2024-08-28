@@ -42,8 +42,6 @@ public class Converter {
         this.world = world;
 
         isRunning = false;
-
-        ItemsHelper.setLogger(instance.getLogger());
     }
 
     public boolean isRunning() {
@@ -139,7 +137,7 @@ public class Converter {
 
                         try {
                             setBlockData(jObject, blockLocation);
-                        } catch (BlockNotFoundException e) {
+                        } catch (Exception e) {
                             instance.getLogger().warning(e.getMessage());
                         }
                     }else {
@@ -164,7 +162,7 @@ public class Converter {
     }
 
     //Set the blockData of the block.
-    private void setBlockData(JSONObject object, Location l) throws BlockNotFoundException {
+    private void setBlockData(JSONObject object, Location l) throws Exception {
 
         Block block = world.getBlockAt(l);
 

@@ -18,6 +18,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.*;
 import org.bukkit.loot.LootTable;
+import org.bukkit.map.MapView;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionType;
 import org.json.simple.JSONArray;
@@ -31,13 +32,6 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 public class ItemsHelper {
-
-    private static Logger logger;
-
-    public static void setLogger(Logger _logger){
-        logger = _logger;
-    }
-
     public static ItemStack getItem(String id, JSONObject props) throws Exception{
         ItemStack itemStack = new ItemStack(Material.getMaterial(id.toUpperCase()));
 
@@ -119,11 +113,17 @@ public class ItemsHelper {
             KnowledgeBookMeta knowledgeBookMeta = (KnowledgeBookMeta) itemStack.getItemMeta();
             for(int c = 0; c < bookRecipes.size(); c++){
                 String recipe = (String) bookRecipes.get(c);
-                if(recipe.startsWith("minecraft:"))
-                    knowledgeBookMeta.addRecipe(new NamespacedKey("minecraft", recipe.substring(10)));
+                knowledgeBookMeta.addRecipe(new NamespacedKey("minecraft", recipe));
             }
 
             itemStack.setItemMeta(knowledgeBookMeta);
+            itemMeta = itemStack.getItemMeta();
+        }else if(id.equals("filled_map") && props.containsKey("org_id")){
+            int org_id = (int)(long)props.get("org_id");
+            MapMeta mapMeta = (MapMeta) itemStack.getItemMeta();
+            MapView mapView = ItemMapsHelper.instance.getMapView(org_id);
+            mapMeta.setMapView(mapView);
+            itemStack.setItemMeta(mapMeta);
             itemMeta = itemStack.getItemMeta();
         }
 
@@ -363,7 +363,7 @@ public class ItemsHelper {
         return cols;
     }
 
-    public static void setItems(Inventory inventory, JSONArray items){
+    public static void setItems(Inventory inventory, JSONArray items) throws Exception {
         for(Object itemRaw : items){
             JSONObject _item = (JSONObject) itemRaw;
             String _id = (String) _item.get("id");
@@ -378,7 +378,7 @@ public class ItemsHelper {
                     itemStack.setAmount(_count);
                     inventory.setItem(_slot, itemStack);
                 }catch (Exception ex){
-                    logger.warning(String.format("Exception while setting item: %1$s | Error: %2$s", _id, ex.getMessage()));
+                    throw new Exception(String.format("Exception while setting item: %1$s | Error: %2$s", _id, ex.getMessage()));
                 }
 
             }

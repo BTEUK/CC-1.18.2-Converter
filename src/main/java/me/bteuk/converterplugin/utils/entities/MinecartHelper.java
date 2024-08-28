@@ -29,12 +29,12 @@ public class MinecartHelper {
         }
     }
 
-    public static void prepChestMinecart(StorageMinecart storageMinecart, JSONObject props){
+    public static void prepChestMinecart(StorageMinecart storageMinecart, JSONObject props) throws Exception {
         InventoryHelper.prepInventoryChest(storageMinecart, props);
         InventoryHelper.prepLootableChest(storageMinecart, props);
     }
 
-    public static void prepHopperMinecart(HopperMinecart hopperMinecart, JSONObject props){
+    public static void prepHopperMinecart(HopperMinecart hopperMinecart, JSONObject props) throws Exception {
         InventoryHelper.prepInventoryChest(hopperMinecart, props);
         InventoryHelper.prepLootableChest(hopperMinecart, props);
         if(props.containsKey("enabled"))

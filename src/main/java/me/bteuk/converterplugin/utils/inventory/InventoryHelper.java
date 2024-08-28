@@ -9,7 +9,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 public class InventoryHelper {
-    public static void prepInventoryChest(InventoryHolder inventoryHolder, JSONObject props){
+    public static void prepInventoryChest(InventoryHolder inventoryHolder, JSONObject props) throws Exception {
         if(props.containsKey("items")){
             JSONArray minecartItems = (JSONArray) props.get("items");
             Inventory inventory = inventoryHolder.getInventory();
