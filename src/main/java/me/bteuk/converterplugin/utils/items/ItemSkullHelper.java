@@ -15,17 +15,24 @@ import java.io.StringReader;
 import java.net.URL;
 import java.util.*;
 
+/**
+ * Special helper class to convert custom skull items inside post-processing json files to in-game skull ItemStack with custom textures
+ * @author DavixDevelop
+ */
 public class ItemSkullHelper {
 
     private static JSONParser textureParser = new JSONParser();
 
     public static ItemStack fromTexture(String texture){
         ItemStack skullItem = new ItemStack(Material.PLAYER_HEAD);
-
-
         return  skullItem;
     }
 
+    /**
+     * Create a ItemStack skull from the username of a player
+     * @param username Username of a player
+     * @return Skull ItemStack containing the head of an offline player
+     */
     public static ItemStack fromUsername(String username){
         ItemStack skullItem = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta skullMeta = (SkullMeta) skullItem.getItemMeta();
@@ -34,6 +41,11 @@ public class ItemSkullHelper {
         return skullItem;
     }
 
+    /**
+     * Create a ItemStack skull from the UUID of a player
+     * @param uuid UUID of the player
+     * @return Skull ItemStack containing the head of an offline player
+     */
     public static ItemStack fromUUID(UUID uuid){
         ItemStack skullItem = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta skullMeta = (SkullMeta) skullItem.getItemMeta();
@@ -42,6 +54,15 @@ public class ItemSkullHelper {
         return skullItem;
     }
 
+    /**
+     * Create a ItemStack skull from an encoded base64 string that contains the JSON properties,
+     * ex. the url to the skin/texture
+     * @param id
+     * @param base64
+     * @return
+     * @throws ParseException
+     * @throws IOException
+     */
     public static ItemStack fromBase64(String id, String base64) throws ParseException, IOException {
         ItemStack skullItem = new ItemStack(Material.PLAYER_HEAD, 1, (short)3);
         String rawJson = new String(Base64.getDecoder().decode(base64));

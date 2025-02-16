@@ -2,6 +2,7 @@ package me.bteuk.converterplugin.utils.items;
 
 import com.destroystokyo.paper.Namespaced;
 import me.bteuk.converterplugin.utils.Utils;
+import me.bteuk.converterplugin.utils.inventory.InventoryHelper;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextColor;
@@ -20,6 +21,8 @@ import org.bukkit.inventory.meta.*;
 import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapView;
 import org.bukkit.potion.PotionData;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -29,9 +32,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import java.util.logging.Logger;
 
+/**
+ * Helper class to convert items stored in entities inside post-processing json file to in-game ItemStack items
+ */
 public class ItemsHelper {
+
+    /**
+     * Get the ItemsStack based on the ID of the item, and It's set the properties of the ItemStack based on the JSON object properties of the item
+     * @param id The ID of the item, ex, "knowledge_book"
+     * @param props The JSON object properties of the itme
+     * @return The created ItemStack
+     * @throws Exception If an error happened while setting the properties of the ItemStack
+     */
     public static ItemStack getItem(String id, JSONObject props) throws Exception{
         ItemStack itemStack = new ItemStack(Material.getMaterial(id.toUpperCase()));
 
@@ -39,16 +52,6 @@ public class ItemsHelper {
         ItemMeta itemMeta = itemStack.getItemMeta();
 
         boolean skipDisplayProps = false;
-
-
-
-        if(id.contains("potion") && props.containsKey("custom_potion_color")){
-            int customPotionColor = (int)(long)props.get("custom_potion_color");
-            PotionMeta potionMeta = (PotionMeta) itemStack.getItemMeta();
-            potionMeta.setColor(Color.fromRGB(customPotionColor));
-            itemStack.setItemMeta(potionMeta);
-            itemMeta = itemStack.getItemMeta();
-        }
 
         //Player Head
         if(props.containsKey("SkullOwner")){
@@ -80,7 +83,57 @@ public class ItemsHelper {
             JSONObject potionEffects = (JSONObject) props.get("PotionEffects");
             String _potion = ((String) potionEffects.get("Potion")).substring(10).toUpperCase();
             PotionMeta potionMeta = (PotionMeta) itemMeta;
-            potionMeta.setBasePotionData(new PotionData(PotionType.valueOf(_potion)));
+
+            String _potionEnum = _potion;
+            switch (_potion){
+                case "LEAPING" -> _potionEnum = "JUMP";
+                case "STRONG_LEAPING" -> _potionEnum = "STRONG_JUMP";
+                case "LONG_LEAPING" -> _potionEnum = "LONG_JUMP";
+                case "SWIFTNESS" -> _potionEnum = "SPEED";
+                case "STRONG_SWIFTNESS" -> _potionEnum = "STRONG_SPEED";
+                case "LONG_SWIFTNESS" -> _potionEnum = "LONG_SPEED";
+                case "HEALING" -> _potionEnum = "INSTANT_HEAL";
+                case "STRONG_HEALING" -> _potionEnum = "STRONG_INSTANT_HEAL";
+                case "HARMING" -> _potionEnum = "INSTANT_DAMAGE";
+                case "STRONG_HARMING" -> _potionEnum = "STRONG_INSTANT_DAMAGE";
+                case "REGENERATION" -> _potionEnum = "REGEN";
+                case "STRONG_REGENERATION" -> _potionEnum = "STRONG_REGEN";
+                case "LONG_REGENERATION" -> _potionEnum = "LONG_REGEN";
+
+            }
+
+            if(_potionEnum.startsWith("LONG_"))
+                potionMeta.setBasePotionData(new PotionData(PotionType.valueOf(_potionEnum.substring(5)), true, false));
+            else if( _potionEnum.startsWith("STRONG_"))
+                potionMeta.setBasePotionData(new PotionData(PotionType.valueOf(_potionEnum.substring(7)), false, true));
+            else
+                potionMeta.setBasePotionData(new PotionData(PotionType.valueOf(_potionEnum)));
+
+
+
+            if(potionEffects.containsKey("custom_potion_color")){
+                int customPotionColor = (int)(long)potionEffects.get("custom_potion_color");
+                potionMeta.setColor(Color.fromRGB(customPotionColor));
+            }
+
+            if(potionEffects.containsKey("custom_potion_effects")){
+                JSONArray customPotionEffectsArray = (JSONArray) potionEffects.get("custom_potion_effects");
+                for(int c = 0; c < customPotionEffectsArray.size(); c++){
+                    JSONObject customPotionEffectItem = (JSONObject) customPotionEffectsArray.get(c);
+                    int amplifier = 1;
+                    if(customPotionEffectItem.containsKey("amplifier"))
+                        amplifier = (int)(long)customPotionEffectItem.get("amplifier");
+                    PotionEffect potionEffect = new PotionEffect(PotionEffectType.getByKey(new NamespacedKey("minecraft", (String) customPotionEffectItem.get("id"))), (int)(long)customPotionEffectItem.get("duration"), amplifier);
+                    if(customPotionEffectItem.containsKey("ambient"))
+                        potionEffect.withAmbient((int)(long)customPotionEffectItem.get("ambient") == 1);
+                    if(customPotionEffectItem.containsKey("show_particles"))
+                        potionEffect.withParticles((int)(long)customPotionEffectItem.get("show_particles") == 1);
+
+                    potionMeta.addCustomEffect(potionEffect, true);
+                }
+            }
+
+
             itemStack.setItemMeta(potionMeta);
         }else if((id.equals("writable_book") || id.equals("written_book"))){
             BookMeta bookMeta = (BookMeta) itemStack.getItemMeta();
@@ -118,10 +171,11 @@ public class ItemsHelper {
 
             itemStack.setItemMeta(knowledgeBookMeta);
             itemMeta = itemStack.getItemMeta();
-        }else if(id.equals("filled_map") && props.containsKey("org_id")){
+        }else if(id.equals("filled_map") && props.containsKey("org_id") && props.containsKey("map_session")){
             int org_id = (int)(long)props.get("org_id");
+            String session = (String) props.get("map_session");
             MapMeta mapMeta = (MapMeta) itemStack.getItemMeta();
-            MapView mapView = ItemMapsHelper.instance.getMapView(org_id);
+            MapView mapView = ItemMapsHelper.instance.getMapView(org_id, session);
             mapMeta.setMapView(mapView);
             itemStack.setItemMeta(mapMeta);
             itemMeta = itemStack.getItemMeta();
@@ -233,7 +287,7 @@ public class ItemsHelper {
 
                     if(blockEntity.containsKey("loot_table")){
                         String _lootTable = (String) blockEntity.get("loot_table");
-                        LootTable lootTable = Utils.getLootTable(_lootTable);
+                        LootTable lootTable = InventoryHelper.getLootTable(_lootTable);
                         if(blockEntity.containsKey("loot_table_seed")){
                             long _lootTableSeed = (long) blockEntity.get("loot_table_seed");
                             shulkerBox.setLootTable(lootTable, _lootTableSeed);
@@ -318,6 +372,11 @@ public class ItemsHelper {
         return itemStack;
     }
 
+    /**
+     * Get the FireWorkEffect based on the JSON object properties
+     * @param fireworkProps The JSON object properties
+     * @return The created FireworkEffect based on the given properties
+     */
     public static FireworkEffect getFireworksEffect(JSONObject fireworkProps){
         FireworkEffect.Type type = FireworkEffect.Type.BALL;
         byte _type = (byte) (long)fireworkProps.get("type");
@@ -354,6 +413,11 @@ public class ItemsHelper {
         return fireworkEffectBuilder.build();
     }
 
+    /**
+     * Get a list of colors based on each color integer value inside the JSON array
+     * @param colors JSON array containing integers representing colors
+     * @return List of colors
+     */
     private static List<Color> getColors(JSONArray colors){
         List<Color> cols = new ArrayList<>();
         for(int c = 0; c < colors.size(); c++){
@@ -363,6 +427,12 @@ public class ItemsHelper {
         return cols;
     }
 
+    /**
+     * Set the items in an Inventory from a JSON array containing the items
+     * @param inventory Inventory to set the items
+     * @param items JSON array containing the info of items
+     * @throws Exception If an exception happened while setting the items
+     */
     public static void setItems(Inventory inventory, JSONArray items) throws Exception {
         for(Object itemRaw : items){
             JSONObject _item = (JSONObject) itemRaw;
@@ -380,7 +450,6 @@ public class ItemsHelper {
                 }catch (Exception ex){
                     throw new Exception(String.format("Exception while setting item: %1$s | Error: %2$s", _id, ex.getMessage()));
                 }
-
             }
         }
     }

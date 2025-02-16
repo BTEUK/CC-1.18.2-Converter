@@ -8,8 +8,16 @@ import org.bukkit.entity.Minecart;
 import org.bukkit.entity.minecart.*;
 import org.json.simple.JSONObject;
 
+/**
+ * Helper class for prepping various types of Minecarts
+ */
 public class MinecartHelper {
 
+    /**
+     * Set the properties that all Minecart use
+     * @param minecart Minecart to set
+     * @param props JSON object containing the basic properties of minecarts
+     */
     public static void setCommonMinecartProps(Minecart minecart, JSONObject props){
         Utils.prepEntity(minecart, props);
 
@@ -29,11 +37,23 @@ public class MinecartHelper {
         }
     }
 
+    /**
+     * Prepare a chest (storage) minecart
+     * @param storageMinecart Storage Minecart, like a Chest Minecart to prep
+     * @param props JSON object containing the properties of chest minecart
+     * @throws Exception An exception if the there was a problem setting the inventory of minecart
+     */
     public static void prepChestMinecart(StorageMinecart storageMinecart, JSONObject props) throws Exception {
         InventoryHelper.prepInventoryChest(storageMinecart, props);
         InventoryHelper.prepLootableChest(storageMinecart, props);
     }
 
+    /**
+     * Prepare a hopper minecart
+     * @param hopperMinecart The hopper minecart to prep
+     * @param props JSON object containing the properties of the minecart
+     * @throws Exception Exception An exception if the there was a problem setting the inventory of minecart
+     */
     public static void prepHopperMinecart(HopperMinecart hopperMinecart, JSONObject props) throws Exception {
         InventoryHelper.prepInventoryChest(hopperMinecart, props);
         InventoryHelper.prepLootableChest(hopperMinecart, props);
@@ -41,6 +61,11 @@ public class MinecartHelper {
             hopperMinecart.setEnabled((int) (long) props.get("enabled") == 1);
     }
 
+    /**
+     * Prepare a furnace minecart
+     * @param furnaceMinecart The furnace minecart to prepare
+     * @param props JSON object containing the properties of the minecart
+     */
     public static void prepFurnaceMinecart(PoweredMinecart furnaceMinecart, JSONObject props){
         if(props.containsKey("fuel"))
             furnaceMinecart.setFuel((int) (long) props.get("fuel"));
@@ -50,11 +75,19 @@ public class MinecartHelper {
             furnaceMinecart.setPushZ((double) props.get("push_z"));
     }
 
+    /**
+     * Prepare a command minecart
+     * @param commandMinecart The command minecart to prepare
+     * @param props JSON object containing the properties of the minecarts
+     */
     public static void prepCommandMinecart(CommandMinecart commandMinecart, JSONObject props){
         if(props.containsKey("command"))
             commandMinecart.setCommand((String) props.get("command"));
     }
 
+    /**
+     * Stand in for once updated to 1.20.4+, as it will be able to se explosiveMinecart.setFuseTicks
+     */
     public static void prepExplosiveMinecart(ExplosiveMinecart explosiveMinecart, JSONObject props){
         if(props.containsKey("tnt_fuse")){
             //ToDo: Once updated to 1.20.4+ Use explosiveMinecart.setFuseTicks((int)props.get("tnt_fuse"))

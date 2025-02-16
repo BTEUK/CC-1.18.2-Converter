@@ -1724,6 +1724,13 @@ public class Converter {
         }
     }
 
+    /**
+     * Set an entity in the world
+     * @param entityNamespace The namespace (name) of the entity
+     * @param object JSON object containing the properties of the entity
+     * @param location The location of the entity
+     * @throws Exception
+     */
     private void setEntity(String entityNamespace, JSONObject object, Location location) throws Exception {
         JSONObject objectProps = (JSONObject)object.get("properties");
 

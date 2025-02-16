@@ -1,12 +1,8 @@
 package me.bteuk.converterplugin.utils;
 
 import org.bukkit.DyeColor;
-import org.bukkit.Material;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.entity.Entity;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.loot.LootTable;
-import org.bukkit.loot.LootTables;
 import org.bukkit.util.EulerAngle;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -15,12 +11,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * General utility class for miscellaneous stuff
+ */
 public class Utils {
+
+    /**
+     * Precision floor
+     * @param num The double number to floor
+     * @return The floored number
+     */
     public static int floor(double num) {
         int floor = (int) num;
         return floor == num ? floor : floor - (int) (Double.doubleToRawLongBits(num) >>> 63);
     }
 
+    /**
+     * Convert double degrees to Euler Angles
+     * @param x X rotation in degrees
+     * @param y Y rotation in degrees
+     * @param z Z rotation in degrees
+     * @return The converted XYZ rotation in degrees to Euler Angle
+     */
     public static EulerAngle DegreesToEulerAngles(double x, double y, double z){
         double xRad = Math.toRadians(x);
         double yRad = Math.toRadians(y);
@@ -29,6 +41,11 @@ public class Utils {
         return new EulerAngle(xRad, yRad, zRad);
     }
 
+    /**
+     * Flatten block states to a flat list
+     * @param blockStates A JSON Object of block states
+     * @return Flattened list of block states as a string
+     */
     public static String flattenBlockState(JSONObject blockStates){
         String flatten = "";
         Set<String> blockStateKeys = blockStates.keySet();
@@ -41,16 +58,11 @@ public class Utils {
         return flatten;
     }
 
-    public static LootTable getLootTable(String lootTable){
-        if(lootTable.startsWith("minecraft:chests/"))
-            return LootTables.valueOf(lootTable.substring(17).toUpperCase()).getLootTable();
-
-        if(lootTable.startsWith("minecraft:entities"))
-            return LootTables.valueOf(lootTable.substring(19).toUpperCase()).getLootTable();
-
-        return null;
-    }
-
+    /**
+     * Prepare the basic entity functionalities based on the provided JSON properties
+     * @param entity The entity to prepare
+     * @param properties The basic properties to apply to the entity
+     */
     public static void prepEntity(Entity entity, JSONObject properties){
         entity.setGravity((int) (long) properties.getOrDefault("NoGravity", (long)0) == 1);
         if(properties.containsKey("Rotation")){
@@ -59,6 +71,12 @@ public class Utils {
         }
     }
 
+    /**
+     * Get an Integer list from a JSON object
+     * @param properties The JSON object that contains a key presenting an integer list
+     * @param key The name of the key which holds the Integer list
+     * @return A converted Integer list
+     */
     public static List<Integer> getIntegerListFromJson(JSONObject properties, String key){
         List<Integer> list = new ArrayList<>();
         JSONArray rawArray = (JSONArray) properties.get(key);
@@ -67,6 +85,11 @@ public class Utils {
         return list;
     }
 
+    /**
+     * Get the Pattern Type based on It's pattern ID
+     * @param p Pattern ID
+     * @return The PatterType of the Pattern ID
+     */
     public static PatternType getPatternType(String p) {
 
         switch (p) {
@@ -236,6 +259,11 @@ public class Utils {
         }
     }
 
+    /**
+     * Get the dye color based on the name of the color
+     * @param c Name of the color, ex. orange
+     * @return The DyeColor from the name of the color
+     */
     public static DyeColor getDyeColour(String c) {
 
         switch (c) {

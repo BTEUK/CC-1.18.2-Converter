@@ -1,9 +1,7 @@
 package me.bteuk.converterplugin;
 
-import io.papermc.lib.PaperLib;
 import me.bteuk.converterplugin.utils.exceptions.FolderEmptyException;
 import me.bteuk.converterplugin.utils.items.ItemMapsHelper;
-import me.bteuk.converterplugin.utils.items.ItemsHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -66,7 +64,7 @@ public class Plugin extends JavaPlugin {
 
             //Read mapID.json file, that contains the mapping of original map item ID's to new map item ID's
             if (Files.exists(mapsIdFile))
-                ItemMapsHelper.instance.readReadMapsID();
+                ItemMapsHelper.instance.readMapsID();
 
             if(!isFolderEmpty(mapsItemFolder)) {
                 getLogger().info("Converting map items");

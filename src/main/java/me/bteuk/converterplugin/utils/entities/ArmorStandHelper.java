@@ -19,7 +19,18 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.UUID;
 
+/**
+ * Helper class to set Armor Stands
+ * @author DavixDevelop
+ */
 public class ArmorStandHelper {
+
+    /**
+     * Prepare the provided ArmorStand based on the JSON properties
+     * @param armorStand Armor Stand to prepare
+     * @param properties JSON object containing the properties of Armor Stands
+     * @throws Exception Catch any exception that may happen while propping the armor stand
+     */
     public static void propArmorStand(ArmorStand armorStand, JSONObject properties) throws Exception {
         Utils.prepEntity(armorStand, properties);
         armorStand.setArms((int) (long)properties.get("ShowArms") == 1);
