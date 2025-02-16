@@ -26,7 +26,7 @@ import java.util.zip.GZIPOutputStream;
 
 public class ThreadManager {
 
-    final BlockingQueue<RegionTask> queue;
+    final BlockingQueue<String> queue;
     AtomicInteger activeThreads;
 
     WorldIterator itr;
@@ -95,7 +95,7 @@ public class ThreadManager {
             thread.start();
             //Add null values to the end of the queue so we know when to close the threads.
             try {
-                queue.put(RegionTask.endTask());
+                queue.put("end");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

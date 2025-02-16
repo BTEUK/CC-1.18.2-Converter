@@ -1,6 +1,29 @@
 # CC-1.18.2 Converter
 
-The CC-1.18.2-Converter is a Java-based tool designed to convert Minecraft worlds from version 1.12.2 to version 1.18.2, specifically for use with creative building in BTE worlds. It allows users to convert the world with specific height settings and utilize a paper 1.18.2 server with the Converter plugin for further conversion of special blocks. The program uses a command-line interface and allows for customization of the number of threads used in the conversion process. The resulting output includes converted regions, post-processing, and entity locations if needed. Entities will not be converted, their locations will only be stored in .json files which can by found in the /entities/ output directory.
+The CC-1.18.2-Converter is a Java-based tool designed to convert Minecraft worlds from version 1.12.2 to version 1.18.2, specifically for use with creative building in BTE worlds. It allows users to convert the world with specific height settings and utilize a paper 1.18.2 server with the Converter plugin for further conversion of special blocks. The program uses a command-line interface and allows for customization of the number of threads used in the conversion process. The resulting output includes converted regions, post-processing, and entity locations if needed.
+
+### Entities
+Entities will be converted but only the supported ones:
+- Armor Stand 
+- Boat 
+- Chest Minecart 
+- Command Block Minecart 
+- Ender Crystal 
+- Furnace Minecart 
+- Hopper Minecart 
+- Item 
+- Item Frame 
+- Minecart 
+- Painting 
+- Shulker 
+- TNT 
+- TNT Minecart 
+- Wither Skull
+
+Commands in the Command Block Minecart are converted as well, but only the commands `blockdata`, `entitydata`, and `execute`. Other commands are transferred over as they are. <br>The full list of supported items are: Golden Apple, Boat, Reeds, Fish, Cooked Fish, Dye, Melon, Speckled Melon, Spawn Egg, Firework Charge, Fireworks, Netherbrick, Banner (Patters as well), Mob Spawner, Writable Book, Knowledge Book, Skull (Custom skulls as well), Chorus Fruit Popped, Filled Maps and Music Disc's.
+
+#### Filled Maps
+Filled Maps (item and placed map) are supported as well, but it's only been tested on Paper, so it might not work on other Minecraft servers. The `maps` folder in the output folder can contain one or more `maps_[session]` folders, with the `session` being a random ID which is generated each time the converter is run. This approach enables the conversion of multiple worlds to a single converted world, as it avoids duplicate map item ID's.<br> This approach also avoids writing the full map item data (each pixel color for example) for each occurrence of the filled map placed in the world or in the inventory.
 
 ## Tested versions
 
@@ -43,7 +66,7 @@ ___
 6. Run the server to start world loading and ensure all is working
 7. Download the converter plugin and move it into your /plugins/ folder
 8. Run the server then stop it after it loads fully
-9. Move the *post-processing* folder from your converted world folder to /plugins/Converter
+9. Move the *post-processing* (and **maps** folder, if your world has filled maps) folder from your converted world folder to /plugins/Converter
 10. Set the world in the config in that folder to the same name of the world on the server
 11. Head over to the world folder (i.e. /world/) and put the *region* folder from the converted world folder in there
 12. Start the server. Whenever you teleport to those regions, the converted region will automatically be loaded in.

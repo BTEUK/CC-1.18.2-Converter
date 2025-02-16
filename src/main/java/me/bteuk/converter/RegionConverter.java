@@ -46,7 +46,7 @@ public class RegionConverter extends Thread {
 
     boolean unique;
 
-    final BlockingQueue<RegionTask> queue;
+    final BlockingQueue<String> queue;
 
     //Paths to map_<#>.dat in "data" folder
     List<String> maps = new ArrayList<>();
@@ -101,7 +101,7 @@ public class RegionConverter extends Thread {
 
     int counter;
 
-    public RegionConverter(UUID uuid, BlockingQueue<RegionTask> queue, ThreadManager mng) {
+    public RegionConverter(UUID uuid, BlockingQueue<String> queue, ThreadManager mng) {
 
         this.uuid = uuid;
         this.queue = queue;
@@ -120,9 +120,9 @@ public class RegionConverter extends Thread {
         //Iterate until the queue is empty.
         try {
             while (true) {
-                RegionTask regionTask = queue.take();
+                file = queue.take();
 
-                if (regionTask.isEndTask()) {
+                if (file.equals("end")) {
                     mng.activeThreads.decrementAndGet();
 
                     //Write entities file.
@@ -133,7 +133,7 @@ public class RegionConverter extends Thread {
                     break;
                 }
 
-                file = regionTask.getRegion();
+
 
                 try {
                     convert();
@@ -717,6 +717,10 @@ public class RegionConverter extends Thread {
         save.save(new MinecraftChunkLocation(entryX, entryZ, "mca"), data);
     }
 
+    /**
+     * Convert the CompundTag of entity to a 1.18.2+ suitable format, and add it to the entities JSON array
+     * @param entity The compound tag describing the entity
+     */
     private void convertEntity(CompoundTag entity){
         JSONObject object = new JSONObject();
 

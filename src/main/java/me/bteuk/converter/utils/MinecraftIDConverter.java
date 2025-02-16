@@ -1,19 +1,14 @@
 package me.bteuk.converter.utils;
 
 import me.bteuk.converter.Main;
-import net.querz.nbt.io.NBTInputStream;
 import net.querz.nbt.io.NBTUtil;
-import net.querz.nbt.io.NamedTag;
 import net.querz.nbt.tag.*;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
 import java.io.FileWriter;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -23,7 +18,7 @@ import java.util.concurrent.ExecutionException;
 
 public class MinecraftIDConverter {
     private static final Logger log = LoggerFactory.getLogger(MinecraftIDConverter.class);
-    private static MinecraftIDConverter instance = new MinecraftIDConverter();
+    public static MinecraftIDConverter instance = new MinecraftIDConverter();
 
 
         /*
@@ -5820,6 +5815,11 @@ public class MinecraftIDConverter {
         return blockName;
     }
 
+    /**
+     * Checks if an entiy is supported for conversion
+     * @param legacyNamespaceID The namespace ID of the entity, ex: minecraft:armor_stand
+     * @return True if it's supported, else false
+     */
     public static boolean isEntitySupported(String legacyNamespaceID){
         if(!legacyNamespaceID.startsWith("minecraft"))
             return false;
@@ -5848,6 +5848,11 @@ public class MinecraftIDConverter {
         return false;
     }
 
+    /**
+     * Get the new namespaced id from the legacy (1.12.2) namespace ID
+     * @param legacyNamespaceID
+     * @return
+     */
     public static String getEntityID(String legacyNamespaceID){
 
         switch (legacyNamespaceID){
@@ -5862,6 +5867,11 @@ public class MinecraftIDConverter {
         }
     }
 
+    /**
+     * Get the new mob namespace ID from legacy (1.12.2) mob namespace id
+     * @param legacyMobID The 1.12.2 namespace ID of the mob
+     * @return The new 1.18.2+ mob namespace ID of the mob
+     */
     public static String getMobID(String legacyMobID){
         if(!legacyMobID.startsWith("minecraft:"))
             return legacyMobID;
@@ -5879,6 +5889,11 @@ public class MinecraftIDConverter {
 
     }
 
+    /**
+     * Get the new string Enchantments ID from the legacy integer ID
+     * @param legacyID The 1.12.2 ID of the Enchantment
+     * @return The 1.18.2+ string Enchantments ID
+     */
     public static String getEnchantmentsID(short legacyID){
         switch (legacyID){
             case 6: return "aqua_affinity";
@@ -5914,6 +5929,11 @@ public class MinecraftIDConverter {
         }
     }
 
+    /**
+     * Get the new string effect ID from the legacy integer ID
+     * @param legacyID The 1.12.2 ID of the effect
+     * @return The new 1.18.2+ string ID of the effect
+     */
     public static String getEffectID(int legacyID){
 
         switch (legacyID) {
@@ -5954,6 +5974,14 @@ public class MinecraftIDConverter {
         }
     }
 
+    /**
+     * Get the new 1.18.2+ string Item ID based on the legacy namespace ID of the item and the "Damage" NBT tag from the Item compound tag.
+     * Convert and transfer the NBT tags from the Item compound tag to the JSON object properties
+     * @param legacyNamespaceID The string legacy namespace ID of the Item
+     * @param item CompoundTag of the Item
+     * @param props JSON object to write the converted properties from the Item compound tag to
+     * @return The new, flattened 1.18.2+ string ID of the 1.12.2 Item
+     */
     public static String getItemID(String legacyNamespaceID, CompoundTag item, JSONObject props){
         String namespaceID = legacyNamespaceID;
 
@@ -6017,9 +6045,6 @@ public class MinecraftIDConverter {
                 }
                 case "melon" -> newID = "melon_slice";
                 case "speckled_melon" -> newID = "glistering_melon_slice";
-                case "potion", "splash_potion", "lingering_potion" -> {
-                    TagConv.getIntTagProperty(tagItem, "CustomPotionColor", "custom_potion_color", props);
-                }
                 case "spawn_egg" -> {
                     processTag = false;
                     if(tagItem.containsKey("EntityTag")){
@@ -6090,12 +6115,13 @@ public class MinecraftIDConverter {
                 case "filled_map" -> {
                     try {
                         short org_id = instance.convertMapItem(damage);
-                        if(org_id != -1)
+                        if(org_id != -1) {
                             props.put("org_id", org_id);
+                            props.put("map_session", MinecraftIDConverter.instance.mapSession);
+                        }
                     }catch (Exception ex){
-                        String w = "2";
+                        log.error(ex.toString());
                     }
-                    //ToDo: Add full support for maps
                 }
                 case "skull" -> {
                     switch (damage){
@@ -6205,9 +6231,6 @@ public class MinecraftIDConverter {
                         getPatternTags(blockEntityTag, entityTag);
                     else if(legacyID.contains("shulker_box"))
                         getInventoryTags(blockEntityTag, entityTag);
-                    else {
-                        String w = "2";
-                    }
 
 
                     //TagConv.getCompoundTagProperties(blockEntityTag, entityTag);
@@ -6259,7 +6282,24 @@ public class MinecraftIDConverter {
 
                 //Potions
                 TagConv.getStringTagProperty(tagItem,"Potion", "Potion", potionEffects);
-                //ToDo: Add support for CustomPotionEffects?
+                TagConv.getIntTagProperty(tagItem, "CustomPotionColor", "custom_potion_color", potionEffects);
+                //CustomPotionEffects
+                if(tagItem.containsKey("CustomPotionEffects")){
+                    ListTag<CompoundTag> customPotionEffects = tagItem.getListTag("CustomPotionEffects").asCompoundTagList();
+                    JSONArray customPotionEffectsArray = new JSONArray();
+                    for(CompoundTag customPotionEffect : customPotionEffects){
+                        JSONObject customPotionEffectItem = new JSONObject();
+                        customPotionEffectItem.put("id", getEffectID(customPotionEffect.getInt("Id")));
+                        TagConv.getByteTagProperty(customPotionEffect, "Amplifier", "amplifier", customPotionEffectItem);
+                        TagConv.getIntTagProperty(customPotionEffect, "Duration", "duration", customPotionEffectItem);
+                        TagConv.getByteTagProperty(customPotionEffect, "Ambient", "ambient", customPotionEffectItem);
+                        TagConv.getByteTagProperty(customPotionEffect, "ShowParticles", "show_particles", customPotionEffectItem);
+                        customPotionEffectsArray.add(customPotionEffectItem);
+                    }
+
+                    if(!customPotionEffectsArray.isEmpty())
+                        potionEffects.put("custom_potion_effects", customPotionEffectsArray);
+                }
 
 
                 //Display Properties
@@ -6381,6 +6421,11 @@ public class MinecraftIDConverter {
             props.put("Fireworks", fireworksItems);
     }
 
+    /**
+     * Parse the Explosion tags to the JSON object
+     * @param explosion CompoundTag containing info about the explosion
+     * @param explosionItem JSON object to write the parsed Explosion tags to
+     */
     private static void getExplosionTags(CompoundTag explosion, JSONObject explosionItem){
         TagConv.getByteTagProperty(explosion, "Flicker", "flicker", explosionItem);
         TagConv.getByteTagProperty(explosion, "Trail", "trail", explosionItem);
@@ -6389,6 +6434,11 @@ public class MinecraftIDConverter {
         TagConv.getIntArrayTagProperty(explosion, "FadeColors", "fade_colors", explosionItem);
     }
 
+    /**
+     * Parse the Inventory tags "Items" and "LootTable" to the JSON object
+     * @param inventory CompoundTag containing the Inventory tags
+     * @param properties JSON object to write the parsed tags to
+     */
     public static void getInventoryTags(CompoundTag inventory, JSONObject properties){
         if(inventory.containsKey("Items")){
             ListTag<CompoundTag> itemsList = inventory.getListTag("Items").asCompoundTagList();
@@ -6401,6 +6451,11 @@ public class MinecraftIDConverter {
         TagConv.getLongTagProperty(inventory, "LootTableSeed", "loot_table_seed", properties);
     }
 
+    /**
+     * Parse and convert the "Patterns" tag of the banner to the JSON object properties
+     * @param banner The banner CompoundTag
+     * @param properties The JSON object to write the parsed tags ("patterns") to
+     */
     public static void getPatternTags(CompoundTag banner, JSONObject properties){
         JSONArray _patterns = new JSONArray();
         ListTag<CompoundTag> patterns = (ListTag<CompoundTag>) banner.getListTag("Patterns");
@@ -6416,6 +6471,11 @@ public class MinecraftIDConverter {
         }
     }
 
+    /**
+     * Parse the "Recipes" NBT tag in the knowledge book to a list of strings
+     * @param recipeTag The CompoundTag containing the "Recipes" NBT tag
+     * @param recipes List of string to write the recipes to
+     */
     public static void getRecipes(CompoundTag recipeTag, List<String> recipes){
         if(recipeTag.containsKey("Recipes")){
             Tag<?> recipesTag = recipeTag.get("Recipes");
@@ -6429,18 +6489,33 @@ public class MinecraftIDConverter {
         }
     }
 
-    public static Path DATA_PATH;
-    public static Path MAPS_PATH;
-    private ConcurrentHashMap<Short, CompletableFuture<Short>> convertedMapItems = new ConcurrentHashMap<>();
+    public Path dataPath;
+    public Path mapsPath;
+    public String mapSession = UUID.randomUUID().toString();
+    public ConcurrentHashMap<Short, CompletableFuture<Short>> convertedMapItems = new ConcurrentHashMap<>();
 
+    /**
+     * Return a CompletableFuture to convert a Filled Map Item based on the ID of the Item
+     * @param id The short ID of the Filled Map
+     * @return A CompletableFuture to process the map item
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
     public short convertMapItem(short id) throws ExecutionException, InterruptedException {
         CompletableFuture<Short> future = convertedMapItems.computeIfAbsent(id,this::processMapItem);
         return future.get();
     }
 
+    /**
+     * Process the filled map by directly reading the .dat file of it inside the data folder.
+     * and writing the tag values from the CompoundTag to the JSON map file in the output/maps/maps_[sessionID] folder
+     * Each time the converter is run, a random UUID sessionID is generated, as to avoid duplicate map ID's in the converted world
+     * @param id The short ID of the map Item
+     * @return The short ID of the map Item
+     */
     private CompletableFuture<Short> processMapItem(short id){
         return CompletableFuture.supplyAsync(() -> {
-            Path mapDatPath = DATA_PATH.resolve("map_" + id + ".dat");
+            Path mapDatPath = dataPath.resolve("map_" + id + ".dat");
             if(Files.exists(mapDatPath)){
                 try {
                     CompoundTag mapTag = (CompoundTag) NBTUtil.read(mapDatPath.toFile()).getTag();
@@ -6468,7 +6543,10 @@ public class MinecraftIDConverter {
 
                     TagConv.getCompoundTagProperties(mapDataTag, mapItem);
 
-                    FileWriter mapFile = new FileWriter(MAPS_PATH.resolve("map_" + id + ".json" ).toFile());
+                    Path mapSessionFolder = mapsPath.resolve("maps_" + mapSession);
+                    Files.createDirectories(mapSessionFolder);
+
+                    FileWriter mapFile = new FileWriter(mapSessionFolder.resolve("map_" + id + ".json" ).toFile());
                     mapFile.write(mapItem.toJSONString());
                     mapFile.flush();
                     mapFile.close();
@@ -6478,10 +6556,42 @@ public class MinecraftIDConverter {
         });
     }
 
-    public static void getBlockEntityTags(String legacyID, Byte data, CompoundTag blockEntity, JSONObject properties){
+    /**
+     * Write the "maps" json file in the maps_[sessionID], which stores the ID's of the converted map items, and the
+     * ID of the session when the converted was run. This approach enables, for example if you want to convert multiple 1.12.2 worlds
+     * to a single converted world, as these multiple 1.12.2 worlds may use the same map item ID's, so the newer converted world,
+     * would overwrite the old map item JSON files that use the same ID.
+     */
+    public void writeMapsSessionConfig(){
+        try {
+            JSONObject sessionItem = new JSONObject();
+            JSONArray mapsItem = new JSONArray();
+            for(Short mapId : convertedMapItems.keySet()){
+                mapsItem.add("map_" + mapId);
+            }
 
+            if(!mapsItem.isEmpty()) {
+                sessionItem.put("maps", mapsItem);
+                sessionItem.put("maps_session", mapSession);
+
+                Path mapSessionFolder = mapsPath.resolve("maps_" + mapSession);
+                FileWriter mapFile = new FileWriter(mapSessionFolder.resolve("maps.json").toFile());
+                mapFile.write(sessionItem.toJSONString());
+                mapFile.flush();
+                mapFile.close();
+            }
+
+
+        }catch (Exception ex){
+            log.error(String.format("Error while writing maps session config"));
+        }
     }
 
+    /**
+     * Get the Enchantments from a ListTag of CompoundTags to a JSON array
+     * @param enchantments ListTag of Enchantments CompoundTags
+     * @return JSON array containing properties from the Enchantments CompoundTags
+     */
     private static JSONArray getEnchantments(ListTag<CompoundTag> enchantments){
         JSONArray enchantmentItems = new JSONArray();
         for(CompoundTag enchantmentTag : enchantments){
@@ -6493,6 +6603,11 @@ public class MinecraftIDConverter {
         return enchantmentItems;
     }
 
+    /**
+     * Get the new 1.18.2+ loot table name from the legacy 1.12.2 loot table name, else return it as it is
+     * @param legacyLootTable The 1.12.2 name of the legacy table
+     * @return The new 1.18.2+ loot table name
+     */
     public static String getLootTable(String legacyLootTable){
         switch (legacyLootTable){
             case "minecraft:chests/village_blacksmith":
@@ -6674,26 +6789,10 @@ public class MinecraftIDConverter {
     }
 
     /**
-     * Parse the NBT tags of hanging entities to JSON
-     * @param entity The CompoundTag of the entity
-     * @param properties The JSONObject to parse to
+     * Parse through, convert and return a JSON array of Items from a ListTag of CompoundTags
+     * @param itemsList ListTag of CompoundTags containing the Items of an entity, ex chest
+     * @return And JSON array containing the converted item ID's and parsed item properties
      */
-    public static void parseHangingEntityTags(CompoundTag entity, JSONObject properties){
-        byte facing = entity.getByte("Facing");
-        String enumFacing = "DOWN";
-        switch (facing) {
-            case 3 -> { enumFacing = "SOUTH"; }
-            case 4 -> { enumFacing = "WEST"; }
-            case 2 -> { enumFacing = "NORTH"; }
-            case 5 -> { enumFacing = "EAST"; }
-            case 1 -> { enumFacing = "UP"; }
-            case 0 -> { enumFacing = "DOWN"; }
-        }
-        properties.put("facing", enumFacing);
-        //Integer[] tile = new Integer[]{entity.getInt("TileX"), entity.getInt("TileY"), entity.getInt("TileZ") };
-        //properties.put("tile_pos", tile);
-    }
-
     public static JSONArray getItems(ListTag<CompoundTag> itemsList){
         JSONArray itemsArray = new JSONArray();
         for (CompoundTag compoundTag : itemsList) {
@@ -6712,6 +6811,12 @@ public class MinecraftIDConverter {
         return itemsArray;
     }
 
+    /**
+     * Parse through the NBT tags of the entity, convert them if needed, and write them to the JSON object properties
+     * @param legacyID The legacy 1.12.2 namespace ID of the entity
+     * @param entity The CompoundTag of the entity
+     * @param properties The JSON object to write the parsed NBT tags to
+     */
     public static void getEntitiesTags(String legacyID ,CompoundTag entity, JSONObject properties) {
         TagConv.getByteTagProperty(entity,"NoGravity","NoGravity",properties);
         TagConv.floatTagListToJson("Rotation", entity, properties);
@@ -6803,7 +6908,6 @@ public class MinecraftIDConverter {
 
                 if (legacyID.contains("hopper")) {
                     TagConv.getByteTagProperty(entity, "Enabled", "enabled", properties);
-                    //TagConv.getIntTagProperty(entity, "TransferCooldown","transfer_cooldown", properties);
                 }
             }
             case "minecraft:furnace_minecart" -> {
@@ -6878,7 +6982,6 @@ public class MinecraftIDConverter {
                     }
                     properties.put("item_rotation", rotation);
                 }
-
             }
         }
     }

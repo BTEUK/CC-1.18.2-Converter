@@ -13,7 +13,6 @@ import me.bteuk.converter.cc.Utils;
 import me.bteuk.converter.utils.MinecraftIDConverter;
 
 import java.io.*;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -67,9 +66,9 @@ public class WorldIterator {
         //Get all the files in the folder.
         String[] files = new File(input.resolve("region2d").toString()).list();
 
-        //Set the data folder of the world and output maps folder to ID converter
-        MinecraftIDConverter.DATA_PATH = input.resolve("data");
-        MinecraftIDConverter.MAPS_PATH = output.resolve("maps");
+        //Set the data folder of the world and output maps folder for the ID converter
+        MinecraftIDConverter.instance.dataPath = input.resolve("data");
+        MinecraftIDConverter.instance.mapsPath = output.resolve("maps");
 
 
         if (files == null) {
@@ -85,7 +84,7 @@ public class WorldIterator {
 
             //Add all the files to the queue.
             try {
-                manager.queue.put(RegionTask.regionTask(sFile));
+                manager.queue.put(sFile);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -126,6 +125,9 @@ public class WorldIterator {
         while (manager.activeThreads.get() > 0) {
 
         }
+
+        if(!MinecraftIDConverter.instance.convertedMapItems.isEmpty())
+            MinecraftIDConverter.instance.writeMapsSessionConfig();
     }
 
     private static SaveCubeColumns createSave(Path path) {
