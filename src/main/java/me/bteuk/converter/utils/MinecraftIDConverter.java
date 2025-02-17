@@ -354,16 +354,19 @@ public class MinecraftIDConverter {
         176, 177 (Banner colour and pattern)
         140 (Flower pot content)
         144 (Mob head types and player head texture)
+        23 Dispenser
         25 (Note block content)
         54 Chest
         146 Trapped Chest
+        154 Hopper
+        158 Dropper
         219-234 Skulker Box
 
         */
 
         switch (id) {
 
-            case 53, 67, 108, 109, 114, (byte) 128, (byte) 134, (byte) 135, (byte) 136, (byte) 156, (byte) 163,
+            case 23, 53, 67, 108, 109, 114, (byte) 128, (byte) 134, (byte) 135, (byte) 136, (byte) 154, (byte) 156, (byte) 158, (byte) 163,
                     (byte) 164, (byte) 180, (byte) 203, 26, (byte) 176, (byte) 177, (byte) 140, (byte) 144, 25,
                 54, (byte) 146, (byte) 219, (byte) 220, (byte) 221, (byte) 222, (byte) 223, (byte) 224, (byte) 225,
                         (byte) 226, (byte) 227, (byte) 228, (byte) 229, (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234 -> {
@@ -389,8 +392,12 @@ public class MinecraftIDConverter {
         140 (Flower pot content)
         144 (Mob head types and player head texture)
         25 (Note block content)
+        23 Dispenser
         54 Chests
         146 Trapped Chest
+        154 Hopper
+        158 Dropper
+        219-234 Skulker Box
         */
 
         JSONObject jo = new JSONObject();
@@ -586,7 +593,8 @@ public class MinecraftIDConverter {
                 jo.put("note", block_entity.getByte("note"));
             }
 
-            case 54, (byte) 146, (byte) 219, (byte) 220, (byte) 221, (byte) 222, (byte) 223, (byte) 224, (byte) 225,
+            //Dispenser, Dropper, Hopper, Shulker Boxes, Chests
+            case 23, 54, (byte) 146, (byte) 154, (byte) 158, (byte) 219, (byte) 220, (byte) 221, (byte) 222, (byte) 223, (byte) 224, (byte) 225,
                  (byte) 226, (byte) 227, (byte) 228, (byte) 229, (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234  -> {
                 getInventoryTags(block_entity, jo);
             }
@@ -682,19 +690,15 @@ public class MinecraftIDConverter {
                 }
             }
 
-            case 53, 67, 108, 109, 114, (byte) 128, (byte) 134, (byte) 135, (byte) 136, (byte) 156, (byte) 163,
+            case 23,  53, 67, 108, 109, 114, (byte) 128, (byte) 134, (byte) 135, (byte) 136, (byte) 156, (byte) 163,
                     (byte) 164, (byte) 180, (byte) 203, 85, 113, (byte) 188, (byte) 189, (byte) 190, (byte) 191,
                     (byte) 192, (byte) 139, 101, 102, (byte) 160, 54, (byte) 146, 55, (byte) 199, 26,
                     (byte) 176, (byte) 177, 104, 105, (byte) 140, (byte) 144, 25, (byte) 132, 106,
-                    64, 71, (byte) 193, (byte) 194, (byte) 195, (byte) 196, (byte) 197,
+                    64, 71, (byte) 154, (byte) 158, (byte) 193, (byte) 194, (byte) 195, (byte) 196, (byte) 197,
                  (byte) 219, (byte) 220, (byte) 221, (byte) 222, (byte) 223, (byte) 224, (byte) 225,
                  (byte) 226, (byte) 227, (byte) 228, (byte) 229, (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234-> {
                 return true;
             }
-            /*
-            * 23, 54, (byte) 146, (byte) 158, (byte) 219, (byte) 220, (byte) 221,
-                    (byte) 222, (byte) 223, (byte) 224, (byte) 225, (byte) 226, (byte) 227, (byte) 228, (byte) 229,
-                    (byte) 230, (byte) 231, (byte) 232, (byte) 233, (byte) 234*/
         }
 
         return false;
@@ -793,15 +797,15 @@ public class MinecraftIDConverter {
             //Command Block
             case (byte) 137, (byte) 210, (byte) 211 -> {
 
-                block_entity.putBoolean("auto", false);
-                block_entity.putString("Command", "");
-                block_entity.putBoolean("conditionMet", false);
-                block_entity.putLong("LastExecution", 0);
+                block_entity.putBoolean("auto", tile_entity.containsKey("auto") ? tile_entity.getBoolean("auto") : false);
+                block_entity.putString("Command", getCommand(tile_entity.getString("Command")));
+                block_entity.putBoolean("conditionMet", tile_entity.containsKey("conditionMet") ? tile_entity.getBoolean("conditionMet") : false);
+                block_entity.putLong("LastExecution", tile_entity.containsKey("LastExecution") ? tile_entity.getLong("LastExecution") : 0);
                 block_entity.putString("LastOutput", "");
-                block_entity.putBoolean("powered", false);
-                block_entity.putInt("SuccessCount", 0);
-                block_entity.putBoolean("TrackOutput", true);
-                block_entity.putBoolean("UpdateLastExecution", true);
+                block_entity.putBoolean("powered", tile_entity.containsKey("powered") ? tile_entity.getBoolean("powered") : false);
+                block_entity.putInt("SuccessCount", tile_entity.containsKey("SuccessCount") ? tile_entity.getInt("SuccessCount") : 0);
+                block_entity.putBoolean("TrackOutput", tile_entity.containsKey("TrackOutput") ? tile_entity.getBoolean("TrackOutput") : true);
+                block_entity.putBoolean("UpdateLastExecution", tile_entity.containsKey("UpdateLastExecution") ? tile_entity.getBoolean("UpdateLastExecution") : true);
 
             }
 
@@ -5849,9 +5853,9 @@ public class MinecraftIDConverter {
     }
 
     /**
-     * Get the new namespaced id from the legacy (1.12.2) namespace ID
-     * @param legacyNamespaceID
-     * @return
+     * Get the new namespace id from the legacy (1.12.2) namespace ID
+     * @param legacyNamespaceID Legacy 1.12.2 ID of the entity
+     * @return The new 1.18.2+ entity namespace id
      */
     public static String getEntityID(String legacyNamespaceID){
 
@@ -6011,37 +6015,34 @@ public class MinecraftIDConverter {
                 case "reeds" -> {
                     newID = "sugar_cane";
                 }case "fish" -> {
-                    switch (damage){
-                        case 0 -> newID = "cod";
-                        case 1 -> newID = "salmon";
-                        case 2 -> newID = "tropical_fish";
-                        case 3 -> newID = "pufferfish";
-                    }
+                    newID = switch (damage){
+                        case 1 -> "salmon";
+                        case 2 -> "tropical_fish";
+                        case 3 -> "pufferfish";
+                        default -> "cod";
+                    };
                 } case "cooked_fish" -> {
-                    switch (damage){
-                        case 0 -> newID = "cooked_cod";
-                        case 1 -> newID = "cooked_salmon";
-                    }
+                    newID = (damage == 1) ? "cooked_salmon" : "cooked_cod";
                 }
                 case "dye" -> {
-                    switch (damage){
-                        case 0 -> newID = "black_dye";
-                        case 1 -> newID = "red_dye";
-                        case 2 -> newID = "green_dye";
-                        case 3 -> newID = "brown_dye";
-                        case 4 -> newID = "blu_dye";
-                        case 5 -> newID = "purple_dye";
-                        case 6 -> newID = "cyan_dye";
-                        case 7 -> newID = "light_gray_dye";
-                        case 8 -> newID = "gray_dye";
-                        case 9 -> newID = "pink_dye";
-                        case 10 -> newID = "lime_dye";
-                        case 11 -> newID = "yellow_dye";
-                        case 12 -> newID = "light_blue_dye";
-                        case 13 -> newID = "magenta_dye";
-                        case 14 -> newID = "orange_dye";
-                        case 15 -> newID = "white_dye";
-                    }
+                    newID = switch (damage){
+                        case 1 ->  "red_dye";
+                        case 2 ->  "green_dye";
+                        case 3 ->  "brown_dye";
+                        case 4 ->  "blu_dye";
+                        case 5 ->  "purple_dye";
+                        case 6 ->  "cyan_dye";
+                        case 7 ->  "light_gray_dye";
+                        case 8 ->  "gray_dye";
+                        case 9 ->  "pink_dye";
+                        case 10 ->  "lime_dye";
+                        case 11 ->  "yellow_dye";
+                        case 12 ->  "light_blue_dye";
+                        case 13 ->  "magenta_dye";
+                        case 14 ->  "orange_dye";
+                        case 15 ->  "white_dye";
+                        default ->  "black_dye";
+                    };
                 }
                 case "melon" -> newID = "melon_slice";
                 case "speckled_melon" -> newID = "glistering_melon_slice";
@@ -6058,36 +6059,36 @@ public class MinecraftIDConverter {
                 case "fireworks" -> newID = "firework_rocket";
                 case "netherbrick" -> newID = "nether_brick";
                 case "banner" -> {
-                    newID = "black_banner";
-                    switch (damage) {
-                        case 15 -> newID = "white_banner";
-                        case 14 -> newID = "orange_banner";
-                        case 13 -> newID = "magenta_banner";
-                        case 12 -> newID = "light_blue_banner";
-                        case 11 -> newID = "yellow_banner";
-                        case 10 -> newID = "lime_banner";
-                        case 9 -> newID = "pink_banner";
-                        case 8 -> newID = "gray_banner";
-                        case 7 -> newID = "light_gray_banner";
-                        case 6 -> newID = "cyan_banner";
-                        case 5 -> newID = "purple_banner";
-                        case 4 -> newID = "blue_banner";
-                        case 3 -> newID = "brown_banner";
-                        case 2 -> newID = "green_banner";
-                        case 1 -> newID = "red_banner";
-                    }
+                    newID = switch (damage) {
+                        case 15 ->  "white_banner";
+                        case 14 ->  "orange_banner";
+                        case 13 ->  "magenta_banner";
+                        case 12 ->  "light_blue_banner";
+                        case 11 ->  "yellow_banner";
+                        case 10 ->  "lime_banner";
+                        case 9 ->  "pink_banner";
+                        case 8 ->  "gray_banner";
+                        case 7 ->  "light_gray_banner";
+                        case 6 ->  "cyan_banner";
+                        case 5 ->  "purple_banner";
+                        case 4 ->  "blue_banner";
+                        case 3 ->  "brown_banner";
+                        case 2 ->  "green_banner";
+                        case 1 ->  "red_banner";
+                        default -> "black_banner";
+                    };
                 }
                 case "mob_spawner" -> newID = "spawner";
                 case "writable_book", "written_book" -> {
                     if(legacyID.equals("written_book")){
                         if(tagItem.containsKey("generation")){
                             byte _generation = tagItem.getByte("generation");
-                            String generation = "ORIGINAL";
-                            switch (_generation){
-                                case 1 -> generation = "COPY_OF_ORIGINAL";
-                                case 2 -> generation = "COPY_OF_COPY";
-                                case 3 -> generation = "TATTERED";
-                            }
+                            String generation = switch (_generation){
+                                case 1 -> "COPY_OF_ORIGINAL";
+                                case 2 -> "COPY_OF_COPY";
+                                case 3 -> "TATTERED";
+                                default -> "ORIGINAL";
+                            };
                             props.put("book_generation", generation);
                         }
                         TagConv.getStringTagProperty(tagItem, "author", "book_author", props);
@@ -6124,14 +6125,14 @@ public class MinecraftIDConverter {
                     }
                 }
                 case "skull" -> {
-                    switch (damage){
-                        case 0 -> newID = "skeleton_skull";
-                        case 1 -> newID = "wither_skeleton_skull";
-                        case 2 -> newID = "zombie_head";
-                        case 3 -> newID = "player_head";
-                        case 4 -> newID = "creeper_head";
-                        case 5 -> newID = "dragon_head";
-                    }
+                    newID = switch (damage){
+                        case 1 -> "wither_skeleton_skull";
+                        case 2 -> "zombie_head";
+                        case 3 -> "player_head";
+                        case 4 -> "creeper_head";
+                        case 5 -> "dragon_head";
+                        default -> "skeleton_skull";
+                    };
                 }
                 case "chorus_fruit_popped" -> newID = "popped_chorus_fruit";
             }
@@ -6147,40 +6148,40 @@ public class MinecraftIDConverter {
                 byte id = getLegacyBlockID(legacyID);
 
                 //item is not a block item
-                if (newID.isEmpty() && !legacyID.equals("air") && id == 0) {
+                if (!legacyID.equals("air") && id == 0) {
                     //Get the 1.18+ entity namespace id
                     namespaceID = getEntityID(namespaceID);
                 } else {
                     //Item is a block
                     if (legacyID.equals("bed")) {
-                        String bedVersion = "white_bed";
-                        switch (damage) {
-                            case 1 -> bedVersion = "orange_bed";
-                            case 2 -> bedVersion = "magenta_bed";
-                            case 3 -> bedVersion = "light_blue_bed";
-                            case 4 -> bedVersion = "yellow_bed";
-                            case 5 -> bedVersion = "lime_bed";
-                            case 6 -> bedVersion = "pink_bed";
-                            case 7 -> bedVersion = "gray_bed";
-                            case 8 -> bedVersion = "light_gray_bed";
-                            case 9 -> bedVersion = "cyan_bed";
-                            case 10 -> bedVersion = "purple_bed";
-                            case 11 -> bedVersion = "blue_bed";
-                            case 12 -> bedVersion = "brown_bed";
-                            case 13 -> bedVersion = "green_bed";
-                            case 14 -> bedVersion = "red_bed";
-                            case 15 -> bedVersion = "black_bed";
-                        }
+                        String bedVersion = switch (damage) {
+                            case 1 -> "orange_bed";
+                            case 2 -> "magenta_bed";
+                            case 3 -> "light_blue_bed";
+                            case 4 -> "yellow_bed";
+                            case 5 -> "lime_bed";
+                            case 6 -> "pink_bed";
+                            case 7 -> "gray_bed";
+                            case 8 -> "light_gray_bed";
+                            case 9 -> "cyan_bed";
+                            case 10 -> "purple_bed";
+                            case 11 -> "blue_bed";
+                            case 12 -> "brown_bed";
+                            case 13 -> "green_bed";
+                            case 14 -> "red_bed";
+                            case 15 -> "black_bed";
+                            default -> "white_bed";
+                        };
                         namespaceID = "minecraft:" + bedVersion;
                     } else if (legacyID.equals("skull")) {
-                        String skullType = "skeleton_skull";
-                        switch (damage) {
-                            case 1 -> skullType = "wither_skeleton_skull";
-                            case 2 -> skullType = "player_head";
-                            case 3 -> skullType = "zombie_head";
-                            case 4 -> skullType = "creeper_head";
-                            case 5 -> skullType = "dragon_head";
-                        }
+                        String skullType = switch (damage) {
+                            case 1 -> "wither_skeleton_skull";
+                            case 2 -> "player_head";
+                            case 3 -> "zombie_head";
+                            case 4 ->  "creeper_head";
+                            case 5 ->  "dragon_head";
+                            default -> "skeleton_skull";
+                        };
                         namespaceID = "minecraft:" + skullType;
                     }
                     else {
@@ -6870,10 +6871,6 @@ public class MinecraftIDConverter {
                     if (armor.entrySet().isEmpty()) {
                         jsonArmorItems.add(new JSONObject());
                         continue;
-                    }
-
-                    if(armor.getString("id").equals("minecraft:skull")){
-                        String w = "2";
                     }
 
                     JSONObject jsonArmorItem = new JSONObject();

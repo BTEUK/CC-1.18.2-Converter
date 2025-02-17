@@ -48,9 +48,6 @@ public class RegionConverter extends Thread {
 
     final BlockingQueue<String> queue;
 
-    //Paths to map_<#>.dat in "data" folder
-    List<String> maps = new ArrayList<>();
-
     //Biome related stuff.
     ListTag<StringTag> biomePalette = new ListTag<>(StringTag.class);
     HashMap<Byte, Integer> biomePaletteID = new HashMap<>();
@@ -582,12 +579,10 @@ public class RegionConverter extends Thread {
                 if (MinecraftIDConverter.hasProperties(blocks[j])) {
                     //If it's a block entity.
                     if (MinecraftIDConverter.isBlockEntity(blocks[j])) {
-
                         //Add the properties.
                         obj.put("properties", MinecraftIDConverter.getProperties(blocks[j], meta, tEntity));
 
                     } else {
-
                         //Add the properties
                         obj.put("properties", MinecraftIDConverter.getProperties(blocks[j], meta, null));
 
@@ -717,7 +712,7 @@ public class RegionConverter extends Thread {
     }
 
     /**
-     * Convert the CompundTag of entity to a 1.18.2+ suitable format, and add it to the entities JSON array
+     * Convert the CompoundTag of entity to a 1.18.2+ suitable format, and add it to the entities JSON array
      * @param entity The compound tag describing the entity
      */
     private void convertEntity(CompoundTag entity){

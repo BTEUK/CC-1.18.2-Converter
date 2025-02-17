@@ -8,7 +8,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Converter class for NBT tags to JSON
+ * @author DavixDevelop
+ */
 public class TagConv {
+    /**
+     * Convert a ListTag of FloatTag to a Float List and insert it into a JSONObject
+     * @param listKey The key name of the ListTag
+     * @param tag The CompoundTag containing the key
+     * @param json The JSON object to insert the Float List into at the key name
+     */
     public static void floatTagListToJson(String listKey, CompoundTag tag, JSONObject json){
         if(tag.containsKey(listKey)){
             ListTag<FloatTag> floatTags = tag.getListTag(listKey).asFloatTagList();
@@ -20,6 +30,14 @@ public class TagConv {
         }
     }
 
+    /**
+     * Convert a ListTag of StringTag inside the tag with the tagName
+     * to a List String and insert it into a JSON object at the prop name
+     * @param tag The CompoundTag containing the ListTag of StringTag
+     * @param tagName The key name of the ListTag
+     * @param propName The key name to insert the List String at in the JSON object
+     * @param properties A JSON object to which to write the List String into
+     */
     public static void getStringTagListProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
         if(tag.containsKey(tagName)){
             ListTag<StringTag> stringTags = tag.getListTag(tagName).asStringTagList();
@@ -32,6 +50,14 @@ public class TagConv {
         }
     }
 
+    /**
+     * Convert a IntArrayTag inside the tag with the tagName
+     * to a List Integer and insert it into a JSON object at the prop name
+     * @param tag The CompoundTag containing the IntArrayTag
+     * @param tagName The key name of the IntArrayTag
+     * @param propName The key name to insert the List Integer at in the JSON object
+     * @param properties A JSON object to which to write the List Integer into
+     */
     public static void getIntArrayTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
         if(tag.containsKey(tagName)){
             int[] intArray = tag.getIntArrayTag(tagName).getValue();
@@ -42,6 +68,14 @@ public class TagConv {
         }
     }
 
+    /**
+     * Convert a ByteArrayTag inside the tag with the tagName
+     * to a List Byte and insert it into a JSON object at the prop name
+     * @param tag The CompoundTag containing the ByteArrayTag
+     * @param tagName The key name of the ByteArrayTag
+     * @param propName The key name to insert the List Byte at in the JSON object
+     * @param properties A JSON object to which to write the List Byte into
+     */
     public static void getByteArrayTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
         if(tag.containsKey(tagName)){
             byte[] byteArray = tag.getByteArrayTag(tagName).getValue();
@@ -53,46 +87,115 @@ public class TagConv {
         }
     }
 
+    /**
+     * Get the ByteTag value inside the tag with the tagName
+     * and insert it into a JSON object at the prop name
+     * @param tag The CompoundTag containing the ByteTag
+     * @param tagName The key name of the ByteTag
+     * @param propName The key name to insert the ByteTag value in the JSON object
+     * @param properties A JSON object to which to write the ByteTag value into
+     */
     public static void getByteTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
         if(tag.containsKey(tagName))
             properties.put(propName, tag.getByte(tagName));
     }
 
+    /**
+     * Get the StringTag value inside the tag with the tagName
+     * and insert it into a JSON object at the prop name
+     * @param tag The CompoundTag containing the StringTag
+     * @param tagName The key name of the StringTag
+     * @param propName The key name to insert the StringTag value in the JSON object
+     * @param properties A JSON object to which to write the StringTag value into
+     */
     public static void getStringTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
         if(tag.containsKey(tagName))
             properties.put(propName, tag.getString(tagName));
     }
 
+    /**
+     * Get the DoubleTag value inside the tag with the tagName
+     * and insert it into a JSON object at the prop name
+     * @param tag The CompoundTag containing the DoubleTag
+     * @param tagName The key name of the DoubleTag
+     * @param propName The key name to insert the DoubleTag value in the JSON object
+     * @param properties A JSON object to which to write the DoubleTag value into
+     */
     public static void getDoubleTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
         if(tag.containsKey(tagName))
             properties.put(propName, tag.getDouble(tagName));
     }
 
+    /**
+     * Get the BooleanTag value inside the tag with the tagName
+     * and insert it into a JSON object at the prop name
+     * @param tag The CompoundTag containing the BooleanTag
+     * @param tagName The key name of the BooleanTag
+     * @param propName The key name to insert the BooleanTag value in the JSON object
+     * @param properties A JSON object to which to write the BooleanTag value into
+     */
     public static void getBooleanTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
         if(tag.containsKey(tagName))
             properties.put(propName, tag.getBoolean(tagName));
     }
 
+    /**
+     * Get the IntTag value inside the tag with the tagName
+     * and insert it into a JSON object at the prop name
+     * @param tag The CompoundTag containing the IntTag
+     * @param tagName The key name of the IntTag
+     * @param propName The key name to insert the IntTag value in the JSON object
+     * @param properties A JSON object to which to write the IntTag value into
+     */
     public static void getIntTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
         if(tag.containsKey(tagName))
             properties.put(propName, tag.getInt(tagName));
     }
 
+    /**
+     * Get the LongTag value inside the tag with the tagName
+     * and insert it into a JSON object at the prop name
+     * @param tag The CompoundTag containing the LongTag
+     * @param tagName The key name of the LongTag
+     * @param propName The key name to insert the LongTag value in the JSON object
+     * @param properties A JSON object to which to write the LongTag value into
+     */
     public static void getLongTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
         if(tag.containsKey(tagName))
             properties.put(propName, tag.getLong(tagName));
     }
 
+    /**
+     * Get the ShortTag value inside the tag with the tagName
+     * and insert it into a JSON object at the prop name
+     * @param tag The CompoundTag containing the ShortTag
+     * @param tagName The key name of the ShortTag
+     * @param propName The key name to insert the ShortTag value in the JSON object
+     * @param properties A JSON object to which to write the ShortTag value into
+     */
     public static void getShortTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
         if(tag.containsKey(tagName))
             properties.put(propName, tag.getShort(tagName));
     }
 
+    /**
+     * Get the FloatTag value inside the tag with the tagName
+     * and insert it into a JSON object at the prop name
+     * @param tag The CompoundTag containing the FloatTag
+     * @param tagName The key name of the FloatTag
+     * @param propName The key name to insert the FloatTag value in the JSON object
+     * @param properties A JSON object to which to write the FloatTag value into
+     */
     public static void getFloatTagProperty(CompoundTag tag, String tagName, String propName, JSONObject properties){
         if(tag.containsKey(tagName))
             properties.put(propName, tag.getFloat(tagName));
     }
 
+    /**
+     * Ger call NBT tags values inside the CompoundTag and write it to a JSON object using the same key names
+     * @param tag The CompoundTag to parse through
+     * @param properties The JSON object to insert the NBT tags into at the original key names
+     */
     public static void getCompoundTagProperties(CompoundTag tag, JSONObject properties){
         Set<String> keySet = tag.keySet();
         for(String key : keySet){
@@ -185,18 +288,28 @@ public class TagConv {
         }
     }
 
+    /**
+     * Flatten a CompoundTag containing StringTag's to a String in the format tagName1=tagValue1,tagName2=tagValue2...
+     * @param tag The CompoundTag containing exclusively StringTag's
+     * @return String of flattened list of StringTag's key-value pairs
+     */
     public static String flattenStringsCompoundTag(CompoundTag tag){
-        String flattened = "";
+        StringBuilder flattened = new StringBuilder();
         Set<String> tagKeys =  tag.keySet();
         int c = 0;
         for(String state : tagKeys){
-            flattened += String.format("%1$s=%2$s", state, tag.getString(state) + (c + 1 == tagKeys.size() ? "" : ","));
+            flattened.append(String.format("%1$s=%2$s", state, tag.getString(state) + (c + 1 == tagKeys.size() ? "" : ",")));
             c++;
         }
 
-        return flattened;
+        return flattened.toString();
     }
 
+    /**
+     * Parse a flattened list of StringTag's key-value pairs into a HashMap
+     * @param flattenedTags String of a flattened list of StringTag's key-value pairs in the format tagName1=tagValue1,tagName2=tagValue2...
+     * @param tags The HashMap to insert the parsed key-value parsed into
+     */
     public static void parseFlattenedTags(String flattenedTags, HashMap<String, String> tags){
         if(flattenedTags.contains("=")) {
             if (!flattenedTags.contains(",")) {
