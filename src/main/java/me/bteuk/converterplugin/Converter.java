@@ -166,7 +166,9 @@ public class Converter {
 
         Block block = world.getBlockAt(l);
 
-        switch ((String) object.get("block")) {
+        String blockName = (String) object.get("block");
+
+        switch (blockName) {
 
             case "minecraft:sunflower" -> {
 
@@ -408,16 +410,18 @@ public class Converter {
                  "minecraft:blue_shulker_box", "minecraft:white_shulker_box", "minecraft:brown_shulker_box",
                  "minecraft:green_shulker_box", "minecraft:black_shulker_box", "minecraft:orange_shulker_box",
                  "minecraft:yellow_shulker_box", "minecraft:purple_shulker_box", "minecraft:magenta_shulker_box",
-                 "minecraft:light_blue_shulker_box", "minecraft:light_gray_shulker_box"  -> {
+                 "minecraft:light_blue_shulker_box", "minecraft:light_gray_shulker_box", "minecraft:dispenser", "minecraft:dropper", "minecraft:hopper" -> {
 
 
                 if(object.containsKey("properties")){
                     JSONObject props = (JSONObject) object.get("properties");
-                    org.bukkit.block.ShulkerBox shulkerBox = (org.bukkit.block.ShulkerBox) block.getState();
+                    LootTable lootTable = null;
+                    Long _lootTableSeed = null;
+                    JSONArray itemsRaw = null;
 
                     if(props.containsKey("loot_table")){
                         String _lootTable = (String) props.get("loot_table");
-                        LootTable lootTable = LootTables.SIMPLE_DUNGEON.getLootTable();
+                        lootTable = LootTables.SIMPLE_DUNGEON.getLootTable();
                         if(_lootTable.startsWith("minecraft")) {
                             _lootTable = _lootTable.substring(10);
                             _lootTable = _lootTable.substring(_lootTable.indexOf("/") + 1).toUpperCase();
@@ -427,18 +431,72 @@ public class Converter {
                         }
 
 
-                        if(props.containsKey("loot_table_seed")){
-                            long _lootTableSeed = (long) props.get("loot_table_seed");
-                            shulkerBox.setLootTable(lootTable, _lootTableSeed);
-                        }else {
-                            shulkerBox.setLootTable(lootTable);
-                        }
+                        if(props.containsKey("loot_table_seed"))
+                            _lootTableSeed = (long) props.get("loot_table_seed");
                     }
 
-                    if(props.containsKey("items")){
-                        Inventory chestInventory = shulkerBox.getInventory();
-                        JSONArray itemsRaw = (JSONArray) props.get("items");
-                        ItemsHelper.setItems(chestInventory, itemsRaw);
+                    if(props.containsKey("items"))
+                        itemsRaw = (JSONArray) props.get("items");
+
+                    if(blockName.contains("shulker")) {
+                        org.bukkit.block.ShulkerBox shulkerBox = (org.bukkit.block.ShulkerBox) block.getState();
+                        if(lootTable != null) {
+                            if(_lootTableSeed != null)
+                                shulkerBox.setLootTable(lootTable, _lootTableSeed);
+                            else
+                                shulkerBox.setLootTable(lootTable);
+
+                        }
+
+                        if(itemsRaw != null){
+                            Inventory chestInventory = shulkerBox.getInventory();
+                            ItemsHelper.setItems(chestInventory, itemsRaw);
+                        }
+                    }else if(blockName.equals("minecraft:dispenser")) {
+                        org.bukkit.block.Dispenser dispenser = (org.bukkit.block.Dispenser) block.getState();
+
+                        if(lootTable != null) {
+                            if(_lootTableSeed != null)
+                                dispenser.setLootTable(lootTable, _lootTableSeed);
+                            else
+                                dispenser.setLootTable(lootTable);
+
+                        }
+
+                        if(itemsRaw != null){
+                            Inventory inventory = dispenser.getInventory();
+                            ItemsHelper.setItems(inventory, itemsRaw);
+                        }
+                    } else if(blockName.equals("minecraft:dropper")) {
+                        org.bukkit.block.Dropper dropper = (org.bukkit.block.Dropper) block.getState();
+
+                        if(lootTable != null) {
+                            if(_lootTableSeed != null)
+                                dropper.setLootTable(lootTable, _lootTableSeed);
+                            else
+                                dropper.setLootTable(lootTable);
+
+                        }
+
+                        if(itemsRaw != null){
+                            Inventory inventory = dropper.getInventory();
+                            ItemsHelper.setItems(inventory, itemsRaw);
+                        }
+                    } else if(blockName.equals("minecraft:hopper")) {
+                        org.bukkit.block.Hopper hopper = (org.bukkit.block.Hopper) block.getState();
+
+                        if(lootTable != null) {
+                            if(_lootTableSeed != null)
+                                hopper.setLootTable(lootTable, _lootTableSeed);
+                            else
+                                hopper.setLootTable(lootTable);
+
+                        }
+
+                        if(itemsRaw != null){
+                            Inventory inventory = hopper.getInventory();
+                            ItemsHelper.setItems(inventory, itemsRaw);
+                        }
                     }
                 }
             }
