@@ -107,9 +107,6 @@ public class RegionConverter extends Thread {
         this.queue = queue;
         this.mng = mng;
 
-        //Create json array to store entities.
-        jaEntities = new JSONArray();
-
     }
 
     /**
@@ -161,6 +158,8 @@ public class RegionConverter extends Thread {
 
         //Create new json array to store blocks for post-processing in.
         ja = new JSONArray();
+        //Create json array to store entities.
+        jaEntities = new JSONArray();
 
         //Iterate through all possible chunk columns in the file and continue with any that contain data.
         //A region2d is 512x512 which is 32*32 in terms of chunks, so 1024 individual chunks to iterate.
