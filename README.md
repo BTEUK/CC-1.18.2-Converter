@@ -88,5 +88,6 @@ And that's it! You have successfully used the program to convert your Minecraft 
 
 ## Authors
 
-- Brunt of the work: [@LM-Wolfert](https://www.github.com/LM-Wolfert)
+- Author: [@LM-Wolfert](https://www.github.com/LM-Wolfert)
+- Adding entity support and major improvements [@DavixDevelop](https://github.com/DavixDevelop)
 - Adding offsets and new documentation: [@LordKnish](https://github.com/LordKnish)
