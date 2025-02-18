@@ -3,28 +3,36 @@ package me.bteuk.converterplugin;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import io.papermc.lib.PaperLib;
+import me.bteuk.converterplugin.utils.Utils;
 import me.bteuk.converterplugin.utils.blocks.stairs.StairData;
+import me.bteuk.converterplugin.utils.entities.ArmorStandHelper;
+import me.bteuk.converterplugin.utils.entities.MinecartHelper;
 import me.bteuk.converterplugin.utils.exceptions.BlockNotFoundException;
+import me.bteuk.converterplugin.utils.items.ItemsHelper;
 import org.bukkit.*;
 import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Skull;
 import org.bukkit.block.banner.Pattern;
-import org.bukkit.block.banner.PatternType;
 import org.bukkit.block.data.*;
 import org.bukkit.block.data.type.*;
+import org.bukkit.block.data.type.Observer;
+import org.bukkit.entity.*;
+import org.bukkit.entity.minecart.*;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.loot.LootTable;
+import org.bukkit.loot.LootTables;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class Converter {
 
-    private final Plugin instance;
+    public final Plugin instance;
     private final World world;
 
     private boolean isRunning;
@@ -44,56 +52,123 @@ public class Converter {
         isRunning = value;
     }
 
-    public CompletableFuture<Void> convert(JSONArray jsonArray) {
+    public CompletableFuture<Void> convert(JSONObject jsonObject) {
 
         List<CompletableFuture<Void>> completableFutures = new ArrayList<>();
 
-        //Iterate through array.
-        //Catch any exceptions that may occur.
-        for (Object object : jsonArray) {
+        JSONArray blocksObjects = (JSONArray) jsonObject.get("block");
 
+        HashMap<String, List<JSONObject>> objectsPerChunk = new HashMap<>();
+
+        //Iterate through array of blocks.
+        //Add them to the objects per chunk hash map
+        for(Object object : blocksObjects){
             JSONObject jObject = (JSONObject) object;
+            int chunkX = (int) (long) jObject.get("x") >> 4;
+            int chunkY = (int) (long) jObject.get("y") >> 4;
+            int chunkZ = (int) (long) jObject.get("z") >> 4;
+            String chunkIndex = String.format("%1$d,%2$d,%3$d", chunkX, chunkY, chunkZ);
 
-            //Get the location of the block.
-            Location l = new Location(world, (int) (long) jObject.get("x"), (int) (long) jObject.get("y"), (int) (long) jObject.get("z"));
-            Location lPlusX = l.clone();
-            lPlusX.setX(l.getX()+1);
-            Location lPlusZ = l.clone();
-            lPlusZ.setZ(l.getZ()+1);
-            Location lMinX = l.clone();
-            lMinX.setX(l.getX()-1);
-            Location lMinZ = l.clone();
-            lMinZ.setZ(l.getZ()-1);
+            if(objectsPerChunk.containsKey(chunkIndex))
+                objectsPerChunk.get(chunkIndex).add(jObject);
+            else {
+                List<JSONObject> jObjects = new ArrayList<>();
+                jObjects.add(jObject);
+                objectsPerChunk.put(chunkIndex, jObjects);
+            }
+        }
 
-            //Make sure the chunk is loaded, plus the 4 adjacent chunks, since they may be needed.
+        //Check if region contains entities to add
+        if(jsonObject.containsKey("entity")){
+
+            JSONArray entityObjects = (JSONArray) jsonObject.get("entity");
+
+            for(Object object : entityObjects){
+                JSONObject jObject = (JSONObject) object;
+                int chunkX = Utils.floor((double) jObject.get("x")) >> 4;
+                int chunkY = Utils.floor((double) jObject.get("y")) >> 4;
+                int chunkZ = Utils.floor((double) jObject.get("z")) >> 4;
+                String chunkIndex = String.format("%1$d,%2$d,%3$d", chunkX, chunkY, chunkZ);
+
+                if(objectsPerChunk.containsKey(chunkIndex))
+                    objectsPerChunk.get(chunkIndex).add(jObject);
+                else {
+                    List<JSONObject> jObjects = new ArrayList<>();
+                    jObjects.add(jObject);
+                    objectsPerChunk.put(chunkIndex, jObjects);
+                }
+            }
+
+        }
+
+        for(String chunkIndex : objectsPerChunk.keySet()){
+            List<JSONObject> chunkObjects = objectsPerChunk.get(chunkIndex);
+
+            int chunkX = Integer.parseInt(chunkIndex.substring(0, chunkIndex.indexOf(',')));
+            int chunkY = Integer.parseInt(chunkIndex.substring(chunkIndex.indexOf(',') + 1, chunkIndex.indexOf(',', chunkIndex.indexOf(',') + 1)));
+            int chunkZ = Integer.parseInt(chunkIndex.substring(chunkIndex.indexOf(',', chunkIndex.indexOf(',') + 1) + 1));
+
+            Location chunkL = new Location(world, (chunkX << 4) + 1 , (chunkY << 4) + 1, (chunkZ << 4) + 1);
+            Location chunkLPlusX = chunkL.clone();
+            chunkLPlusX.setX(chunkL.getX() + 1);
+            Location chunkLPlusZ = chunkL.clone();
+            chunkLPlusZ.setZ(chunkL.getZ() + 1);
+            Location chunkLMinX = chunkL.clone();
+            chunkLMinX.setX(chunkL.getX() - 1);
+            Location chunkLMinZ = chunkL.clone();
+            chunkLMinZ.setZ(chunkL.getZ() - 1);
+
             CompletableFuture<Chunk>[] chunks = new CompletableFuture[]{
-                    PaperLib.getChunkAtAsync(l),
-                    PaperLib.getChunkAtAsync(lPlusX),
-                    PaperLib.getChunkAtAsync(lPlusZ),
-                    PaperLib.getChunkAtAsync(lMinX),
-                    PaperLib.getChunkAtAsync(lMinZ)
+                    PaperLib.getChunkAtAsync(chunkL),
+                    PaperLib.getChunkAtAsync(chunkLPlusX),
+                    PaperLib.getChunkAtAsync(chunkLPlusZ),
+                    PaperLib.getChunkAtAsync(chunkLMinX),
+                    PaperLib.getChunkAtAsync(chunkLMinZ)
             };
 
-            //When all 5 chunks are loaded, convert the block.
             completableFutures.add(CompletableFuture.allOf(chunks).thenRunAsync(() -> Bukkit.getScheduler().runTask(instance, () -> {
-                try {
-                    setBlockData(jObject, l);
-                } catch (BlockNotFoundException e) {
-                    instance.getLogger().warning(e.getMessage());
+                //Iterate through array of blocks.
+                //Convert them, depending on the type
+                //Catch any exceptions that may occur.
+                for(JSONObject jObject : chunkObjects){
+                    //Check if jObject is blocks
+                    if(jObject.containsKey("block")){
+                        Location blockLocation = new Location(world, (int) (long) jObject.get("x"), (int) (long) jObject.get("y"), (int) (long) jObject.get("z"));
+
+                        try {
+                            setBlockData(jObject, blockLocation);
+                        } catch (Exception e) {
+                            instance.getLogger().warning(e.getMessage());
+                        }
+                    }else {
+                        //Else jObject is entity
+                        String entityNamespace = (String) jObject.get("entity");
+
+                        //Get the location of the entity.
+                        Location entityLocation = new Location(world, (double) jObject.get("x"), (double) jObject.get("y"), (double) jObject.get("z"));
+
+                        try{
+                            setEntity(entityNamespace,jObject, entityLocation);
+                        }
+                        catch (Exception e){
+                            instance.getLogger().warning(String.format("setEntity (%1$s) error: \n%2$s", entityNamespace, e.getMessage()));
+                        }
+                    }
                 }
             })));
-
         }
 
         return CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[0]));
     }
 
     //Set the blockData of the block.
-    private void setBlockData(JSONObject object, Location l) throws BlockNotFoundException {
+    private void setBlockData(JSONObject object, Location l) throws Exception {
 
         Block block = world.getBlockAt(l);
 
-        switch ((String) object.get("block")) {
+        String blockName = (String) object.get("block");
+
+        switch (blockName) {
 
             case "minecraft:sunflower" -> {
 
@@ -117,8 +192,8 @@ public class Converter {
             }
 
             case "minecraft:oak_stairs", "minecraft:cobblestone_stairs", "minecraft:brick_stairs", "minecraft:stone_brick_stairs", "minecraft:nether_brick_stairs",
-                    "minecraft:sandstone_stairs", "minecraft:spruce_stairs", "minecraft:birch_stairs", "minecraft:jungle_stairs", "minecraft:quartz_stairs", "minecraft:acacia_stairs",
-                    "minecraft:dark_oak_stairs", "minecraft:red_sandstone_stairs", "minecraft:purpur_stairs" -> {
+                 "minecraft:sandstone_stairs", "minecraft:spruce_stairs", "minecraft:birch_stairs", "minecraft:jungle_stairs", "minecraft:quartz_stairs", "minecraft:acacia_stairs",
+                 "minecraft:dark_oak_stairs", "minecraft:red_sandstone_stairs", "minecraft:purpur_stairs" -> {
 
                 BlockData bd = block.getBlockData();
                 if (!(bd instanceof Stairs)) {
@@ -134,7 +209,7 @@ public class Converter {
 
             //Fences, Iron bar and Glass panes.
             case "minecraft:oak_fence", "minecraft:birch_fence", "minecraft:spruce_fence", "minecraft:jungle_fence", "minecraft:acacia_fence", "minecraft:dark_oak_fence",
-                    "minecraft:nether_brick_fence", "minecraft:glass_pane", "minecraft:iron_bars" -> {
+                 "minecraft:nether_brick_fence", "minecraft:glass_pane", "minecraft:iron_bars" -> {
 
                 //Check if the fence can connect to adjacent blocks.
                 BlockData bd = block.getBlockData();
@@ -171,10 +246,10 @@ public class Converter {
 
             //Stained glass (for some reason it's a different data type from normal glass panes, even though the data is the exact same)
             case "minecraft:red_stained_glass_pane", "minecraft:lime_stained_glass_pane",
-                    "minecraft:pink_stained_glass_pane", "minecraft:gray_stained_glass_pane", "minecraft:cyan_stained_glass_pane", "minecraft:blue_stained_glass_pane",
-                    "minecraft:white_stained_glass_pane", "minecraft:brown_stained_glass_pane", "minecraft:green_stained_glass_pane", "minecraft:black_stained_glass_pane",
-                    "minecraft:orange_stained_glass_pane", "minecraft:yellow_stained_glass_pane", "minecraft:purple_stained_glass_pane",
-                    "minecraft:magenta_stained_glass_pane", "minecraft:light_blue_stained_glass_pane", "minecraft:light_gray_stained_glass_pane" -> {
+                 "minecraft:pink_stained_glass_pane", "minecraft:gray_stained_glass_pane", "minecraft:cyan_stained_glass_pane", "minecraft:blue_stained_glass_pane",
+                 "minecraft:white_stained_glass_pane", "minecraft:brown_stained_glass_pane", "minecraft:green_stained_glass_pane", "minecraft:black_stained_glass_pane",
+                 "minecraft:orange_stained_glass_pane", "minecraft:yellow_stained_glass_pane", "minecraft:purple_stained_glass_pane",
+                 "minecraft:magenta_stained_glass_pane", "minecraft:light_blue_stained_glass_pane", "minecraft:light_gray_stained_glass_pane" -> {
 
                 //Check if the fence can connect to adjacent blocks.
                 BlockData bd = block.getBlockData();
@@ -297,6 +372,133 @@ public class Converter {
 
                 block.setBlockData(chest, false);
 
+                if(object.containsKey("properties")){
+                    JSONObject props = (JSONObject) object.get("properties");
+                    org.bukkit.block.Chest _chest = (org.bukkit.block.Chest) block.getState();
+
+                    if(props.containsKey("loot_table")){
+                        String _lootTable = (String) props.get("loot_table");
+                        LootTable lootTable = LootTables.SIMPLE_DUNGEON.getLootTable();
+                        if(_lootTable.startsWith("minecraft")) {
+                            _lootTable = _lootTable.substring(10);
+                            _lootTable = _lootTable.substring(_lootTable.indexOf("/") + 1).toUpperCase();
+                            try{
+                                lootTable = LootTables.valueOf(_lootTable).getLootTable();
+                            }catch (Exception ex){ }
+                        }
+
+
+                        if(props.containsKey("loot_table_seed")){
+                            long _lootTableSeed = (long) props.get("loot_table_seed");
+                            _chest.setLootTable(lootTable, _lootTableSeed);
+                        }else {
+                            _chest.setLootTable(lootTable);
+                        }
+                    }
+
+                    if(props.containsKey("items")){
+                        Inventory chestInventory = _chest.getBlockInventory();
+                        JSONArray itemsRaw = (JSONArray) props.get("items");
+                        ItemsHelper.setItems(chestInventory, itemsRaw);
+                    }
+                }
+
+            }
+
+            case "minecraft:shulker_box", "minecraft:pink_shulker_box", "minecraft:red_shulker_box",
+                 "minecraft:lime_shulker_box", "minecraft:gray_shulker_box","minecraft:cyan_shulker_box",
+                 "minecraft:blue_shulker_box", "minecraft:white_shulker_box", "minecraft:brown_shulker_box",
+                 "minecraft:green_shulker_box", "minecraft:black_shulker_box", "minecraft:orange_shulker_box",
+                 "minecraft:yellow_shulker_box", "minecraft:purple_shulker_box", "minecraft:magenta_shulker_box",
+                 "minecraft:light_blue_shulker_box", "minecraft:light_gray_shulker_box", "minecraft:dispenser", "minecraft:dropper", "minecraft:hopper" -> {
+
+
+                if(object.containsKey("properties")){
+                    JSONObject props = (JSONObject) object.get("properties");
+                    LootTable lootTable = null;
+                    Long _lootTableSeed = null;
+                    JSONArray itemsRaw = null;
+
+                    if(props.containsKey("loot_table")){
+                        String _lootTable = (String) props.get("loot_table");
+                        lootTable = LootTables.SIMPLE_DUNGEON.getLootTable();
+                        if(_lootTable.startsWith("minecraft")) {
+                            _lootTable = _lootTable.substring(10);
+                            _lootTable = _lootTable.substring(_lootTable.indexOf("/") + 1).toUpperCase();
+                            try{
+                                lootTable = LootTables.valueOf(_lootTable).getLootTable();
+                            }catch (Exception ex){ }
+                        }
+
+
+                        if(props.containsKey("loot_table_seed"))
+                            _lootTableSeed = (long) props.get("loot_table_seed");
+                    }
+
+                    if(props.containsKey("items"))
+                        itemsRaw = (JSONArray) props.get("items");
+
+                    if(blockName.contains("shulker")) {
+                        org.bukkit.block.ShulkerBox shulkerBox = (org.bukkit.block.ShulkerBox) block.getState();
+                        if(lootTable != null) {
+                            if(_lootTableSeed != null)
+                                shulkerBox.setLootTable(lootTable, _lootTableSeed);
+                            else
+                                shulkerBox.setLootTable(lootTable);
+
+                        }
+
+                        if(itemsRaw != null){
+                            Inventory chestInventory = shulkerBox.getInventory();
+                            ItemsHelper.setItems(chestInventory, itemsRaw);
+                        }
+                    }else if(blockName.equals("minecraft:dispenser")) {
+                        org.bukkit.block.Dispenser dispenser = (org.bukkit.block.Dispenser) block.getState();
+
+                        if(lootTable != null) {
+                            if(_lootTableSeed != null)
+                                dispenser.setLootTable(lootTable, _lootTableSeed);
+                            else
+                                dispenser.setLootTable(lootTable);
+
+                        }
+
+                        if(itemsRaw != null){
+                            Inventory inventory = dispenser.getInventory();
+                            ItemsHelper.setItems(inventory, itemsRaw);
+                        }
+                    } else if(blockName.equals("minecraft:dropper")) {
+                        org.bukkit.block.Dropper dropper = (org.bukkit.block.Dropper) block.getState();
+
+                        if(lootTable != null) {
+                            if(_lootTableSeed != null)
+                                dropper.setLootTable(lootTable, _lootTableSeed);
+                            else
+                                dropper.setLootTable(lootTable);
+
+                        }
+
+                        if(itemsRaw != null){
+                            Inventory inventory = dropper.getInventory();
+                            ItemsHelper.setItems(inventory, itemsRaw);
+                        }
+                    } else if(blockName.equals("minecraft:hopper")) {
+                        org.bukkit.block.Hopper hopper = (org.bukkit.block.Hopper) block.getState();
+
+                        if(lootTable != null) {
+                            if(_lootTableSeed != null)
+                                hopper.setLootTable(lootTable, _lootTableSeed);
+                            else
+                                hopper.setLootTable(lootTable);
+
+                        }
+
+                        if(itemsRaw != null){
+                            Inventory inventory = hopper.getInventory();
+                            ItemsHelper.setItems(inventory, itemsRaw);
+                        }
+                    }
+                }
             }
 
             case "minecraft:redstone_wire" -> {
@@ -802,14 +1004,17 @@ public class Converter {
 
                     Location lAbove = new Location(world, l.getX(), l.getY() + 1, l.getZ());
 
-                    //Check if block below is a door of the same material, if true get it's properties.
+                    //Check if block below is a door of the same material and different half, if true get it's properties.
                     if (world.getBlockData(lAbove) instanceof Door aDoor && world.getType(lAbove) == door.getMaterial()) {
 
-                        //Get hinge and powered status.
-                        door.setHinge(aDoor.getHinge());
-                        door.setPowered(aDoor.isPowered());
+                        if(door.getHalf() != aDoor.getHalf()) {
 
-                        block.setBlockData(door, false);
+                            //Get hinge and powered status.
+                            door.setHinge(aDoor.getHinge());
+                            door.setPowered(aDoor.isPowered());
+
+                            block.setBlockData(door, false);
+                        }
 
                     }
                 }
@@ -876,44 +1081,44 @@ public class Converter {
         //First check if the block is solid, return if true.
         switch (bd.getMaterial()) {
             case STONE, GRANITE, POLISHED_GRANITE, DIORITE, POLISHED_DIORITE, ANDESITE, POLISHED_ANDESITE,
-                    GRASS_BLOCK, DIRT, COARSE_DIRT, PODZOL, COBBLESTONE,
-                    OAK_PLANKS, SPRUCE_PLANKS, BIRCH_PLANKS, JUNGLE_PLANKS, ACACIA_PLANKS, DARK_OAK_PLANKS,
-                    BEDROCK, SAND, RED_SAND, GRAVEL,
-                    COAL_ORE, IRON_ORE, GOLD_ORE, REDSTONE_ORE, EMERALD_ORE, LAPIS_ORE, DIAMOND_ORE, NETHER_QUARTZ_ORE,
-                    COAL_BLOCK, IRON_BLOCK, GOLD_BLOCK, DIAMOND_BLOCK,
-                    OAK_LOG, SPRUCE_LOG, BIRCH_LOG, JUNGLE_LOG, ACACIA_LOG, DARK_OAK_LOG,
-                    OAK_WOOD, SPRUCE_WOOD, BIRCH_WOOD, JUNGLE_WOOD, ACACIA_WOOD, DARK_OAK_WOOD,
-                    SPONGE, WET_SPONGE, GLASS, LAPIS_BLOCK, SANDSTONE, CHISELED_SANDSTONE, CUT_SANDSTONE,
-                    WHITE_WOOL, ORANGE_WOOL, MAGENTA_WOOL, LIGHT_BLUE_WOOL, YELLOW_WOOL, LIME_WOOL, PINK_WOOL, GRAY_WOOL,
-                    LIGHT_GRAY_WOOL, CYAN_WOOL, PURPLE_WOOL, BLUE_WOOL, BROWN_WOOL, GREEN_WOOL, RED_WOOL, BLACK_WOOL,
-                    SMOOTH_QUARTZ, SMOOTH_RED_SANDSTONE, SMOOTH_SANDSTONE, SMOOTH_STONE, BRICKS, BOOKSHELF,
-                    MOSSY_COBBLESTONE, OBSIDIAN, PURPUR_BLOCK, PURPUR_PILLAR, CRAFTING_TABLE, FURNACE,
-                    ICE, SNOW_BLOCK, CLAY, JUKEBOX, NETHERRACK, SOUL_SAND, GLOWSTONE,
-                    INFESTED_STONE, INFESTED_COBBLESTONE, INFESTED_STONE_BRICKS, INFESTED_MOSSY_STONE_BRICKS, INFESTED_CRACKED_STONE_BRICKS, INFESTED_CHISELED_STONE_BRICKS,
-                    STONE_BRICKS, MOSSY_STONE_BRICKS, CRACKED_STONE_BRICKS, CHISELED_STONE_BRICKS,
-                    BROWN_MUSHROOM_BLOCK, RED_MUSHROOM_BLOCK, MUSHROOM_STEM, MYCELIUM, NETHER_BRICK, END_STONE, END_STONE_BRICKS,
-                    EMERALD_BLOCK, BEACON, CHISELED_QUARTZ_BLOCK, QUARTZ_BLOCK, QUARTZ_PILLAR,
-                    WHITE_TERRACOTTA, ORANGE_TERRACOTTA, MAGENTA_TERRACOTTA, LIGHT_BLUE_TERRACOTTA,
-                    YELLOW_TERRACOTTA, LIME_TERRACOTTA, PINK_TERRACOTTA, GRAY_TERRACOTTA,
-                    LIGHT_GRAY_TERRACOTTA, CYAN_TERRACOTTA, PURPLE_TERRACOTTA, BLUE_TERRACOTTA,
-                    BROWN_TERRACOTTA, GREEN_TERRACOTTA, RED_TERRACOTTA, BLACK_TERRACOTTA,
-                    HAY_BLOCK, TERRACOTTA, PACKED_ICE, PRISMARINE, PRISMARINE_BRICKS, DARK_PRISMARINE, SEA_LANTERN,
-                    RED_SANDSTONE, CHISELED_RED_SANDSTONE, CUT_RED_SANDSTONE, MAGMA_BLOCK, RED_NETHER_BRICKS, BONE_BLOCK,
-                    WHITE_GLAZED_TERRACOTTA, ORANGE_GLAZED_TERRACOTTA, MAGENTA_GLAZED_TERRACOTTA, LIGHT_BLUE_GLAZED_TERRACOTTA,
-                    YELLOW_GLAZED_TERRACOTTA, LIME_GLAZED_TERRACOTTA, PINK_GLAZED_TERRACOTTA, GRAY_GLAZED_TERRACOTTA,
-                    LIGHT_GRAY_GLAZED_TERRACOTTA, CYAN_GLAZED_TERRACOTTA, PURPLE_GLAZED_TERRACOTTA, BLUE_GLAZED_TERRACOTTA,
-                    BROWN_GLAZED_TERRACOTTA, GREEN_GLAZED_TERRACOTTA, RED_GLAZED_TERRACOTTA, BLACK_GLAZED_TERRACOTTA,
-                    WHITE_CONCRETE, ORANGE_CONCRETE, MAGENTA_CONCRETE, LIGHT_BLUE_CONCRETE, YELLOW_CONCRETE, LIME_CONCRETE, PINK_CONCRETE, GRAY_CONCRETE,
-                    LIGHT_GRAY_CONCRETE, CYAN_CONCRETE, PURPLE_CONCRETE, BLUE_CONCRETE, BROWN_CONCRETE, GREEN_CONCRETE, RED_CONCRETE, BLACK_CONCRETE,
-                    WHITE_CONCRETE_POWDER, ORANGE_CONCRETE_POWDER, MAGENTA_CONCRETE_POWDER, LIGHT_BLUE_CONCRETE_POWDER,
-                    YELLOW_CONCRETE_POWDER, LIME_CONCRETE_POWDER, PINK_CONCRETE_POWDER, GRAY_CONCRETE_POWDER,
-                    LIGHT_GRAY_CONCRETE_POWDER, CYAN_CONCRETE_POWDER, PURPLE_CONCRETE_POWDER, BLUE_CONCRETE_POWDER,
-                    BROWN_CONCRETE_POWDER, GREEN_CONCRETE_POWDER, RED_CONCRETE_POWDER, BLACK_CONCRETE_POWDER,
-                    REDSTONE_BLOCK, SLIME_BLOCK, PISTON, STICKY_PISTON, OBSERVER, DISPENSER, DROPPER,
-                    TNT, REDSTONE_LAMP, NOTE_BLOCK,
-                    WHITE_STAINED_GLASS, ORANGE_STAINED_GLASS, MAGENTA_STAINED_GLASS, LIGHT_BLUE_STAINED_GLASS, YELLOW_STAINED_GLASS, LIME_STAINED_GLASS, PINK_STAINED_GLASS,
-                    GRAY_STAINED_GLASS, LIGHT_GRAY_STAINED_GLASS, CYAN_STAINED_GLASS, PURPLE_STAINED_GLASS, BLUE_STAINED_GLASS, BROWN_STAINED_GLASS, GREEN_STAINED_GLASS,
-                    RED_STAINED_GLASS, BLACK_STAINED_GLASS -> {
+                 GRASS_BLOCK, DIRT, COARSE_DIRT, PODZOL, COBBLESTONE,
+                 OAK_PLANKS, SPRUCE_PLANKS, BIRCH_PLANKS, JUNGLE_PLANKS, ACACIA_PLANKS, DARK_OAK_PLANKS,
+                 BEDROCK, SAND, RED_SAND, GRAVEL,
+                 COAL_ORE, IRON_ORE, GOLD_ORE, REDSTONE_ORE, EMERALD_ORE, LAPIS_ORE, DIAMOND_ORE, NETHER_QUARTZ_ORE,
+                 COAL_BLOCK, IRON_BLOCK, GOLD_BLOCK, DIAMOND_BLOCK,
+                 OAK_LOG, SPRUCE_LOG, BIRCH_LOG, JUNGLE_LOG, ACACIA_LOG, DARK_OAK_LOG,
+                 OAK_WOOD, SPRUCE_WOOD, BIRCH_WOOD, JUNGLE_WOOD, ACACIA_WOOD, DARK_OAK_WOOD,
+                 SPONGE, WET_SPONGE, GLASS, LAPIS_BLOCK, SANDSTONE, CHISELED_SANDSTONE, CUT_SANDSTONE,
+                 WHITE_WOOL, ORANGE_WOOL, MAGENTA_WOOL, LIGHT_BLUE_WOOL, YELLOW_WOOL, LIME_WOOL, PINK_WOOL, GRAY_WOOL,
+                 LIGHT_GRAY_WOOL, CYAN_WOOL, PURPLE_WOOL, BLUE_WOOL, BROWN_WOOL, GREEN_WOOL, RED_WOOL, BLACK_WOOL,
+                 SMOOTH_QUARTZ, SMOOTH_RED_SANDSTONE, SMOOTH_SANDSTONE, SMOOTH_STONE, BRICKS, BOOKSHELF,
+                 MOSSY_COBBLESTONE, OBSIDIAN, PURPUR_BLOCK, PURPUR_PILLAR, CRAFTING_TABLE, FURNACE,
+                 ICE, SNOW_BLOCK, CLAY, JUKEBOX, NETHERRACK, SOUL_SAND, GLOWSTONE,
+                 INFESTED_STONE, INFESTED_COBBLESTONE, INFESTED_STONE_BRICKS, INFESTED_MOSSY_STONE_BRICKS, INFESTED_CRACKED_STONE_BRICKS, INFESTED_CHISELED_STONE_BRICKS,
+                 STONE_BRICKS, MOSSY_STONE_BRICKS, CRACKED_STONE_BRICKS, CHISELED_STONE_BRICKS,
+                 BROWN_MUSHROOM_BLOCK, RED_MUSHROOM_BLOCK, MUSHROOM_STEM, MYCELIUM, NETHER_BRICK, END_STONE, END_STONE_BRICKS,
+                 EMERALD_BLOCK, BEACON, CHISELED_QUARTZ_BLOCK, QUARTZ_BLOCK, QUARTZ_PILLAR,
+                 WHITE_TERRACOTTA, ORANGE_TERRACOTTA, MAGENTA_TERRACOTTA, LIGHT_BLUE_TERRACOTTA,
+                 YELLOW_TERRACOTTA, LIME_TERRACOTTA, PINK_TERRACOTTA, GRAY_TERRACOTTA,
+                 LIGHT_GRAY_TERRACOTTA, CYAN_TERRACOTTA, PURPLE_TERRACOTTA, BLUE_TERRACOTTA,
+                 BROWN_TERRACOTTA, GREEN_TERRACOTTA, RED_TERRACOTTA, BLACK_TERRACOTTA,
+                 HAY_BLOCK, TERRACOTTA, PACKED_ICE, PRISMARINE, PRISMARINE_BRICKS, DARK_PRISMARINE, SEA_LANTERN,
+                 RED_SANDSTONE, CHISELED_RED_SANDSTONE, CUT_RED_SANDSTONE, MAGMA_BLOCK, RED_NETHER_BRICKS, BONE_BLOCK,
+                 WHITE_GLAZED_TERRACOTTA, ORANGE_GLAZED_TERRACOTTA, MAGENTA_GLAZED_TERRACOTTA, LIGHT_BLUE_GLAZED_TERRACOTTA,
+                 YELLOW_GLAZED_TERRACOTTA, LIME_GLAZED_TERRACOTTA, PINK_GLAZED_TERRACOTTA, GRAY_GLAZED_TERRACOTTA,
+                 LIGHT_GRAY_GLAZED_TERRACOTTA, CYAN_GLAZED_TERRACOTTA, PURPLE_GLAZED_TERRACOTTA, BLUE_GLAZED_TERRACOTTA,
+                 BROWN_GLAZED_TERRACOTTA, GREEN_GLAZED_TERRACOTTA, RED_GLAZED_TERRACOTTA, BLACK_GLAZED_TERRACOTTA,
+                 WHITE_CONCRETE, ORANGE_CONCRETE, MAGENTA_CONCRETE, LIGHT_BLUE_CONCRETE, YELLOW_CONCRETE, LIME_CONCRETE, PINK_CONCRETE, GRAY_CONCRETE,
+                 LIGHT_GRAY_CONCRETE, CYAN_CONCRETE, PURPLE_CONCRETE, BLUE_CONCRETE, BROWN_CONCRETE, GREEN_CONCRETE, RED_CONCRETE, BLACK_CONCRETE,
+                 WHITE_CONCRETE_POWDER, ORANGE_CONCRETE_POWDER, MAGENTA_CONCRETE_POWDER, LIGHT_BLUE_CONCRETE_POWDER,
+                 YELLOW_CONCRETE_POWDER, LIME_CONCRETE_POWDER, PINK_CONCRETE_POWDER, GRAY_CONCRETE_POWDER,
+                 LIGHT_GRAY_CONCRETE_POWDER, CYAN_CONCRETE_POWDER, PURPLE_CONCRETE_POWDER, BLUE_CONCRETE_POWDER,
+                 BROWN_CONCRETE_POWDER, GREEN_CONCRETE_POWDER, RED_CONCRETE_POWDER, BLACK_CONCRETE_POWDER,
+                 REDSTONE_BLOCK, SLIME_BLOCK, PISTON, STICKY_PISTON, OBSERVER, DISPENSER, DROPPER,
+                 TNT, REDSTONE_LAMP, NOTE_BLOCK,
+                 WHITE_STAINED_GLASS, ORANGE_STAINED_GLASS, MAGENTA_STAINED_GLASS, LIGHT_BLUE_STAINED_GLASS, YELLOW_STAINED_GLASS, LIME_STAINED_GLASS, PINK_STAINED_GLASS,
+                 GRAY_STAINED_GLASS, LIGHT_GRAY_STAINED_GLASS, CYAN_STAINED_GLASS, PURPLE_STAINED_GLASS, BLUE_STAINED_GLASS, BROWN_STAINED_GLASS, GREEN_STAINED_GLASS,
+                 RED_STAINED_GLASS, BLACK_STAINED_GLASS -> {
                 return true;
             }
         }
@@ -1051,54 +1256,54 @@ public class Converter {
         //First check if the block is solid, return if true.
         switch (bd.getMaterial()) {
             case STONE, GRANITE, POLISHED_GRANITE, DIORITE, POLISHED_DIORITE, ANDESITE, POLISHED_ANDESITE,
-                    GRASS_BLOCK, DIRT, COARSE_DIRT, PODZOL, COBBLESTONE,
-                    OAK_PLANKS, SPRUCE_PLANKS, BIRCH_PLANKS, JUNGLE_PLANKS, ACACIA_PLANKS, DARK_OAK_PLANKS,
-                    BEDROCK, SAND, RED_SAND, GRAVEL,
-                    COAL_ORE, IRON_ORE, GOLD_ORE, REDSTONE_ORE, EMERALD_ORE, LAPIS_ORE, DIAMOND_ORE, NETHER_QUARTZ_ORE,
-                    COAL_BLOCK, IRON_BLOCK, GOLD_BLOCK, DIAMOND_BLOCK,
-                    OAK_LOG, SPRUCE_LOG, BIRCH_LOG, JUNGLE_LOG, ACACIA_LOG, DARK_OAK_LOG,
-                    OAK_WOOD, SPRUCE_WOOD, BIRCH_WOOD, JUNGLE_WOOD, ACACIA_WOOD, DARK_OAK_WOOD,
-                    SPONGE, WET_SPONGE, GLASS, LAPIS_BLOCK, SANDSTONE, CHISELED_SANDSTONE, CUT_SANDSTONE,
-                    WHITE_WOOL, ORANGE_WOOL, MAGENTA_WOOL, LIGHT_BLUE_WOOL, YELLOW_WOOL, LIME_WOOL, PINK_WOOL, GRAY_WOOL,
-                    LIGHT_GRAY_WOOL, CYAN_WOOL, PURPLE_WOOL, BLUE_WOOL, BROWN_WOOL, GREEN_WOOL, RED_WOOL, BLACK_WOOL,
-                    SMOOTH_QUARTZ, SMOOTH_RED_SANDSTONE, SMOOTH_SANDSTONE, SMOOTH_STONE, BRICKS, BOOKSHELF,
-                    MOSSY_COBBLESTONE, OBSIDIAN, PURPUR_BLOCK, PURPUR_PILLAR, CRAFTING_TABLE, FURNACE,
-                    ICE, SNOW_BLOCK, CLAY, JUKEBOX, NETHERRACK, SOUL_SAND, GLOWSTONE,
-                    INFESTED_STONE, INFESTED_COBBLESTONE, INFESTED_STONE_BRICKS, INFESTED_MOSSY_STONE_BRICKS, INFESTED_CRACKED_STONE_BRICKS, INFESTED_CHISELED_STONE_BRICKS,
-                    STONE_BRICKS, MOSSY_STONE_BRICKS, CRACKED_STONE_BRICKS, CHISELED_STONE_BRICKS,
-                    BROWN_MUSHROOM_BLOCK, RED_MUSHROOM_BLOCK, MUSHROOM_STEM, MYCELIUM, NETHER_BRICK, END_STONE, END_STONE_BRICKS,
-                    EMERALD_BLOCK, BEACON, CHISELED_QUARTZ_BLOCK, QUARTZ_BLOCK, QUARTZ_PILLAR,
-                    WHITE_TERRACOTTA, ORANGE_TERRACOTTA, MAGENTA_TERRACOTTA, LIGHT_BLUE_TERRACOTTA,
-                    YELLOW_TERRACOTTA, LIME_TERRACOTTA, PINK_TERRACOTTA, GRAY_TERRACOTTA,
-                    LIGHT_GRAY_TERRACOTTA, CYAN_TERRACOTTA, PURPLE_TERRACOTTA, BLUE_TERRACOTTA,
-                    BROWN_TERRACOTTA, GREEN_TERRACOTTA, RED_TERRACOTTA, BLACK_TERRACOTTA,
-                    HAY_BLOCK, TERRACOTTA, PACKED_ICE, PRISMARINE, PRISMARINE_BRICKS, DARK_PRISMARINE, SEA_LANTERN,
-                    RED_SANDSTONE, CHISELED_RED_SANDSTONE, CUT_RED_SANDSTONE, MAGMA_BLOCK, RED_NETHER_BRICKS, BONE_BLOCK,
-                    WHITE_GLAZED_TERRACOTTA, ORANGE_GLAZED_TERRACOTTA, MAGENTA_GLAZED_TERRACOTTA, LIGHT_BLUE_GLAZED_TERRACOTTA,
-                    YELLOW_GLAZED_TERRACOTTA, LIME_GLAZED_TERRACOTTA, PINK_GLAZED_TERRACOTTA, GRAY_GLAZED_TERRACOTTA,
-                    LIGHT_GRAY_GLAZED_TERRACOTTA, CYAN_GLAZED_TERRACOTTA, PURPLE_GLAZED_TERRACOTTA, BLUE_GLAZED_TERRACOTTA,
-                    BROWN_GLAZED_TERRACOTTA, GREEN_GLAZED_TERRACOTTA, RED_GLAZED_TERRACOTTA, BLACK_GLAZED_TERRACOTTA,
-                    WHITE_CONCRETE, ORANGE_CONCRETE, MAGENTA_CONCRETE, LIGHT_BLUE_CONCRETE, YELLOW_CONCRETE, LIME_CONCRETE, PINK_CONCRETE, GRAY_CONCRETE,
-                    LIGHT_GRAY_CONCRETE, CYAN_CONCRETE, PURPLE_CONCRETE, BLUE_CONCRETE, BROWN_CONCRETE, GREEN_CONCRETE, RED_CONCRETE, BLACK_CONCRETE,
-                    WHITE_CONCRETE_POWDER, ORANGE_CONCRETE_POWDER, MAGENTA_CONCRETE_POWDER, LIGHT_BLUE_CONCRETE_POWDER,
-                    YELLOW_CONCRETE_POWDER, LIME_CONCRETE_POWDER, PINK_CONCRETE_POWDER, GRAY_CONCRETE_POWDER,
-                    LIGHT_GRAY_CONCRETE_POWDER, CYAN_CONCRETE_POWDER, PURPLE_CONCRETE_POWDER, BLUE_CONCRETE_POWDER,
-                    BROWN_CONCRETE_POWDER, GREEN_CONCRETE_POWDER, RED_CONCRETE_POWDER, BLACK_CONCRETE_POWDER,
-                    REDSTONE_BLOCK, SLIME_BLOCK, PISTON, STICKY_PISTON, OBSERVER, DISPENSER, DROPPER,
-                    TNT, REDSTONE_LAMP, NOTE_BLOCK,
-                    WHITE_STAINED_GLASS, ORANGE_STAINED_GLASS, MAGENTA_STAINED_GLASS, LIGHT_BLUE_STAINED_GLASS, YELLOW_STAINED_GLASS, LIME_STAINED_GLASS, PINK_STAINED_GLASS,
-                    GRAY_STAINED_GLASS, LIGHT_GRAY_STAINED_GLASS, CYAN_STAINED_GLASS, PURPLE_STAINED_GLASS, BLUE_STAINED_GLASS, BROWN_STAINED_GLASS, GREEN_STAINED_GLASS,
-                    RED_STAINED_GLASS, BLACK_STAINED_GLASS,
+                 GRASS_BLOCK, DIRT, COARSE_DIRT, PODZOL, COBBLESTONE,
+                 OAK_PLANKS, SPRUCE_PLANKS, BIRCH_PLANKS, JUNGLE_PLANKS, ACACIA_PLANKS, DARK_OAK_PLANKS,
+                 BEDROCK, SAND, RED_SAND, GRAVEL,
+                 COAL_ORE, IRON_ORE, GOLD_ORE, REDSTONE_ORE, EMERALD_ORE, LAPIS_ORE, DIAMOND_ORE, NETHER_QUARTZ_ORE,
+                 COAL_BLOCK, IRON_BLOCK, GOLD_BLOCK, DIAMOND_BLOCK,
+                 OAK_LOG, SPRUCE_LOG, BIRCH_LOG, JUNGLE_LOG, ACACIA_LOG, DARK_OAK_LOG,
+                 OAK_WOOD, SPRUCE_WOOD, BIRCH_WOOD, JUNGLE_WOOD, ACACIA_WOOD, DARK_OAK_WOOD,
+                 SPONGE, WET_SPONGE, GLASS, LAPIS_BLOCK, SANDSTONE, CHISELED_SANDSTONE, CUT_SANDSTONE,
+                 WHITE_WOOL, ORANGE_WOOL, MAGENTA_WOOL, LIGHT_BLUE_WOOL, YELLOW_WOOL, LIME_WOOL, PINK_WOOL, GRAY_WOOL,
+                 LIGHT_GRAY_WOOL, CYAN_WOOL, PURPLE_WOOL, BLUE_WOOL, BROWN_WOOL, GREEN_WOOL, RED_WOOL, BLACK_WOOL,
+                 SMOOTH_QUARTZ, SMOOTH_RED_SANDSTONE, SMOOTH_SANDSTONE, SMOOTH_STONE, BRICKS, BOOKSHELF,
+                 MOSSY_COBBLESTONE, OBSIDIAN, PURPUR_BLOCK, PURPUR_PILLAR, CRAFTING_TABLE, FURNACE,
+                 ICE, SNOW_BLOCK, CLAY, JUKEBOX, NETHERRACK, SOUL_SAND, GLOWSTONE,
+                 INFESTED_STONE, INFESTED_COBBLESTONE, INFESTED_STONE_BRICKS, INFESTED_MOSSY_STONE_BRICKS, INFESTED_CRACKED_STONE_BRICKS, INFESTED_CHISELED_STONE_BRICKS,
+                 STONE_BRICKS, MOSSY_STONE_BRICKS, CRACKED_STONE_BRICKS, CHISELED_STONE_BRICKS,
+                 BROWN_MUSHROOM_BLOCK, RED_MUSHROOM_BLOCK, MUSHROOM_STEM, MYCELIUM, NETHER_BRICK, END_STONE, END_STONE_BRICKS,
+                 EMERALD_BLOCK, BEACON, CHISELED_QUARTZ_BLOCK, QUARTZ_BLOCK, QUARTZ_PILLAR,
+                 WHITE_TERRACOTTA, ORANGE_TERRACOTTA, MAGENTA_TERRACOTTA, LIGHT_BLUE_TERRACOTTA,
+                 YELLOW_TERRACOTTA, LIME_TERRACOTTA, PINK_TERRACOTTA, GRAY_TERRACOTTA,
+                 LIGHT_GRAY_TERRACOTTA, CYAN_TERRACOTTA, PURPLE_TERRACOTTA, BLUE_TERRACOTTA,
+                 BROWN_TERRACOTTA, GREEN_TERRACOTTA, RED_TERRACOTTA, BLACK_TERRACOTTA,
+                 HAY_BLOCK, TERRACOTTA, PACKED_ICE, PRISMARINE, PRISMARINE_BRICKS, DARK_PRISMARINE, SEA_LANTERN,
+                 RED_SANDSTONE, CHISELED_RED_SANDSTONE, CUT_RED_SANDSTONE, MAGMA_BLOCK, RED_NETHER_BRICKS, BONE_BLOCK,
+                 WHITE_GLAZED_TERRACOTTA, ORANGE_GLAZED_TERRACOTTA, MAGENTA_GLAZED_TERRACOTTA, LIGHT_BLUE_GLAZED_TERRACOTTA,
+                 YELLOW_GLAZED_TERRACOTTA, LIME_GLAZED_TERRACOTTA, PINK_GLAZED_TERRACOTTA, GRAY_GLAZED_TERRACOTTA,
+                 LIGHT_GRAY_GLAZED_TERRACOTTA, CYAN_GLAZED_TERRACOTTA, PURPLE_GLAZED_TERRACOTTA, BLUE_GLAZED_TERRACOTTA,
+                 BROWN_GLAZED_TERRACOTTA, GREEN_GLAZED_TERRACOTTA, RED_GLAZED_TERRACOTTA, BLACK_GLAZED_TERRACOTTA,
+                 WHITE_CONCRETE, ORANGE_CONCRETE, MAGENTA_CONCRETE, LIGHT_BLUE_CONCRETE, YELLOW_CONCRETE, LIME_CONCRETE, PINK_CONCRETE, GRAY_CONCRETE,
+                 LIGHT_GRAY_CONCRETE, CYAN_CONCRETE, PURPLE_CONCRETE, BLUE_CONCRETE, BROWN_CONCRETE, GREEN_CONCRETE, RED_CONCRETE, BLACK_CONCRETE,
+                 WHITE_CONCRETE_POWDER, ORANGE_CONCRETE_POWDER, MAGENTA_CONCRETE_POWDER, LIGHT_BLUE_CONCRETE_POWDER,
+                 YELLOW_CONCRETE_POWDER, LIME_CONCRETE_POWDER, PINK_CONCRETE_POWDER, GRAY_CONCRETE_POWDER,
+                 LIGHT_GRAY_CONCRETE_POWDER, CYAN_CONCRETE_POWDER, PURPLE_CONCRETE_POWDER, BLUE_CONCRETE_POWDER,
+                 BROWN_CONCRETE_POWDER, GREEN_CONCRETE_POWDER, RED_CONCRETE_POWDER, BLACK_CONCRETE_POWDER,
+                 REDSTONE_BLOCK, SLIME_BLOCK, PISTON, STICKY_PISTON, OBSERVER, DISPENSER, DROPPER,
+                 TNT, REDSTONE_LAMP, NOTE_BLOCK,
+                 WHITE_STAINED_GLASS, ORANGE_STAINED_GLASS, MAGENTA_STAINED_GLASS, LIGHT_BLUE_STAINED_GLASS, YELLOW_STAINED_GLASS, LIME_STAINED_GLASS, PINK_STAINED_GLASS,
+                 GRAY_STAINED_GLASS, LIGHT_GRAY_STAINED_GLASS, CYAN_STAINED_GLASS, PURPLE_STAINED_GLASS, BLUE_STAINED_GLASS, BROWN_STAINED_GLASS, GREEN_STAINED_GLASS,
+                 RED_STAINED_GLASS, BLACK_STAINED_GLASS,
 
-                    OAK_LEAVES, SPRUCE_LEAVES, BIRCH_LEAVES, JUNGLE_LEAVES, ACACIA_LEAVES, DARK_OAK_LEAVES,
-                    FARMLAND, DIRT_PATH, CARVED_PUMPKIN, JACK_O_LANTERN, MELON, ENCHANTING_TABLE, END_PORTAL_FRAME,
-                    WHITE_CARPET, ORANGE_CARPET, MAGENTA_CARPET, LIGHT_BLUE_CARPET, YELLOW_CARPET, LIME_CARPET,
-                    PINK_CARPET, GRAY_CARPET, LIGHT_GRAY_CARPET, CYAN_CARPET, PURPLE_CARPET, BLUE_CARPET,
-                    BROWN_CARPET, GREEN_CARPET, RED_CARPET, BLACK_CARPET,
-                    SHULKER_BOX, WHITE_SHULKER_BOX, ORANGE_SHULKER_BOX, MAGENTA_SHULKER_BOX, LIGHT_BLUE_SHULKER_BOX,
-                    YELLOW_SHULKER_BOX, LIME_SHULKER_BOX, PINK_SHULKER_BOX, GRAY_SHULKER_BOX, LIGHT_GRAY_SHULKER_BOX,
-                    CYAN_SHULKER_BOX, PURPLE_SHULKER_BOX, BLUE_SHULKER_BOX, BROWN_SHULKER_BOX, GREEN_SHULKER_BOX,
-                    RED_SHULKER_BOX, BLACK_SHULKER_BOX, DAYLIGHT_DETECTOR -> {
+                 OAK_LEAVES, SPRUCE_LEAVES, BIRCH_LEAVES, JUNGLE_LEAVES, ACACIA_LEAVES, DARK_OAK_LEAVES,
+                 FARMLAND, DIRT_PATH, CARVED_PUMPKIN, JACK_O_LANTERN, MELON, ENCHANTING_TABLE, END_PORTAL_FRAME,
+                 WHITE_CARPET, ORANGE_CARPET, MAGENTA_CARPET, LIGHT_BLUE_CARPET, YELLOW_CARPET, LIME_CARPET,
+                 PINK_CARPET, GRAY_CARPET, LIGHT_GRAY_CARPET, CYAN_CARPET, PURPLE_CARPET, BLUE_CARPET,
+                 BROWN_CARPET, GREEN_CARPET, RED_CARPET, BLACK_CARPET,
+                 SHULKER_BOX, WHITE_SHULKER_BOX, ORANGE_SHULKER_BOX, MAGENTA_SHULKER_BOX, LIGHT_BLUE_SHULKER_BOX,
+                 YELLOW_SHULKER_BOX, LIME_SHULKER_BOX, PINK_SHULKER_BOX, GRAY_SHULKER_BOX, LIGHT_GRAY_SHULKER_BOX,
+                 CYAN_SHULKER_BOX, PURPLE_SHULKER_BOX, BLUE_SHULKER_BOX, BROWN_SHULKER_BOX, GREEN_SHULKER_BOX,
+                 RED_SHULKER_BOX, BLACK_SHULKER_BOX, DAYLIGHT_DETECTOR -> {
                 return true;
             }
         }
@@ -1310,17 +1515,17 @@ public class Converter {
             switch (bAbove.getMaterial()) {
 
                 case TORCH, REDSTONE_TORCH, STONE_PRESSURE_PLATE, OAK_PRESSURE_PLATE,
-                        LIGHT_WEIGHTED_PRESSURE_PLATE, HEAVY_WEIGHTED_PRESSURE_PLATE,
-                        OAK_SIGN, BREWING_STAND, FLOWER_POT, POTTED_DANDELION, POTTED_POPPY,
-                        POTTED_BLUE_ORCHID, POTTED_ALLIUM, POTTED_AZURE_BLUET, POTTED_RED_TULIP,
-                        POTTED_ORANGE_TULIP, POTTED_WHITE_TULIP, POTTED_PINK_TULIP, POTTED_OXEYE_DAISY,
-                        POTTED_OAK_SAPLING, POTTED_SPRUCE_SAPLING, POTTED_BIRCH_SAPLING, POTTED_JUNGLE_SAPLING,
-                        POTTED_ACACIA_SAPLING, POTTED_DARK_OAK_SAPLING, POTTED_RED_MUSHROOM, POTTED_BROWN_MUSHROOM,
-                        POTTED_FERN, POTTED_DEAD_BUSH, POTTED_CACTUS,
-                        SKELETON_SKULL, WITHER_SKELETON_SKULL, PLAYER_HEAD, ZOMBIE_HEAD, CREEPER_HEAD, DRAGON_HEAD,
-                        WHITE_BANNER, ORANGE_BANNER, MAGENTA_BANNER, LIGHT_BLUE_BANNER, YELLOW_BANNER, LIME_BANNER,
-                        PINK_BANNER, GRAY_BANNER, LIGHT_GRAY_BANNER, CYAN_BANNER, PURPLE_BANNER, BLUE_BANNER,
-                        BROWN_BANNER, GREEN_BANNER, RED_BANNER, BLACK_BANNER -> wall.setUp(true);
+                     LIGHT_WEIGHTED_PRESSURE_PLATE, HEAVY_WEIGHTED_PRESSURE_PLATE,
+                     OAK_SIGN, BREWING_STAND, FLOWER_POT, POTTED_DANDELION, POTTED_POPPY,
+                     POTTED_BLUE_ORCHID, POTTED_ALLIUM, POTTED_AZURE_BLUET, POTTED_RED_TULIP,
+                     POTTED_ORANGE_TULIP, POTTED_WHITE_TULIP, POTTED_PINK_TULIP, POTTED_OXEYE_DAISY,
+                     POTTED_OAK_SAPLING, POTTED_SPRUCE_SAPLING, POTTED_BIRCH_SAPLING, POTTED_JUNGLE_SAPLING,
+                     POTTED_ACACIA_SAPLING, POTTED_DARK_OAK_SAPLING, POTTED_RED_MUSHROOM, POTTED_BROWN_MUSHROOM,
+                     POTTED_FERN, POTTED_DEAD_BUSH, POTTED_CACTUS,
+                     SKELETON_SKULL, WITHER_SKELETON_SKULL, PLAYER_HEAD, ZOMBIE_HEAD, CREEPER_HEAD, DRAGON_HEAD,
+                     WHITE_BANNER, ORANGE_BANNER, MAGENTA_BANNER, LIGHT_BLUE_BANNER, YELLOW_BANNER, LIME_BANNER,
+                     PINK_BANNER, GRAY_BANNER, LIGHT_GRAY_BANNER, CYAN_BANNER, PURPLE_BANNER, BLUE_BANNER,
+                     BROWN_BANNER, GREEN_BANNER, RED_BANNER, BLACK_BANNER -> wall.setUp(true);
 
                 case END_ROD, HOPPER -> {
                     Directional direction = (Directional) bAbove;
@@ -1345,245 +1550,6 @@ public class Converter {
         }
 
         return wall;
-    }
-
-    private PatternType getPatternType(String p) {
-
-        switch (p) {
-
-            case "bs" -> {
-                return PatternType.STRIPE_BOTTOM;
-            }
-
-            case "ts" -> {
-                return PatternType.STRIPE_TOP;
-            }
-
-            case "ls" -> {
-                return PatternType.STRIPE_LEFT;
-            }
-
-            case "rs" -> {
-                return PatternType.STRIPE_RIGHT;
-            }
-
-            case "cs" -> {
-                return PatternType.STRIPE_CENTER;
-            }
-
-            case "ms" -> {
-                return PatternType.STRIPE_MIDDLE;
-            }
-
-            case "drs" -> {
-                return PatternType.STRIPE_DOWNRIGHT;
-            }
-
-            case "dls" -> {
-                return PatternType.STRIPE_DOWNLEFT;
-            }
-
-            case "ss" -> {
-                return PatternType.STRIPE_SMALL;
-            }
-
-            case "cr" -> {
-                return PatternType.CROSS;
-            }
-
-            case "sc" -> {
-                return PatternType.STRAIGHT_CROSS;
-            }
-
-            case "ld" -> {
-                return PatternType.DIAGONAL_LEFT;
-            }
-
-            case "rud" -> {
-                return PatternType.DIAGONAL_RIGHT_MIRROR;
-            }
-
-            case "lud" -> {
-                return PatternType.DIAGONAL_LEFT_MIRROR;
-            }
-
-            case "rd" -> {
-                return PatternType.DIAGONAL_RIGHT;
-            }
-
-            case "vh" -> {
-                return PatternType.HALF_VERTICAL;
-            }
-
-            case "vhr" -> {
-                return PatternType.HALF_VERTICAL_MIRROR;
-            }
-
-            case "hh" -> {
-                return PatternType.HALF_HORIZONTAL;
-            }
-
-            case "hhb" -> {
-                return PatternType.HALF_HORIZONTAL_MIRROR;
-            }
-
-            case "bl" -> {
-                return PatternType.SQUARE_BOTTOM_LEFT;
-            }
-
-            case "br" -> {
-                return PatternType.SQUARE_BOTTOM_RIGHT;
-            }
-
-            case "tl" -> {
-                return PatternType.SQUARE_TOP_LEFT;
-            }
-
-            case "tr" -> {
-                return PatternType.SQUARE_TOP_RIGHT;
-            }
-
-            case "bt" -> {
-                return PatternType.TRIANGLE_BOTTOM;
-            }
-
-            case "tt" -> {
-                return PatternType.TRIANGLE_TOP;
-            }
-
-            case "bts" -> {
-                return PatternType.TRIANGLES_BOTTOM;
-            }
-
-            case "tts" -> {
-                return PatternType.TRIANGLES_TOP;
-            }
-
-            case "mc" -> {
-                return PatternType.CIRCLE_MIDDLE;
-            }
-
-            case "mr" -> {
-                return PatternType.RHOMBUS_MIDDLE;
-            }
-            case "bo" -> {
-                return PatternType.BORDER;
-            }
-
-            case "cbo" -> {
-                return PatternType.CURLY_BORDER;
-            }
-
-            case "bri" -> {
-                return PatternType.BRICKS;
-            }
-
-            case "gra" -> {
-                return PatternType.GRADIENT;
-            }
-
-            case "gru" -> {
-                return PatternType.GRADIENT_UP;
-            }
-
-            case "cre" -> {
-                return PatternType.CREEPER;
-            }
-
-            case "sku" -> {
-                return PatternType.SKULL;
-            }
-
-            case "flo" -> {
-                return PatternType.FLOWER;
-            }
-
-            case "moj" -> {
-                return PatternType.MOJANG;
-            }
-
-            case "glb" -> {
-                return PatternType.GLOBE;
-            }
-
-            case "pig" -> {
-                return PatternType.PIGLIN;
-            }
-
-            default -> {
-                return PatternType.BASE;
-            }
-        }
-    }
-
-    private DyeColor getDyeColour(String c) {
-
-        switch (c) {
-
-            case "orange" -> {
-                return DyeColor.ORANGE;
-            }
-
-            case "magenta" -> {
-                return DyeColor.MAGENTA;
-            }
-
-            case "light_blue" -> {
-                return DyeColor.LIGHT_BLUE;
-            }
-
-            case "yellow" -> {
-                return DyeColor.YELLOW;
-            }
-
-            case "lime" -> {
-                return DyeColor.LIME;
-            }
-
-            case "pink" -> {
-                return DyeColor.PINK;
-            }
-
-            case "gray" -> {
-                return DyeColor.GRAY;
-            }
-
-            case "light_gray" -> {
-                return DyeColor.LIGHT_GRAY;
-            }
-
-            case "cyan" -> {
-                return DyeColor.CYAN;
-            }
-
-            case "purple" -> {
-                return DyeColor.PURPLE;
-            }
-
-            case "blue" -> {
-                return DyeColor.BLUE;
-            }
-
-            case "brown" -> {
-                return DyeColor.BROWN;
-            }
-
-            case "green" -> {
-                return DyeColor.GREEN;
-            }
-
-            case "red" -> {
-                return DyeColor.RED;
-            }
-
-            case "black" -> {
-                return DyeColor.BLACK;
-            }
-
-            default -> {
-                return DyeColor.WHITE;
-            }
-        }
     }
 
     private void setRotation(Rotatable rot, byte rotation) {
@@ -1617,8 +1583,8 @@ public class Converter {
             for (Object o : patterns) {
                 JSONObject pattern = (JSONObject) o;
 
-                banner.addPattern(new Pattern(getDyeColour((String) pattern.get("colour")),
-                        getPatternType((String) pattern.get("pattern"))));
+                banner.addPattern(new Pattern(Utils.getDyeColour((String) pattern.get("colour")),
+                        Utils.getPatternType((String) pattern.get("pattern"))));
             }
 
             banner.update(false, false);
@@ -1630,8 +1596,8 @@ public class Converter {
         switch (block.getType()) {
 
             case REDSTONE_WIRE, REDSTONE_BLOCK, REDSTONE_TORCH, LEVER, DAYLIGHT_DETECTOR, COMPARATOR,
-                    STONE_BUTTON, OAK_BUTTON, TRAPPED_CHEST, STONE_PRESSURE_PLATE, OAK_PRESSURE_PLATE,
-                    HEAVY_WEIGHTED_PRESSURE_PLATE, LIGHT_WEIGHTED_PRESSURE_PLATE, DETECTOR_RAIL -> {
+                 STONE_BUTTON, OAK_BUTTON, TRAPPED_CHEST, STONE_PRESSURE_PLATE, OAK_PRESSURE_PLATE,
+                 HEAVY_WEIGHTED_PRESSURE_PLATE, LIGHT_WEIGHTED_PRESSURE_PLATE, DETECTOR_RAIL -> {
                 return true;
             }
 
@@ -1697,65 +1663,65 @@ public class Converter {
 
             //Bass (String Bass)
             case OAK_PLANKS, SPRUCE_PLANKS, BIRCH_PLANKS, JUNGLE_PLANKS, ACACIA_PLANKS, DARK_OAK_PLANKS,
-                    OAK_LOG, SPRUCE_LOG, BIRCH_LOG, JUNGLE_LOG, ACACIA_LOG, DARK_OAK_LOG,
-                    OAK_WOOD, SPRUCE_WOOD, BIRCH_WOOD, JUNGLE_WOOD, ACACIA_WOOD, DARK_OAK_WOOD,
-                    NOTE_BLOCK, BOOKSHELF, OAK_STAIRS, SPRUCE_STAIRS, BIRCH_STAIRS, JUNGLE_STAIRS, ACACIA_STAIRS, DARK_OAK_STAIRS,
-                    CHEST, TRAPPED_CHEST, CRAFTING_TABLE, OAK_SIGN, SPRUCE_SIGN, BIRCH_SIGN, JUNGLE_SIGN, ACACIA_SIGN, DARK_OAK_SIGN,
-                    OAK_DOOR, SPRUCE_DOOR, BIRCH_DOOR, JUNGLE_DOOR, ACACIA_DOOR, DARK_OAK_DOOR,
-                    OAK_PRESSURE_PLATE, JUKEBOX, OAK_FENCE, SPRUCE_FENCE, BIRCH_FENCE, JUNGLE_FENCE, ACACIA_FENCE, DARK_OAK_FENCE,
-                    OAK_TRAPDOOR, RED_MUSHROOM_BLOCK, BROWN_MUSHROOM_BLOCK, MUSHROOM_STEM,
-                    OAK_FENCE_GATE, SPRUCE_FENCE_GATE, BIRCH_FENCE_GATE, JUNGLE_FENCE_GATE, ACACIA_FENCE_GATE, DARK_OAK_FENCE_GATE,
-                    DAYLIGHT_DETECTOR, WHITE_BANNER, ORANGE_BANNER, MAGENTA_BANNER, LIGHT_BLUE_BANNER,
-                    YELLOW_BANNER, LIME_BANNER, PINK_BANNER, GRAY_BANNER, LIGHT_GRAY_BANNER, CYAN_BANNER,
-                    PURPLE_BANNER, BLUE_BANNER, BROWN_BANNER, GREEN_BANNER, RED_BANNER, BLACK_BANNER,
-                    WHITE_WALL_BANNER, ORANGE_WALL_BANNER, MAGENTA_WALL_BANNER, LIGHT_BLUE_WALL_BANNER,
-                    YELLOW_WALL_BANNER, LIME_WALL_BANNER, PINK_WALL_BANNER, GRAY_WALL_BANNER, LIGHT_GRAY_WALL_BANNER,
-                    CYAN_WALL_BANNER, PURPLE_WALL_BANNER, BLUE_WALL_BANNER, BROWN_WALL_BANNER,
-                    GREEN_WALL_BANNER, RED_WALL_BANNER, BLACK_WALL_BANNER,
-                    OAK_SLAB, SPRUCE_SLAB, BIRCH_SLAB, JUNGLE_SLAB, ACACIA_SLAB, DARK_OAK_SLAB -> {
+                 OAK_LOG, SPRUCE_LOG, BIRCH_LOG, JUNGLE_LOG, ACACIA_LOG, DARK_OAK_LOG,
+                 OAK_WOOD, SPRUCE_WOOD, BIRCH_WOOD, JUNGLE_WOOD, ACACIA_WOOD, DARK_OAK_WOOD,
+                 NOTE_BLOCK, BOOKSHELF, OAK_STAIRS, SPRUCE_STAIRS, BIRCH_STAIRS, JUNGLE_STAIRS, ACACIA_STAIRS, DARK_OAK_STAIRS,
+                 CHEST, TRAPPED_CHEST, CRAFTING_TABLE, OAK_SIGN, SPRUCE_SIGN, BIRCH_SIGN, JUNGLE_SIGN, ACACIA_SIGN, DARK_OAK_SIGN,
+                 OAK_DOOR, SPRUCE_DOOR, BIRCH_DOOR, JUNGLE_DOOR, ACACIA_DOOR, DARK_OAK_DOOR,
+                 OAK_PRESSURE_PLATE, JUKEBOX, OAK_FENCE, SPRUCE_FENCE, BIRCH_FENCE, JUNGLE_FENCE, ACACIA_FENCE, DARK_OAK_FENCE,
+                 OAK_TRAPDOOR, RED_MUSHROOM_BLOCK, BROWN_MUSHROOM_BLOCK, MUSHROOM_STEM,
+                 OAK_FENCE_GATE, SPRUCE_FENCE_GATE, BIRCH_FENCE_GATE, JUNGLE_FENCE_GATE, ACACIA_FENCE_GATE, DARK_OAK_FENCE_GATE,
+                 DAYLIGHT_DETECTOR, WHITE_BANNER, ORANGE_BANNER, MAGENTA_BANNER, LIGHT_BLUE_BANNER,
+                 YELLOW_BANNER, LIME_BANNER, PINK_BANNER, GRAY_BANNER, LIGHT_GRAY_BANNER, CYAN_BANNER,
+                 PURPLE_BANNER, BLUE_BANNER, BROWN_BANNER, GREEN_BANNER, RED_BANNER, BLACK_BANNER,
+                 WHITE_WALL_BANNER, ORANGE_WALL_BANNER, MAGENTA_WALL_BANNER, LIGHT_BLUE_WALL_BANNER,
+                 YELLOW_WALL_BANNER, LIME_WALL_BANNER, PINK_WALL_BANNER, GRAY_WALL_BANNER, LIGHT_GRAY_WALL_BANNER,
+                 CYAN_WALL_BANNER, PURPLE_WALL_BANNER, BLUE_WALL_BANNER, BROWN_WALL_BANNER,
+                 GREEN_WALL_BANNER, RED_WALL_BANNER, BLACK_WALL_BANNER,
+                 OAK_SLAB, SPRUCE_SLAB, BIRCH_SLAB, JUNGLE_SLAB, ACACIA_SLAB, DARK_OAK_SLAB -> {
                 return Instrument.BASS_GUITAR;
             }
 
             //Snare Drum
             case SAND, RED_SAND, GRAVEL, WHITE_CONCRETE_POWDER, ORANGE_CONCRETE_POWDER,
-                    LIGHT_BLUE_CONCRETE_POWDER, YELLOW_CONCRETE_POWDER, LIME_CONCRETE_POWDER,
-                    PINK_CONCRETE_POWDER, GRAY_CONCRETE_POWDER, LIGHT_GRAY_CONCRETE_POWDER, CYAN_CONCRETE_POWDER,
-                    PURPLE_CONCRETE_POWDER, BLUE_CONCRETE_POWDER, BROWN_CONCRETE_POWDER, GREEN_CONCRETE_POWDER,
-                    RED_CONCRETE_POWDER, BLACK_CONCRETE_POWDER -> {
+                 LIGHT_BLUE_CONCRETE_POWDER, YELLOW_CONCRETE_POWDER, LIME_CONCRETE_POWDER,
+                 PINK_CONCRETE_POWDER, GRAY_CONCRETE_POWDER, LIGHT_GRAY_CONCRETE_POWDER, CYAN_CONCRETE_POWDER,
+                 PURPLE_CONCRETE_POWDER, BLUE_CONCRETE_POWDER, BROWN_CONCRETE_POWDER, GREEN_CONCRETE_POWDER,
+                 RED_CONCRETE_POWDER, BLACK_CONCRETE_POWDER -> {
                 return Instrument.SNARE_DRUM;
             }
 
             //Clicks and Sticks (Hihat)
             case GLASS, WHITE_STAINED_GLASS, ORANGE_STAINED_GLASS, MAGENTA_STAINED_GLASS, LIGHT_BLUE_STAINED_GLASS,
-                    YELLOW_STAINED_GLASS, LIME_STAINED_GLASS, PINK_STAINED_GLASS, GRAY_STAINED_GLASS,
-                    LIGHT_GRAY_STAINED_GLASS, CYAN_STAINED_GLASS, PURPLE_STAINED_GLASS, BLUE_STAINED_GLASS,
-                    BROWN_STAINED_GLASS, GREEN_STAINED_GLASS, RED_STAINED_GLASS, BLACK_STAINED_GLASS,
-                    GLASS_PANE, WHITE_STAINED_GLASS_PANE, ORANGE_STAINED_GLASS_PANE, MAGENTA_STAINED_GLASS_PANE,
-                    LIGHT_BLUE_STAINED_GLASS_PANE, YELLOW_STAINED_GLASS_PANE, LIME_STAINED_GLASS_PANE, PINK_STAINED_GLASS_PANE,
-                    GRAY_STAINED_GLASS_PANE, LIGHT_GRAY_STAINED_GLASS_PANE, CYAN_STAINED_GLASS_PANE,
-                    PURPLE_STAINED_GLASS_PANE, BLUE_STAINED_GLASS_PANE, BROWN_STAINED_GLASS_PANE,
-                    GREEN_STAINED_GLASS_PANE, RED_STAINED_GLASS_PANE, BLACK_STAINED_GLASS_PANE,
-                    BEACON, SEA_LANTERN -> {
+                 YELLOW_STAINED_GLASS, LIME_STAINED_GLASS, PINK_STAINED_GLASS, GRAY_STAINED_GLASS,
+                 LIGHT_GRAY_STAINED_GLASS, CYAN_STAINED_GLASS, PURPLE_STAINED_GLASS, BLUE_STAINED_GLASS,
+                 BROWN_STAINED_GLASS, GREEN_STAINED_GLASS, RED_STAINED_GLASS, BLACK_STAINED_GLASS,
+                 GLASS_PANE, WHITE_STAINED_GLASS_PANE, ORANGE_STAINED_GLASS_PANE, MAGENTA_STAINED_GLASS_PANE,
+                 LIGHT_BLUE_STAINED_GLASS_PANE, YELLOW_STAINED_GLASS_PANE, LIME_STAINED_GLASS_PANE, PINK_STAINED_GLASS_PANE,
+                 GRAY_STAINED_GLASS_PANE, LIGHT_GRAY_STAINED_GLASS_PANE, CYAN_STAINED_GLASS_PANE,
+                 PURPLE_STAINED_GLASS_PANE, BLUE_STAINED_GLASS_PANE, BROWN_STAINED_GLASS_PANE,
+                 GREEN_STAINED_GLASS_PANE, RED_STAINED_GLASS_PANE, BLACK_STAINED_GLASS_PANE,
+                 BEACON, SEA_LANTERN -> {
                 return Instrument.STICKS;
             }
 
             //Bass Drum (Kick)
             case STONE, DIORITE, GRANITE, ANDESITE, POLISHED_ANDESITE, POLISHED_DIORITE, POLISHED_GRANITE,
-                    COBBLESTONE, MOSSY_COBBLESTONE, BEDROCK, COAL_ORE, IRON_ORE, GOLD_ORE, REDSTONE_ORE, LAPIS_ORE, DIAMOND_ORE, EMERALD_ORE,
-                    DROPPER, DISPENSER, SANDSTONE, CUT_SANDSTONE, CHISELED_SANDSTONE, SMOOTH_SANDSTONE, RED_SANDSTONE, CUT_RED_SANDSTONE, CHISELED_RED_SANDSTONE, SMOOTH_RED_SANDSTONE,
-                    SMOOTH_STONE, BRICKS, SPAWNER, FURNACE, COBBLESTONE_STAIRS, STONE_BRICK_STAIRS, SANDSTONE_STAIRS, RED_SANDSTONE_STAIRS, NETHER_BRICK_STAIRS, PURPUR_STAIRS, QUARTZ_STAIRS,
-                    STONE_PRESSURE_PLATE, NETHERRACK, STONE_BRICKS, CHISELED_STONE_BRICKS, MOSSY_STONE_BRICKS, CRACKED_STONE_BRICKS, NETHER_BRICK,
-                    NETHER_BRICK_FENCE, ENCHANTING_TABLE, END_PORTAL_FRAME, END_STONE, ENDER_CHEST, COBBLESTONE_WALL, MOSSY_COBBLESTONE_WALL, QUARTZ_BLOCK,
-                    QUARTZ_PILLAR, CHISELED_QUARTZ_BLOCK, TERRACOTTA, WHITE_TERRACOTTA, ORANGE_TERRACOTTA, MAGENTA_TERRACOTTA, LIGHT_BLUE_TERRACOTTA,
-                    YELLOW_TERRACOTTA, LIME_TERRACOTTA, PINK_TERRACOTTA, GRAY_TERRACOTTA, LIGHT_GRAY_TERRACOTTA, CYAN_TERRACOTTA, PURPLE_TERRACOTTA,
-                    BLUE_TERRACOTTA, BROWN_TERRACOTTA, GREEN_TERRACOTTA, RED_TERRACOTTA, BLACK_TERRACOTTA, PRISMARINE, PRISMARINE_BRICKS, DARK_PRISMARINE,
-                    COBBLESTONE_SLAB, STONE_BRICK_SLAB, SANDSTONE_SLAB, RED_SANDSTONE_SLAB, BRICK_SLAB, NETHER_BRICK_SLAB, QUARTZ_SLAB, PURPUR_SLAB,
-                    OBSIDIAN, PURPUR_BLOCK, PURPUR_PILLAR, END_STONE_BRICKS, MAGMA_BLOCK, RED_NETHER_BRICKS, OBSERVER, WHITE_GLAZED_TERRACOTTA, ORANGE_GLAZED_TERRACOTTA,
-                    MAGENTA_GLAZED_TERRACOTTA, LIGHT_BLUE_GLAZED_TERRACOTTA, YELLOW_GLAZED_TERRACOTTA, LIME_GLAZED_TERRACOTTA, PINK_GLAZED_TERRACOTTA,
-                    GRAY_GLAZED_TERRACOTTA, LIGHT_GRAY_GLAZED_TERRACOTTA, CYAN_GLAZED_TERRACOTTA, PURPLE_GLAZED_TERRACOTTA, BLUE_GLAZED_TERRACOTTA,
-                    BROWN_GLAZED_TERRACOTTA, GREEN_GLAZED_TERRACOTTA, RED_GLAZED_TERRACOTTA, BLACK_GLAZED_TERRACOTTA, WHITE_CONCRETE, ORANGE_CONCRETE,
-                    MAGENTA_CONCRETE, LIGHT_BLUE_CONCRETE, YELLOW_CONCRETE, LIME_CONCRETE, PINK_CONCRETE, GRAY_CONCRETE, LIGHT_GRAY_CONCRETE, CYAN_CONCRETE,
-                    PURPLE_CONCRETE, BLUE_CONCRETE, BROWN_CONCRETE, GREEN_CONCRETE, RED_CONCRETE, BLACK_CONCRETE -> {
+                 COBBLESTONE, MOSSY_COBBLESTONE, BEDROCK, COAL_ORE, IRON_ORE, GOLD_ORE, REDSTONE_ORE, LAPIS_ORE, DIAMOND_ORE, EMERALD_ORE,
+                 DROPPER, DISPENSER, SANDSTONE, CUT_SANDSTONE, CHISELED_SANDSTONE, SMOOTH_SANDSTONE, RED_SANDSTONE, CUT_RED_SANDSTONE, CHISELED_RED_SANDSTONE, SMOOTH_RED_SANDSTONE,
+                 SMOOTH_STONE, BRICKS, SPAWNER, FURNACE, COBBLESTONE_STAIRS, STONE_BRICK_STAIRS, SANDSTONE_STAIRS, RED_SANDSTONE_STAIRS, NETHER_BRICK_STAIRS, PURPUR_STAIRS, QUARTZ_STAIRS,
+                 STONE_PRESSURE_PLATE, NETHERRACK, STONE_BRICKS, CHISELED_STONE_BRICKS, MOSSY_STONE_BRICKS, CRACKED_STONE_BRICKS, NETHER_BRICK,
+                 NETHER_BRICK_FENCE, ENCHANTING_TABLE, END_PORTAL_FRAME, END_STONE, ENDER_CHEST, COBBLESTONE_WALL, MOSSY_COBBLESTONE_WALL, QUARTZ_BLOCK,
+                 QUARTZ_PILLAR, CHISELED_QUARTZ_BLOCK, TERRACOTTA, WHITE_TERRACOTTA, ORANGE_TERRACOTTA, MAGENTA_TERRACOTTA, LIGHT_BLUE_TERRACOTTA,
+                 YELLOW_TERRACOTTA, LIME_TERRACOTTA, PINK_TERRACOTTA, GRAY_TERRACOTTA, LIGHT_GRAY_TERRACOTTA, CYAN_TERRACOTTA, PURPLE_TERRACOTTA,
+                 BLUE_TERRACOTTA, BROWN_TERRACOTTA, GREEN_TERRACOTTA, RED_TERRACOTTA, BLACK_TERRACOTTA, PRISMARINE, PRISMARINE_BRICKS, DARK_PRISMARINE,
+                 COBBLESTONE_SLAB, STONE_BRICK_SLAB, SANDSTONE_SLAB, RED_SANDSTONE_SLAB, BRICK_SLAB, NETHER_BRICK_SLAB, QUARTZ_SLAB, PURPUR_SLAB,
+                 OBSIDIAN, PURPUR_BLOCK, PURPUR_PILLAR, END_STONE_BRICKS, MAGMA_BLOCK, RED_NETHER_BRICKS, OBSERVER, WHITE_GLAZED_TERRACOTTA, ORANGE_GLAZED_TERRACOTTA,
+                 MAGENTA_GLAZED_TERRACOTTA, LIGHT_BLUE_GLAZED_TERRACOTTA, YELLOW_GLAZED_TERRACOTTA, LIME_GLAZED_TERRACOTTA, PINK_GLAZED_TERRACOTTA,
+                 GRAY_GLAZED_TERRACOTTA, LIGHT_GRAY_GLAZED_TERRACOTTA, CYAN_GLAZED_TERRACOTTA, PURPLE_GLAZED_TERRACOTTA, BLUE_GLAZED_TERRACOTTA,
+                 BROWN_GLAZED_TERRACOTTA, GREEN_GLAZED_TERRACOTTA, RED_GLAZED_TERRACOTTA, BLACK_GLAZED_TERRACOTTA, WHITE_CONCRETE, ORANGE_CONCRETE,
+                 MAGENTA_CONCRETE, LIGHT_BLUE_CONCRETE, YELLOW_CONCRETE, LIME_CONCRETE, PINK_CONCRETE, GRAY_CONCRETE, LIGHT_GRAY_CONCRETE, CYAN_CONCRETE,
+                 PURPLE_CONCRETE, BLUE_CONCRETE, BROWN_CONCRETE, GREEN_CONCRETE, RED_CONCRETE, BLACK_CONCRETE -> {
                 return Instrument.BASS_DRUM;
             }
 
@@ -1776,7 +1742,7 @@ public class Converter {
 
             //Guitar
             case WHITE_WOOL, ORANGE_WOOL, MAGENTA_WOOL, LIGHT_BLUE_WOOL, YELLOW_WOOL, LIME_WOOL, PINK_WOOL, GRAY_WOOL,
-                    LIGHT_GRAY_WOOL, CYAN_WOOL, PURPLE_WOOL, BLUE_WOOL, BROWN_WOOL, GREEN_WOOL, RED_WOOL, BLACK_WOOL -> {
+                 LIGHT_GRAY_WOOL, CYAN_WOOL, PURPLE_WOOL, BLUE_WOOL, BROWN_WOOL, GREEN_WOOL, RED_WOOL, BLACK_WOOL -> {
                 return Instrument.GUITAR;
             }
 
@@ -1815,4 +1781,100 @@ public class Converter {
             }
         }
     }
+
+    /**
+     * Set an entity in the world
+     * @param entityNamespace The namespace (name) of the entity
+     * @param object JSON object containing the properties of the entity
+     * @param location The location of the entity
+     * @throws Exception
+     */
+    private void setEntity(String entityNamespace, JSONObject object, Location location) throws Exception {
+        JSONObject objectProps = (JSONObject)object.get("properties");
+
+        switch (entityNamespace) {
+            case "minecraft:armor_stand" -> {
+                ArmorStand armorStand = (ArmorStand) world.spawnEntity(location, EntityType.ARMOR_STAND);
+                ArmorStandHelper.propArmorStand(armorStand, objectProps);
+            }
+            case "minecraft:minecart" -> {
+                RideableMinecart rideableMinecart = (RideableMinecart) world.spawnEntity(location, EntityType.MINECART);
+                MinecartHelper.setCommonMinecartProps(rideableMinecart, objectProps);
+            }
+            case "minecraft:chest_minecart" ->{
+                StorageMinecart storageMinecart = (StorageMinecart) world.spawnEntity(location, EntityType.MINECART_CHEST);
+                MinecartHelper.setCommonMinecartProps(storageMinecart, objectProps);
+                MinecartHelper.prepChestMinecart(storageMinecart, objectProps);
+            }
+            case "minecraft:hopper_minecart" -> {
+                HopperMinecart hopperMinecart = (HopperMinecart) world.spawnEntity(location, EntityType.MINECART_HOPPER);
+                MinecartHelper.setCommonMinecartProps(hopperMinecart, objectProps);
+                MinecartHelper.prepHopperMinecart(hopperMinecart, objectProps);
+            }
+            case "minecraft:command_block_minecart" -> {
+                CommandMinecart commandMinecart = (CommandMinecart) world.spawnEntity(location, EntityType.MINECART_COMMAND);
+                MinecartHelper.setCommonMinecartProps(commandMinecart, objectProps);
+                MinecartHelper.prepCommandMinecart(commandMinecart, objectProps);
+            }
+            case "minecraft:furnace_minecart" -> {
+                PoweredMinecart furnaceMinecart = (PoweredMinecart) world.spawnEntity(location, EntityType.MINECART_FURNACE);
+                MinecartHelper.setCommonMinecartProps(furnaceMinecart, objectProps);
+                MinecartHelper.prepFurnaceMinecart(furnaceMinecart, objectProps);
+            }
+            case "minecraft:tnt_minecart" -> {
+                ExplosiveMinecart explosiveMinecart = (ExplosiveMinecart) world.spawnEntity(location, EntityType.MINECART_TNT);
+                MinecartHelper.setCommonMinecartProps(explosiveMinecart, objectProps);
+                MinecartHelper.prepExplosiveMinecart(explosiveMinecart, objectProps);
+            }
+            case "minecraft:end_crystal" -> {
+                EnderCrystal enderCrystal = (EnderCrystal) world.spawnEntity(location, EntityType.ENDER_CRYSTAL);
+                Utils.prepEntity(enderCrystal, objectProps);
+                if(objectProps.containsKey("beam_target")){
+                    List<Integer> beamTarget = Utils.getIntegerListFromJson(objectProps, "beam_target");
+                    enderCrystal.setBeamTarget(new Location(location.getWorld(), beamTarget.get(0), beamTarget.get(1), beamTarget.get(2)));
+                }
+                enderCrystal.setShowingBottom((objectProps.containsKey("show_button") ? (int) (long)objectProps.get("show_button") == 1 : false));
+            }
+            case "minecraft:painting" -> {
+                JSONArray tilePos = (JSONArray) objectProps.get("tile_pos");
+                location = new Location(location.getWorld(), (double) (long) tilePos.get(0), (double) (long) tilePos.get(1), (double) (long) tilePos.get(2));
+
+                Painting painting = (Painting) world.spawnEntity(location, EntityType.PAINTING);
+                Utils.prepEntity(painting, objectProps);
+                Art motive = Art.getByName((String) objectProps.get("motive"));
+                painting.setArt(motive);
+                if(objectProps.containsKey("facing")){
+                    painting.setFacingDirection(BlockFace.valueOf((String) objectProps.get("facing")));
+                }
+            }
+            case "minecraft:item_frame" -> {
+                ItemFrame itemFrame = (ItemFrame) world.spawnEntity(location, EntityType.ITEM_FRAME);
+                Utils.prepEntity(itemFrame, objectProps);
+                if(objectProps.containsKey("fixed"))
+                    itemFrame.setFixed((int)(long)objectProps.get("fixed")==1);
+                if(objectProps.containsKey("invisible"))
+                    itemFrame.setVisible((int)(long)objectProps.get("invisible")==0);
+                if(objectProps.containsKey("item")){
+                    JSONObject item = (JSONObject) objectProps.get("item");
+                    JSONObject itemProps = (JSONObject) item.getOrDefault("Properties", new JSONObject());
+                    String itemID = (String) item.get("id");
+                    if(itemID.startsWith("minecraft:")) {
+                        itemID = itemID.substring(10);
+                        ItemStack _item = ItemsHelper.getItem(itemID, itemProps);
+                        itemFrame.setItem(_item);
+                    }
+                }
+                if(objectProps.containsKey("item_rotation")){
+                    itemFrame.setRotation(Rotation.valueOf((String) objectProps.get("item_rotation")));
+                }
+                if(objectProps.containsKey("item_drop_chance")){
+                    Double itemDropChance = (double)objectProps.get("item_drop_chance");
+                    itemFrame.setItemDropChance(itemDropChance.floatValue());
+                }
+
+            }
+
+        }
+    }
+
 }

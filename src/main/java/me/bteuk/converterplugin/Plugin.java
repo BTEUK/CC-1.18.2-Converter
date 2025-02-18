@@ -1,21 +1,20 @@
 package me.bteuk.converterplugin;
 
-import io.papermc.lib.PaperLib;
 import me.bteuk.converterplugin.utils.exceptions.FolderEmptyException;
+import me.bteuk.converterplugin.utils.items.ItemMapsHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Optional;
@@ -31,7 +30,7 @@ public class Plugin extends JavaPlugin {
 
         saveDefaultConfig();
 
-        //Get datafolder.
+        //Get data folder.
         Path folder = Path.of(getDataFolder().getAbsolutePath()).resolve("post-processing");
 
         //If no files exist in the folder, disable the plugin as it is no longer necessary.
@@ -51,6 +50,32 @@ public class Plugin extends JavaPlugin {
 
         World world = Bukkit.getWorld(worldName);
 
+        //Get json parser.
+        JSONParser parser = new JSONParser();
+        getLogger().info("Converter activated.");
+
+        try {
+            Path mapsItemFolder = Path.of(getDataFolder().getAbsolutePath()).resolve("maps");
+            Path mapsIdFile = Path.of(getDataFolder().getAbsolutePath()).resolve("mapID.json");
+            Path dataFolder = Paths.get( Bukkit.getWorldContainer().getCanonicalPath().replace("\\", "/"), worldName, "data");
+
+            //Setup item maps helper
+            new ItemMapsHelper(world, mapsIdFile, mapsItemFolder,dataFolder, parser);
+
+            //Read mapID.json file, that contains the mapping of original map item ID's to new map item ID's
+            if (Files.exists(mapsIdFile))
+                ItemMapsHelper.instance.readMapsID();
+
+            if(!isFolderEmpty(mapsItemFolder)) {
+                getLogger().info("Converting map items");
+                ItemMapsHelper.instance.convertMaps();
+                getLogger().info("Converted map items");
+            }
+
+        }catch (Exception exception) {
+            getLogger().warning(String.format("Error while converting map items in maps folder: %1$s", exception.getMessage()));
+        }
+
         //Enable world analyser functions if enabled in config.
         if (getConfig().getBoolean("world_analyser")) {
 
@@ -58,12 +83,9 @@ public class Plugin extends JavaPlugin {
 
         }
 
+
         Converter converter = new Converter(this, world);
         LinkedHashSet<File> converterQueue = new LinkedHashSet<>();
-
-        //Get json parser.
-        JSONParser parser = new JSONParser();
-        getLogger().info("Converter activated.");
 
         //List of repeating tasks, they are stored, so they can be cancelled if not needed.
         tasks = new ArrayList<>();
@@ -129,7 +151,7 @@ public class Plugin extends JavaPlugin {
 
                     if (!converter.isRunning() && !converterQueue.isEmpty()) {
 
-                        //Set converter to running, this prevent multiple conversion running at once.
+                        //Set converter to running, this prevents multiple conversion running at once.
                         converter.setRunning(true);
 
                         //Get the first region in the set.
@@ -140,28 +162,40 @@ public class Plugin extends JavaPlugin {
 
                             getLogger().info("Starting conversion of " + newFile);
 
-                            //Get the array of json objects.
-                            JSONArray jsonArray = (JSONArray) parser.parse(reader);
+                            Object rawJsonObject = parser.parse(reader);
+                            JSONObject jsonObject = new JSONObject();
 
-                            Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+                            if(rawJsonObject instanceof JSONObject) {
+                                //Get the json object that contains blocks (and entities)
+                                jsonObject = (JSONObject) rawJsonObject;
+                            }else {
+                                //Put array of json blocks into json object (for backwards compatibility)
+                                JSONArray jsonArray = (JSONArray) rawJsonObject;
+                                jsonObject.put("block", jsonArray);
+                            }
 
-                                CompletableFuture<Void> converterTask = converter.convert(jsonArray);
+                            if(!jsonObject.isEmpty()) {
+                                JSONObject finalJsonObject = jsonObject;
+                                Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
 
-                                converterTask.thenRun(() -> {
-                                    getLogger().info("Converted file " + newFile);
+                                    CompletableFuture<Void> converterTask = converter.convert(finalJsonObject);
 
-                                    //If the converter has converted the region successfully, remove the file from the queue and set isRunning to false to unlock the converter.
-                                    //Additionally delete the file, so it can't be converted multiple times.
-                                    if (newFile.delete()) {
-                                        getLogger().info("Deleted " + newFile.getName());
-                                    } else {
-                                        getLogger().info("Failed to delete " + newFile.getName());
-                                    }
+                                    converterTask.thenRun(() -> {
+                                        getLogger().info("Converted file " + newFile);
 
-                                    converterQueue.remove(newFile);
-                                    converter.setRunning(false);
+                                        //If the converter has converted the region successfully, remove the file from the queue and set isRunning to false to unlock the converter.
+                                        //Additionally delete the file, so it can't be converted multiple times.
+                                        if (newFile.delete()) {
+                                            getLogger().info("Deleted " + newFile.getName());
+                                        } else {
+                                            getLogger().info("Failed to delete " + newFile.getName());
+                                        }
+
+                                        converterQueue.remove(newFile);
+                                        converter.setRunning(false);
+                                    });
                                 });
-                            });
+                            }
 
                         } catch (IOException | ParseException ex) {
                             ex.printStackTrace();
@@ -169,6 +203,16 @@ public class Plugin extends JavaPlugin {
 
                     }
                 }, 0L, 80L).getTaskId());
+
+    }
+
+    @Override
+    public void onDisable(){
+        try {
+            ItemMapsHelper.instance.writeMapsID();
+        }catch (Exception ex){
+            getLogger().warning("Warning, error while writing mapID.json: " + ex.getMessage());
+        }
 
     }
 
